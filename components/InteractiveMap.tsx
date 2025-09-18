@@ -29,8 +29,10 @@ export const InteractiveMap: React.FC<{ celebrations: Celebration[] }> = ({ cele
     useEffect(() => {
         if (map.current || !mapContainer.current) return; // initialize map only once
 
+        // Set the access token globally
+        mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+
         map.current = new mapboxgl.Map({
-            accessToken: MAPBOX_ACCESS_TOKEN,
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/dark-v11',
             center: [USER_LOCATION.lng, USER_LOCATION.lat],
