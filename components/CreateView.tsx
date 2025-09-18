@@ -1,7 +1,6 @@
-
 import React, { useState, useCallback } from 'react';
 import type { SpecialDay } from '../types';
-import { generateDecorationIdeas } from '../services/geminiService';
+import { generateDecorationIdeasStream } from '../services/geminiService';
 import { SparklesIcon } from './icons';
 
 const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
@@ -16,9 +15,18 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
         setIsLoading(true);
         setError('');
         setSuggestion('');
+        
+        const typeWriter = async (text: string) => {
+            for (const char of text) {
+                setSuggestion(prev => prev + char);
+                await new Promise(resolve => setTimeout(resolve, 5));
+            }
+        };
+
         try {
-            const result = await generateDecorationIdeas(theme, items, skill, time);
-            setSuggestion(result);
+            for await (const chunk of generateDecorationIdeasStream(theme, items, skill, time)) {
+                await typeWriter(chunk);
+            }
         } catch (err) {
             setError('Failed to generate ideas. Please try again.');
             console.error(err);
@@ -62,9 +70,9 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
             >
                 {isLoading ? 'Thinking...' : 'Generate Ideas'}
             </button>
-            {suggestion && (
-                 <div className="mt-4 p-4 bg-neutral-800 rounded-lg whitespace-pre-wrap font-mono text-sm text-neutral-300">
-                    {suggestion}
+            {(suggestion || isLoading) && (
+                 <div className="mt-4 p-4 bg-neutral-800 rounded-lg whitespace-pre-wrap font-mono text-sm text-neutral-300 min-h-[5rem]">
+                    {suggestion}{isLoading && <span className="inline-block w-2 h-4 ml-1 bg-special-primary animate-blink" />}
                 </div>
             )}
             {error && <p className="mt-2 text-red-400">{error}</p>}

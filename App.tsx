@@ -38,7 +38,7 @@ const App: React.FC = () => {
     
     return (
         <div className="h-screen w-screen flex flex-col bg-neutral-900 bg-gradient-to-br from-neutral-900 to-neutral-800">
-            <Header isLoggedIn={isLoggedIn} onLoginToggle={handleLoginToggle} />
+            <Header isLoggedIn={isLoggedIn} setActiveTab={setActiveTab} />
             <main className="flex-grow overflow-hidden relative">
                 {renderContent()}
             </main>

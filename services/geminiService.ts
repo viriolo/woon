@@ -20,10 +20,11 @@ const getAiClient = (): GoogleGenAI | null => {
     return null;
 }
 
-export const generateDecorationIdeas = async (theme: string, items: string, skill: string, time: string): Promise<string> => {
+export async function* generateDecorationIdeasStream(theme: string, items: string, skill: string, time: string): AsyncGenerator<string> {
     const aiClient = getAiClient();
     if (!aiClient) {
-        return Promise.resolve("API Key not configured. Please set up your API_KEY environment variable.");
+        yield "API Key not configured. Please set up your API_KEY environment variable.";
+        return;
     }
 
     const prompt = `
@@ -39,14 +40,17 @@ export const generateDecorationIdeas = async (theme: string, items: string, skil
     `;
 
     try {
-        const response = await aiClient.models.generateContent({
+        const response = await aiClient.models.generateContentStream({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
 
-        return response.text;
+        for await (const chunk of response) {
+            yield chunk.text;
+        }
+
     } catch (error) {
         console.error("Error calling Gemini API:", error);
-        return "Sorry, I couldn't come up with ideas right now. Please try again later.";
+        yield "Sorry, I couldn't come up with ideas right now. Please try again later.";
     }
 };
