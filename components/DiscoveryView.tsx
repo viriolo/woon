@@ -1,7 +1,8 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { SpecialDay, Celebration } from '../types';
 import { InteractiveMap } from './InteractiveMap';
+import { SearchIcon } from './icons';
 
 interface DiscoveryViewProps {
     specialDay: SpecialDay;
@@ -9,13 +10,32 @@ interface DiscoveryViewProps {
     celebrations: Celebration[];
 }
 
-const HeroSection: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
+const HeroSection: React.FC<{
+    specialDay: SpecialDay;
+    searchQuery: string;
+    onSearchChange: (query: string) => void;
+}> = ({ specialDay, searchQuery, onSearchChange }) => (
     <div className="absolute top-0 left-0 right-0 pt-20 pb-10 px-4 z-10 text-center bg-gradient-to-b from-neutral-900 via-neutral-900/90 to-transparent">
         <h2 className="text-sm font-medium text-special-secondary uppercase tracking-widest">{specialDay.date}</h2>
         <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-special-surface to-special-secondary my-1">
             {specialDay.title}
         </h1>
         <p className="text-neutral-300 max-w-xl mx-auto">{specialDay.description}</p>
+        <div className="mt-4 max-w-lg mx-auto">
+            <div className="relative">
+                <input
+                    type="text"
+                    placeholder="Search celebrations by title or author..."
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-neutral-800/70 backdrop-blur-sm border border-neutral-700 rounded-full text-white placeholder-neutral-400 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                    aria-label="Search celebrations"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <SearchIcon className="w-5 h-5 text-neutral-400" />
+                </div>
+            </div>
+        </div>
     </div>
 );
 
@@ -55,6 +75,20 @@ const CelebrationCarousel: React.FC<{
 
 export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations }) => {
     const [selectedCelebrationId, setSelectedCelebrationId] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredCelebrations = celebrations.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.author.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    useEffect(() => {
+        // If the selected celebration is filtered out, deselect it
+        if (selectedCelebrationId && !filteredCelebrations.some(c => c.id === selectedCelebrationId)) {
+            setSelectedCelebrationId(null);
+        }
+    }, [filteredCelebrations, selectedCelebrationId]);
+
 
     const handleSelectCelebration = useCallback((id: number | null) => {
         setSelectedCelebrationId(id);
@@ -62,14 +96,18 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
 
     return (
         <div className="h-full w-full animate-fade-in">
-            <HeroSection specialDay={specialDay} />
+            <HeroSection 
+                specialDay={specialDay} 
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+            />
             <InteractiveMap 
-                celebrations={celebrations} 
+                celebrations={filteredCelebrations} 
                 selectedCelebrationId={selectedCelebrationId}
                 onSelectCelebration={handleSelectCelebration}
             />
             <CelebrationCarousel 
-                celebrations={celebrations} 
+                celebrations={filteredCelebrations} 
                 tomorrowSpecialDay={tomorrowSpecialDay} 
                 selectedCelebrationId={selectedCelebrationId}
                 onSelectCelebration={handleSelectCelebration}
