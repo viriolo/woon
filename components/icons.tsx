@@ -43,7 +43,8 @@ export const SparklesIcon: React.FC<IconProps> = ({ className }) => (
 
 export const GlobeAltIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m0 18a9 9 0 009-9M3 12a9 9 0 019-9m0 18a9 9 0 00-9-9m-9 9h18" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.25 9.75h17.5M3.25 14.25h17.5M12 3a14.2 14.2 0 00-3.41 1.41A14.2 14.2 0 0012 21a14.2 14.2 0 003.41-1.41A14.2 14.2 0 0012 3z" />
     </svg>
 );
 

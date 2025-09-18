@@ -1,7 +1,7 @@
 import type { SpecialDay, Celebration, UserLocation } from './types';
 
-// IMPORTANT: Replace with your own Mapbox access token
-export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2p0MG01MXRqMW45cjQzb2R6b2ptc3J4MSJ9.zA2W0IkI0c6QhamG4uQb3A';
+// IMPORTANT: Replace with your own Mapbox access token from your mapbox.com account
+export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1Ijoidmlpbm5vIiwiYSI6ImNtZnA5bmh6ZDBkcDMybXBzbmZqMWs1cXAifQ.1LFslO7Ge-PEuiNEYT5DYw';
 
 export const TODAY_SPECIAL_DAY: SpecialDay = {
     title: "World Creativity Day",
