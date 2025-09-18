@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { User } from '../types';
 import { authService } from '../services/authService';
@@ -14,6 +13,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -26,9 +26,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
         try {
             let user: User;
             if (mode === 'signup') {
-                user = await authService.signUp(name, email);
+                user = await authService.signUp(name, email, password);
             } else {
-                user = await authService.logIn(email);
+                user = await authService.logIn(email, password);
             }
             onLoginSuccess(user);
         } catch (err: any) {
@@ -79,7 +79,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
                         disabled={isLoading}
                         className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                     />
-                     {/* In a real app, you'd have a password field. Simulating with just email for demo. */}
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        required
+                        disabled={isLoading}
+                        className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                    />
 
                     {error && <p className="text-red-400 text-sm">{error}</p>}
                     
