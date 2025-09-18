@@ -14,6 +14,7 @@ import { authService } from './services/authService';
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState('today');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(false);
     const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
 
     useEffect(() => {
@@ -29,9 +30,13 @@ const App: React.FC = () => {
     };
 
     const handleLogout = () => {
-        authService.logOut();
-        setCurrentUser(null);
-        setActiveTab('today'); // Go to a safe tab after logging out
+        setIsAuthLoading(true);
+        setTimeout(() => { // Simulate async logout
+            authService.logOut();
+            setCurrentUser(null);
+            setActiveTab('today'); // Go to a safe tab after logging out
+            setIsAuthLoading(false);
+        }, 500);
     };
 
     const handleSetTab = (tab: string) => {
@@ -65,6 +70,7 @@ const App: React.FC = () => {
     return (
         <div className="h-screen w-screen flex flex-col bg-neutral-900 bg-gradient-to-br from-neutral-900 to-neutral-800">
             <Header 
+                isAuthLoading={isAuthLoading}
                 currentUser={currentUser} 
                 setActiveTab={setActiveTab} 
                 onShowAuth={() => setIsAuthViewVisible(true)}
@@ -77,6 +83,7 @@ const App: React.FC = () => {
                 <AuthView
                     onClose={() => setIsAuthViewVisible(false)}
                     onLoginSuccess={handleLoginSuccess}
+                    onSetAuthLoading={setIsAuthLoading}
                 />
             )}
         </div>

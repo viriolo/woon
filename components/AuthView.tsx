@@ -1,14 +1,16 @@
+
 import React, { useState } from 'react';
 import type { User } from '../types';
 import { authService } from '../services/authService';
-import { XCircleIcon } from './icons';
+import { XCircleIcon, LoadingSpinner } from './icons';
 
 interface AuthViewProps {
     onClose: () => void;
     onLoginSuccess: (user: User) => void;
+    onSetAuthLoading: (isLoading: boolean) => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onSetAuthLoading }) => {
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -19,6 +21,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) =
         e.preventDefault();
         setError('');
         setIsLoading(true);
+        onSetAuthLoading(true);
 
         try {
             let user: User;
@@ -32,6 +35,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) =
             setError(err.message || 'An error occurred.');
         } finally {
             setIsLoading(false);
+            onSetAuthLoading(false);
         }
     };
 
@@ -62,7 +66,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) =
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Your Name"
                             required
-                            className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                            disabled={isLoading}
+                            className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                         />
                     )}
                     <input
@@ -71,7 +76,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) =
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Email Address"
                         required
-                        className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                        disabled={isLoading}
+                        className="w-full p-3 bg-neutral-700 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                     />
                      {/* In a real app, you'd have a password field. Simulating with just email for demo. */}
 
@@ -80,9 +86,14 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess }) =
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 px-4 bg-special-primary text-neutral-900 font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                        className="w-full py-3 px-4 flex justify-center items-center gap-2 bg-special-primary text-neutral-900 font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
                     >
-                        {isLoading ? 'Processing...' : (mode === 'login' ? 'Log In' : 'Sign Up')}
+                        {isLoading ? (
+                            <>
+                                <LoadingSpinner className="h-5 w-5" />
+                                <span>Processing...</span>
+                            </>
+                        ) : (mode === 'login' ? 'Log In' : 'Sign Up')}
                     </button>
                 </form>
 
