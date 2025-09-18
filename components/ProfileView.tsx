@@ -1,21 +1,23 @@
 
 import React from 'react';
+import type { User } from '../types';
 import { CELEBRATIONS } from '../constants';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon } from './icons';
 
 interface ProfileViewProps {
-    isLoggedIn: boolean;
-    onLoginToggle: () => void;
+    currentUser: User | null;
+    onLogout: () => void;
+    onShowAuth: () => void;
 }
 
-const LoggedOutView: React.FC<{ onLoginToggle: () => void }> = ({ onLoginToggle }) => (
+const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
     <div className="flex-grow flex flex-col items-center justify-center text-center p-4 animate-fade-in">
         <h2 className="text-3xl font-display text-special-primary mb-2">Your Profile</h2>
         <p className="text-neutral-300 max-w-md mb-6">
             Sign in to save your favorite celebrations, share your own creations, and customize your experience.
         </p>
         <button
-            onClick={onLoginToggle}
+            onClick={onShowAuth}
             className="px-6 py-3 text-base font-bold rounded-full bg-special-primary text-neutral-900 hover:opacity-90 transition-opacity"
         >
             Log In or Sign Up
@@ -42,15 +44,16 @@ const SettingsItem: React.FC<{ icon: React.ReactNode, label: string }> = ({ icon
 );
 
 
-const LoggedInView: React.FC<{ onLoginToggle: () => void }> = ({ onLoginToggle }) => {
+const LoggedInView: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLogout }) => {
     const userCelebrations = CELEBRATIONS.slice(0, 3);
+    const avatarUrl = `https://i.pravatar.cc/150?u=${user.email}`;
 
     return (
         <div className="h-full overflow-y-auto pb-24 animate-fade-in">
             <div className="pt-20 p-4 flex items-center gap-4">
-                <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-special-primary" />
+                <img src={avatarUrl} alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-special-primary" />
                 <div>
-                    <h2 className="text-2xl font-bold font-display">Alex Doe</h2>
+                    <h2 className="text-2xl font-bold font-display">{user.name}</h2>
                     <p className="text-neutral-400">Celebration Streak: 14 days 🔥</p>
                 </div>
             </div>
@@ -83,7 +86,7 @@ const LoggedInView: React.FC<{ onLoginToggle: () => void }> = ({ onLoginToggle }
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-700/50">
                         <SettingsItem icon={<CogIcon className="w-6 h-6" />} label="Subscription: Free Tier" />
-                         <button onClick={onLoginToggle} className="w-full p-4 text-left text-red-400 bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors font-medium">
+                         <button onClick={onLogout} className="w-full p-4 text-left text-red-400 bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors font-medium">
                             Log Out
                         </button>
                     </div>
@@ -94,6 +97,6 @@ const LoggedInView: React.FC<{ onLoginToggle: () => void }> = ({ onLoginToggle }
     );
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, onLoginToggle }) => {
-    return isLoggedIn ? <LoggedInView onLoginToggle={onLoginToggle}/> : <LoggedOutView onLoginToggle={onLoginToggle}/>;
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth }) => {
+    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} /> : <LoggedOutView onShowAuth={onShowAuth} />;
 };

@@ -1,36 +1,62 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
 import { DiscoveryView } from './components/DiscoveryView';
 import { CreateView } from './components/CreateView';
 import { ConnectView } from './components/ConnectView';
 import { ProfileView } from './components/ProfileView';
-import type { SpecialDay, Celebration } from './types';
+import { AuthView } from './components/AuthView';
+import type { SpecialDay, Celebration, User } from './types';
 import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
+import { authService } from './services/authService';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState('today');
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
+
+    useEffect(() => {
+        const user = authService.getCurrentUser();
+        if (user) {
+            setCurrentUser(user);
+        }
+    }, []);
+
+    const handleLoginSuccess = (user: User) => {
+        setCurrentUser(user);
+        setIsAuthViewVisible(false);
+    };
+
+    const handleLogout = () => {
+        authService.logOut();
+        setCurrentUser(null);
+        setActiveTab('today'); // Go to a safe tab after logging out
+    };
+
+    const handleSetTab = (tab: string) => {
+        if (tab === 'share' && !currentUser) {
+            setIsAuthViewVisible(true); // Protect the share route
+        } else {
+            setActiveTab(tab);
+        }
+    };
 
     const todaySpecialDay: SpecialDay = TODAY_SPECIAL_DAY;
     const tomorrowSpecialDay: SpecialDay = TOMORROW_SPECIAL_DAY;
     const celebrations: Celebration[] = CELEBRATIONS;
-
-    const handleLoginToggle = useCallback(() => {
-        setIsLoggedIn(prev => !prev);
-    }, []);
 
     const renderContent = () => {
         switch (activeTab) {
             case 'today':
                 return <DiscoveryView specialDay={todaySpecialDay} tomorrowSpecialDay={tomorrowSpecialDay} celebrations={celebrations} />;
             case 'share':
-                return isLoggedIn ? <CreateView specialDay={todaySpecialDay} /> : <LoginPrompt />;
+                // This view is protected by handleSetTab, so currentUser will exist here.
+                return currentUser ? <CreateView specialDay={todaySpecialDay} /> : null;
             case 'connect':
                 return <ConnectView />;
             case 'profile':
-                return <ProfileView isLoggedIn={isLoggedIn} onLoginToggle={handleLoginToggle} />;
+                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} />;
             default:
                 return <DiscoveryView specialDay={todaySpecialDay} tomorrowSpecialDay={tomorrowSpecialDay} celebrations={celebrations} />;
         }
@@ -38,24 +64,23 @@ const App: React.FC = () => {
     
     return (
         <div className="h-screen w-screen flex flex-col bg-neutral-900 bg-gradient-to-br from-neutral-900 to-neutral-800">
-            <Header isLoggedIn={isLoggedIn} setActiveTab={setActiveTab} />
+            <Header 
+                currentUser={currentUser} 
+                setActiveTab={setActiveTab} 
+                onShowAuth={() => setIsAuthViewVisible(true)}
+            />
             <main className="flex-grow overflow-hidden relative">
                 {renderContent()}
             </main>
-            <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <BottomNavBar activeTab={activeTab} setActiveTab={handleSetTab} />
+            {isAuthViewVisible && (
+                <AuthView
+                    onClose={() => setIsAuthViewVisible(false)}
+                    onLoginSuccess={handleLoginSuccess}
+                />
+            )}
         </div>
     );
 };
-
-
-const LoginPrompt: React.FC = () => (
-    <div className="flex-grow flex flex-col items-center justify-center text-center p-4 animate-fade-in">
-        <h2 className="text-2xl font-display text-special-primary mb-2">Join the Celebration!</h2>
-        <p className="text-neutral-300 max-w-md">
-            You need to be logged in to share your own celebration displays. Log in to inspire your neighbors and be part of the community.
-        </p>
-    </div>
-);
-
 
 export default App;

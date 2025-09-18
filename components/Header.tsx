@@ -1,17 +1,21 @@
 
 import React from 'react';
+import type { User } from '../types';
 
 interface HeaderProps {
-    isLoggedIn: boolean;
+    currentUser: User | null;
     setActiveTab: (tab: string) => void;
+    onShowAuth: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ isLoggedIn, setActiveTab }) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, setActiveTab, onShowAuth }) => {
     
     const handleButtonClick = () => {
-        // Always navigate to the profile tab.
-        // The ProfileView will handle whether to show the login prompt or the user dashboard.
-        setActiveTab('profile');
+        if (currentUser) {
+            setActiveTab('profile');
+        } else {
+            onShowAuth();
+        }
     };
 
     return (
@@ -21,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ isLoggedIn, setActiveTab }) => {
                 onClick={handleButtonClick}
                 className="px-4 py-2 text-sm font-medium rounded-full bg-special-primary/20 text-special-secondary hover:bg-special-primary/30 transition-colors"
             >
-                {isLoggedIn ? 'Profile' : 'Log In'}
+                {currentUser ? 'Profile' : 'Log In'}
             </button>
         </header>
     );

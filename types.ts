@@ -18,3 +18,9 @@ export interface UserLocation {
   lng: number;
   lat: number;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
