@@ -1,8 +1,8 @@
-
 import React from 'react';
 import type { Event } from '../types';
 import { MiniMap } from './MiniMap';
-import { XCircleIcon, MapPinIcon } from './icons';
+import { XCircleIcon, MapPinIcon, CalendarDaysIcon } from './icons';
+import { AddToCalendarButton } from 'add-to-calendar-button-react';
 
 interface EventDetailViewProps {
     event: Event;
@@ -10,6 +10,11 @@ interface EventDetailViewProps {
 }
 
 export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose }) => {
+    const [hours, minutes] = event.time.split(':').map(Number);
+    const endDate = new Date(`${event.date}T${event.time}`);
+    endDate.setHours(endDate.getHours() + 1); // Assume 1 hour duration
+    const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+
     return (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in" onClick={onClose}>
             <div 
@@ -29,9 +34,10 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose
                 </header>
 
                 <div className="overflow-y-auto space-y-4 pr-2 -mr-2">
-                    <div className="flex items-center text-sm text-special-secondary">
-                        <span className="font-bold">{event.date}</span>
-                        <span className="mx-2 text-neutral-400">•</span>
+                    <div className="flex items-center gap-2 text-neutral-700">
+                        <CalendarDaysIcon className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                        <span className="font-medium">{event.date}</span>
+                        <span className="mx-1 text-neutral-400">•</span>
                         <span>{event.time}</span>
                     </div>
 
@@ -48,7 +54,23 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose
                         {event.description}
                     </p>
                 </div>
-                 <div className="mt-6 flex-shrink-0">
+                 <div className="mt-6 flex-shrink-0 space-y-2">
+                    <div className="w-full">
+                        <AddToCalendarButton
+                            name={event.title}
+                            description={event.description}
+                            location={event.location}
+                            startDate={event.date}
+                            endDate={event.date}
+                            startTime={event.time}
+                            endTime={endTime}
+                            timeZone="currentBrowser"
+                            buttonStyle="default"
+                            lightMode="light"
+                            label="Add to Calendar"
+                            options={['Apple','Google','iCal','Outlook.com','Yahoo']}
+                        />
+                    </div>
                     <button className="w-full py-3 px-4 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition">
                         Join Event
                     </button>
