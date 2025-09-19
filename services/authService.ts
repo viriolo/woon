@@ -1,4 +1,3 @@
-
 import type { User, NotificationPreferences } from '../types';
 
 // This service now uses localStorage to simulate a user database, making it functional without a backend.
@@ -79,6 +78,39 @@ export const authService = {
         }
         
         localStorage.setItem(SESSION_STORAGE_KEY, email);
+        const { passwordHash, ...userToReturn } = storedUser;
+        return userToReturn;
+    },
+
+    socialLogIn: async (provider: 'google' | 'facebook'): Promise<User> => {
+        await new Promise(res => setTimeout(res, 700)); // Simulate network delay
+        const users = getStoredUsers();
+        
+        const mockEmail = `social_user_${provider}@example.com`;
+        const mockName = provider === 'google' ? 'Google User' : 'Facebook User';
+
+        let storedUser = users.find(u => u.email === mockEmail);
+
+        if (!storedUser) {
+            // If user doesn't exist, create a new one (first-time social login)
+            const newUser: StoredUser = {
+                id: new Date().toISOString(),
+                name: mockName,
+                email: mockEmail,
+                passwordHash: hashPassword('social_login_dummy_password'),
+                avatarUrl: undefined,
+                notificationPreferences: {
+                    dailySpecialDay: true,
+                    communityActivity: true,
+                },
+                likedCelebrationIds: [],
+            };
+            users.push(newUser);
+            saveStoredUsers(users);
+            storedUser = newUser;
+        }
+
+        localStorage.setItem(SESSION_STORAGE_KEY, storedUser.email);
         const { passwordHash, ...userToReturn } = storedUser;
         return userToReturn;
     },

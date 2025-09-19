@@ -1,13 +1,37 @@
 import React, { useState } from 'react';
 import type { User } from '../types';
 import { authService } from '../services/authService';
-import { XCircleIcon, LoadingSpinner } from './icons';
+import { XCircleIcon, LoadingSpinner, GoogleIcon, FacebookIcon } from './icons';
 
 interface AuthViewProps {
     onClose: () => void;
     onLoginSuccess: (user: User) => void;
     onSetAuthLoading: (isLoading: boolean) => void;
 }
+
+const SocialButton: React.FC<{
+    provider: 'google' | 'facebook';
+    onClick: () => void;
+    disabled: boolean;
+}> = ({ provider, onClick, disabled }) => {
+    const isGoogle = provider === 'google';
+    const styles = {
+        google: 'bg-white text-neutral-700 hover:bg-neutral-200/50 border-neutral-300',
+        facebook: 'bg-[#1877F2] text-white hover:bg-[#166eeb] border-transparent',
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`w-full py-3 px-4 flex justify-center items-center gap-3 border rounded-lg font-medium transition disabled:opacity-50 ${styles[provider]}`}
+        >
+            {isGoogle ? <GoogleIcon className="w-5 h-5" /> : <FacebookIcon className="w-6 h-6" />}
+            <span>Continue with {isGoogle ? 'Google' : 'Facebook'}</span>
+        </button>
+    );
+};
 
 export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onSetAuthLoading }) => {
     const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -16,6 +40,21 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+        setError('');
+        setIsLoading(true);
+        onSetAuthLoading(true);
+        try {
+            const user = await authService.socialLogIn(provider);
+            onLoginSuccess(user);
+        } catch (err: any) {
+            setError(err.message || 'An error occurred during social login.');
+        } finally {
+            setIsLoading(false);
+            onSetAuthLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,6 +96,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
                 <p className="text-neutral-500 text-center mb-6">
                     {mode === 'login' ? "Log in to continue your celebration." : "Create an account to start sharing."}
                 </p>
+
+                <div className="space-y-3">
+                    <SocialButton provider="google" onClick={() => handleSocialLogin('google')} disabled={isLoading} />
+                    <SocialButton provider="facebook" onClick={() => handleSocialLogin('facebook')} disabled={isLoading} />
+                </div>
+
+                <div className="flex items-center my-6">
+                    <div className="flex-grow border-t border-neutral-300"></div>
+                    <span className="flex-shrink mx-4 text-xs text-neutral-500 uppercase">OR</span>
+                    <div className="flex-grow border-t border-neutral-300"></div>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {mode === 'signup' && (
