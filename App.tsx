@@ -30,7 +30,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                const user = authService.checkSession();
+                const user = await authService.checkSession();
                 if (user) {
                     setCurrentUser(user);
                 }

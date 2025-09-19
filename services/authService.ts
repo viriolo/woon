@@ -1,140 +1,104 @@
 
 import type { User, NotificationPreferences } from '../types';
+import { userService } from './userService';
+import { initializeDatabase } from './database';
 
-// This service now uses localStorage to simulate a user database, making it functional without a backend.
+// Session storage key for browser-side session management
+const SESSION_STORAGE_KEY = 'woon_session_token';
 
-const USERS_STORAGE_KEY = 'woon_users';
-const SESSION_STORAGE_KEY = 'woon_session_email';
-
-interface StoredUser extends User {
-    passwordHash: string;
-}
-
-const getStoredUsers = (): StoredUser[] => {
-    try {
-        const users = localStorage.getItem(USERS_STORAGE_KEY);
-        return users ? JSON.parse(users) : [];
-    } catch (e) {
-        console.error("Failed to parse users from localStorage", e);
-        return [];
+// Initialize database on first import
+let dbInitialized = false;
+const ensureDbInitialized = async () => {
+    if (!dbInitialized) {
+        try {
+            await initializeDatabase();
+            dbInitialized = true;
+        } catch (error) {
+            console.error('Failed to initialize database:', error);
+            throw new Error('Database initialization failed');
+        }
     }
 };
 
-const saveStoredUsers = (users: StoredUser[]) => {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-};
-
-const hashPassword = (password: string): string => {
-    // In a real app, use a strong hashing algorithm like bcrypt.
-    // This is a simple simulation for demonstration purposes.
-    return `hashed_${password.split('').reverse().join('')}`;
-};
-
-const getUserFromStored = (email: string | null): User | null => {
-    if (!email) return null;
-    const users = getStoredUsers();
-    const storedUser = users.find(u => u.email === email);
-    if (!storedUser) return null;
-    
-    const { passwordHash, ...user } = storedUser;
-    return user;
-}
-
 export const authService = {
     signUp: async (name: string, email: string, password: string): Promise<User> => {
+        await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 500)); // Simulate network delay
-        const users = getStoredUsers();
-        if (users.some(u => u.email === email)) {
-            throw new Error('An account with this email already exists.');
-        }
 
-        const newUser: StoredUser = {
-            id: new Date().toISOString(),
-            name,
-            email,
-            passwordHash: hashPassword(password),
-            notificationPreferences: {
-                dailySpecialDay: true,
-                communityActivity: true,
-            },
-            likedCelebrationIds: [],
-        };
-        
-        users.push(newUser);
-        saveStoredUsers(users);
-        localStorage.setItem(SESSION_STORAGE_KEY, email);
+        const user = await userService.createUser(name, email, password);
+        const sessionToken = await userService.createSession(user.id);
 
-        const { passwordHash, ...userToReturn } = newUser;
-        return userToReturn;
+        // Store session token in localStorage for client-side session management
+        localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+
+        return user;
     },
 
     logIn: async (email: string, password: string): Promise<User> => {
+        await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 500)); // Simulate network delay
-        const users = getStoredUsers();
-        const storedUser = users.find(u => u.email === email);
 
-        if (!storedUser || storedUser.passwordHash !== hashPassword(password)) {
-            throw new Error('Invalid email or password.');
-        }
-        
-        localStorage.setItem(SESSION_STORAGE_KEY, email);
-        const { passwordHash, ...userToReturn } = storedUser;
-        return userToReturn;
+        const user = await userService.authenticateUser(email, password);
+        const sessionToken = await userService.createSession(user.id);
+
+        // Store session token in localStorage for client-side session management
+        localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+
+        return user;
     },
 
     logOut: async (): Promise<void> => {
         await new Promise(res => setTimeout(res, 300)); // Simulate network delay
+
+        const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (sessionToken) {
+            await userService.deleteSession(sessionToken);
+        }
+
         localStorage.removeItem(SESSION_STORAGE_KEY);
     },
 
-    checkSession: (): User | null => {
-        // This is now a synchronous check against localStorage
-        const email = localStorage.getItem(SESSION_STORAGE_KEY);
-        return getUserFromStored(email);
+    checkSession: async (): Promise<User | null> => {
+        try {
+            await ensureDbInitialized();
+            const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+
+            if (!sessionToken) {
+                return null;
+            }
+
+            return await userService.getUserBySession(sessionToken);
+        } catch (error) {
+            console.error('Error checking session:', error);
+            // Clean up invalid session token
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            return null;
+        }
     },
 
     updateNotificationPreferences: async (prefs: Partial<NotificationPreferences>): Promise<User> => {
+        await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 300)); // Simulate network delay
-        const email = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (!email) throw new Error("User not authenticated.");
 
-        const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        
-        if (userIndex === -1) throw new Error("User not found.");
+        const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!sessionToken) throw new Error("User not authenticated.");
 
-        users[userIndex].notificationPreferences = {
-            ...users[userIndex].notificationPreferences,
-            ...prefs
-        };
-        saveStoredUsers(users);
-        
-        const { passwordHash, ...updatedUser } = users[userIndex];
-        return updatedUser;
+        const currentUser = await userService.getUserBySession(sessionToken);
+        if (!currentUser) throw new Error("Invalid session.");
+
+        return await userService.updateNotificationPreferences(currentUser.id, prefs);
     },
-    
+
     toggleLikeStatus: async (celebrationId: number): Promise<User> => {
+        await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 100)); // Simulate network delay
-        const email = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (!email) throw new Error("User not authenticated.");
 
-        const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        
-        if (userIndex === -1) throw new Error("User not found.");
+        const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!sessionToken) throw new Error("User not authenticated.");
 
-        const user = users[userIndex];
-        const isLiked = user.likedCelebrationIds.includes(celebrationId);
+        const currentUser = await userService.getUserBySession(sessionToken);
+        if (!currentUser) throw new Error("Invalid session.");
 
-        if (isLiked) {
-            user.likedCelebrationIds = user.likedCelebrationIds.filter(id => id !== celebrationId);
-        } else {
-            user.likedCelebrationIds.push(celebrationId);
-        }
-        
-        saveStoredUsers(users);
-        
-        const { passwordHash, ...updatedUser } = user;
-        return updatedUser;
+        return await userService.toggleLikeStatus(currentUser.id, celebrationId);
     }
 };

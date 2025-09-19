@@ -10,12 +10,15 @@
   },
   "dependencies": {
     "@google/genai": "^1.20.0",
-    "react-dom": "^19.1.1",
-    "react": "^19.1.1",
+    "@neondatabase/serverless": "^1.0.1",
+    "add-to-calendar-button-react": "2.4.2",
+    "bcryptjs": "^3.0.2",
     "mapbox-gl": "3.4.0",
-    "add-to-calendar-button-react": "2.4.2"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
