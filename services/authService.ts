@@ -1,3 +1,4 @@
+
 import type { User, NotificationPreferences } from '../types';
 
 // This service now uses localStorage to simulate a user database, making it functional without a backend.
@@ -56,6 +57,7 @@ export const authService = {
                 dailySpecialDay: true,
                 communityActivity: true,
             },
+            likedCelebrationIds: [],
         };
         
         users.push(newUser);
@@ -108,6 +110,31 @@ export const authService = {
         saveStoredUsers(users);
         
         const { passwordHash, ...updatedUser } = users[userIndex];
+        return updatedUser;
+    },
+    
+    toggleLikeStatus: async (celebrationId: number): Promise<User> => {
+        await new Promise(res => setTimeout(res, 100)); // Simulate network delay
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex === -1) throw new Error("User not found.");
+
+        const user = users[userIndex];
+        const isLiked = user.likedCelebrationIds.includes(celebrationId);
+
+        if (isLiked) {
+            user.likedCelebrationIds = user.likedCelebrationIds.filter(id => id !== celebrationId);
+        } else {
+            user.likedCelebrationIds.push(celebrationId);
+        }
+        
+        saveStoredUsers(users);
+        
+        const { passwordHash, ...updatedUser } = user;
         return updatedUser;
     }
 };

@@ -32,6 +32,7 @@ export interface User {
   name: string;
   email: string;
   notificationPreferences: NotificationPreferences;
+  likedCelebrationIds: number[];
 }
 
 export interface Event {

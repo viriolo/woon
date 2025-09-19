@@ -1,13 +1,16 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import type { SpecialDay, Celebration } from '../types';
+import type { SpecialDay, Celebration, User } from '../types';
 import { InteractiveMap } from './InteractiveMap';
-import { SearchIcon } from './icons';
+import { SearchIcon, HeartIcon } from './icons';
 import { BottomSheet } from './BottomSheet';
 
 interface DiscoveryViewProps {
     specialDay: SpecialDay;
     tomorrowSpecialDay: SpecialDay;
     celebrations: Celebration[];
+    currentUser: User | null;
+    onToggleLike: (celebrationId: number) => void;
 }
 
 const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
@@ -44,8 +47,10 @@ const HeroSection: React.FC<{
 const CelebrationCard: React.FC<{
     celebration: Celebration;
     isSelected: boolean;
+    isLiked: boolean;
     onClick: () => void;
-}> = ({ celebration, isSelected, onClick }) => (
+    onToggleLike: () => void;
+}> = ({ celebration, isSelected, isLiked, onClick, onToggleLike }) => (
     <div
         onClick={onClick}
         className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 cursor-pointer ${
@@ -57,6 +62,16 @@ const CelebrationCard: React.FC<{
             <h3 className="font-bold text-neutral-800 truncate">{celebration.title}</h3>
             <p className="text-sm text-neutral-600">by {celebration.author}</p>
         </div>
+        <button 
+            onClick={(e) => {
+                e.stopPropagation();
+                onToggleLike();
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-full transition-colors group"
+        >
+            <HeartIcon className={`w-6 h-6 transition-all ${isLiked ? 'text-red-500 scale-110' : 'text-neutral-400 group-hover:text-red-400'}`} />
+            <span className="text-xs font-medium text-neutral-600">{celebration.likes}</span>
+        </button>
     </div>
 );
 
@@ -68,7 +83,7 @@ const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSp
     </div>
 );
 
-export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations }) => {
+export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations, currentUser, onToggleLike }) => {
     const [selectedCelebrationId, setSelectedCelebrationId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -111,7 +126,9 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
                             key={c.id}
                             celebration={c}
                             isSelected={selectedCelebrationId === c.id}
+                            isLiked={!!currentUser?.likedCelebrationIds.includes(c.id)}
                             onClick={() => handleSelectCelebration(c.id)}
+                            onToggleLike={() => onToggleLike(c.id)}
                         />
                     ))}
                     <TomorrowCard tomorrowSpecialDay={tomorrowSpecialDay} />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
@@ -89,6 +90,49 @@ const App: React.FC = () => {
         // Switch to the discovery view to see the new celebration
         setActiveTab('today');
     };
+    
+    const handleToggleLike = async (celebrationId: number) => {
+        if (!currentUser) {
+            setIsAuthViewVisible(true);
+            return;
+        }
+
+        const isLiked = currentUser.likedCelebrationIds.includes(celebrationId);
+        
+        // Optimistic UI updates
+        setCurrentUser(prevUser => {
+            if (!prevUser) return null;
+            return {
+                ...prevUser,
+                likedCelebrationIds: isLiked
+                    ? prevUser.likedCelebrationIds.filter(id => id !== celebrationId)
+                    : [...prevUser.likedCelebrationIds, celebrationId]
+            };
+        });
+        setCelebrations(prevCelebrations =>
+            prevCelebrations.map(c =>
+                c.id === celebrationId ? { ...c, likes: c.likes + (isLiked ? -1 : 1) } : c
+            )
+        );
+
+        try {
+            // Persist changes
+            const updatedUser = await authService.toggleLikeStatus(celebrationId);
+            await celebrationService.updateLikeCount(celebrationId, !isLiked);
+            // Sync state with persisted data
+            setCurrentUser(updatedUser);
+        } catch (error) {
+            console.error("Failed to toggle like:", error);
+            // Revert optimistic updates on error
+            setCurrentUser(currentUser);
+             setCelebrations(prevCelebrations =>
+                prevCelebrations.map(c =>
+                    c.id === celebrationId ? { ...c, likes: c.likes + (isLiked ? 1 : -1) } : c
+                )
+            );
+        }
+    };
+
 
     const handleSetTab = (tab: string) => {
         if (tab === 'share' && !currentUser) {
@@ -101,7 +145,13 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'today':
-                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={celebrations} />;
+                return <DiscoveryView 
+                            specialDay={TODAY_SPECIAL_DAY} 
+                            tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} 
+                            celebrations={celebrations} 
+                            currentUser={currentUser}
+                            onToggleLike={handleToggleLike}
+                       />;
             case 'share':
                 return currentUser ? <CreateView user={currentUser} specialDay={TODAY_SPECIAL_DAY} onCelebrationCreated={handleCelebrationCreated} /> : null;
             case 'connect':
@@ -109,7 +159,13 @@ const App: React.FC = () => {
             case 'profile':
                 return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} celebrations={celebrations} />;
             default:
-                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={celebrations} />;
+                return <DiscoveryView 
+                            specialDay={TODAY_SPECIAL_DAY} 
+                            tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} 
+                            celebrations={celebrations} 
+                            currentUser={currentUser}
+                            onToggleLike={handleToggleLike}
+                       />;
         }
     };
     
