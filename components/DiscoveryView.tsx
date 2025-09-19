@@ -10,21 +10,24 @@ interface DiscoveryViewProps {
     celebrations: Celebration[];
 }
 
+const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
+    <div className="inline-block bg-white/70 backdrop-blur-md border border-neutral-200/50 rounded-full px-4 py-2 shadow-md">
+        <span className="font-bold text-neutral-800">{specialDay.title}</span>
+        <span className="mx-2 text-neutral-400">•</span>
+        <span className="font-medium text-special-secondary">{specialDay.date}</span>
+    </div>
+);
+
+
 const HeroSection: React.FC<{
     specialDay: SpecialDay;
     searchQuery: string;
     onSearchChange: (query: string) => void;
 }> = ({ specialDay, searchQuery, onSearchChange }) => (
-    <div className="absolute top-0 left-0 right-0 pt-24 pb-12 px-4 z-10 text-center bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none">
-        <div className="pointer-events-auto">
-            <h2 className="text-sm font-bold text-special-secondary uppercase tracking-widest">{specialDay.date}</h2>
-            <h1 className="text-5xl font-display font-bold text-neutral-900 my-1" style={{textShadow: '0 2px 10px rgba(255,255,255,0.7)'}}>
-                {specialDay.title}
-            </h1>
-            <p className="text-neutral-700 max-w-xl mx-auto">
-                {specialDay.description}
-            </p>
-            <div className="mt-6 max-w-md mx-auto relative">
+    <div className="absolute top-0 left-0 right-0 pt-16 pb-4 px-4 z-10 text-center pointer-events-none">
+        <div className="pointer-events-auto flex flex-col items-center gap-4">
+            <SpecialDayBadge specialDay={specialDay} />
+            <div className="w-full max-w-md mx-auto relative">
                 <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                 <input
                     type="text"

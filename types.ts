@@ -9,7 +9,9 @@ export interface SpecialDay {
 export interface Celebration {
   id: number;
   author: string;
+  authorId: string;
   title: string;
+  description: string;
   imageUrl: string;
   likes: number;
   position: { lng: number; lat: number };

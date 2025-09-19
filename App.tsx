@@ -8,11 +8,12 @@ import { ProfileView } from './components/ProfileView';
 import { AuthView } from './components/AuthView';
 import { EventCreationView } from './components/EventCreationView';
 import { EventDetailView } from './components/EventDetailView';
-import type { User, NotificationPreferences, Event } from './types';
-import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
+import type { User, NotificationPreferences, Event, Celebration } from './types';
+import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS as MOCK_CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
 import { LoadingSpinner } from './components/icons';
 import { eventService } from './services/eventService';
+import { celebrationService } from './services/celebrationService';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState('today');
@@ -22,19 +23,23 @@ const App: React.FC = () => {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isEventCreationVisible, setIsEventCreationVisible] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
+    const [celebrations, setCelebrations] = useState<Celebration[]>([]);
     const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
 
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                // Session check is now synchronous and fast
                 const user = authService.checkSession();
                 if (user) {
                     setCurrentUser(user);
                 }
-                // Fetch events from localStorage
                 const storedEvents = await eventService.getEvents();
                 setEvents(storedEvents);
+
+                const storedCelebrations = await celebrationService.getCelebrations();
+                // Combine mock celebrations with user-created ones
+                setCelebrations([...MOCK_CELEBRATIONS, ...storedCelebrations]);
+
             } catch (error) {
                 console.error("Initialization failed:", error);
             } finally {
@@ -79,6 +84,12 @@ const App: React.FC = () => {
         setIsEventCreationVisible(false);
     };
 
+    const handleCelebrationCreated = (newCelebration: Celebration) => {
+        setCelebrations(prev => [...prev, newCelebration]);
+        // Switch to the discovery view to see the new celebration
+        setActiveTab('today');
+    };
+
     const handleSetTab = (tab: string) => {
         if (tab === 'share' && !currentUser) {
             setIsAuthViewVisible(true);
@@ -90,15 +101,15 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'today':
-                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={CELEBRATIONS} />;
+                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={celebrations} />;
             case 'share':
-                return currentUser ? <CreateView specialDay={TODAY_SPECIAL_DAY} /> : null;
+                return currentUser ? <CreateView user={currentUser} specialDay={TODAY_SPECIAL_DAY} onCelebrationCreated={handleCelebrationCreated} /> : null;
             case 'connect':
                 return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
-                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} />;
+                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} celebrations={celebrations} />;
             default:
-                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={CELEBRATIONS} />;
+                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={celebrations} />;
         }
     };
     
