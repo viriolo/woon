@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import type { SpecialDay, Celebration } from '../types';
 import { InteractiveMap } from './InteractiveMap';
@@ -15,24 +14,26 @@ const HeroSection: React.FC<{
     searchQuery: string;
     onSearchChange: (query: string) => void;
 }> = ({ specialDay, searchQuery, onSearchChange }) => (
-    <div className="absolute top-0 left-0 right-0 pt-20 pb-10 px-4 z-10 text-center bg-gradient-to-b from-neutral-50 via-neutral-50/90 to-transparent">
-        <h2 className="text-sm font-medium text-special-secondary uppercase tracking-widest">{specialDay.date}</h2>
-        <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 to-special-primary my-1">
-            {specialDay.title}
-        </h1>
-        <p className="text-neutral-700 max-w-xl mx-auto">{specialDay.description}</p>
-        <div className="mt-4 max-w-lg mx-auto">
-            <div className="relative">
-                <input
-                    type="text"
-                    placeholder="Search celebrations by title or author..."
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white/70 backdrop-blur-sm border border-neutral-300 rounded-full text-neutral-900 placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
-                    aria-label="Search celebrations"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon className="w-5 h-5 text-neutral-500" />
+    <div className="absolute top-0 left-0 right-0 pt-24 pb-12 px-4 z-10 text-center bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none">
+        <div className="pointer-events-auto">
+            <h2 className="text-sm font-bold text-special-secondary uppercase tracking-widest">{specialDay.date}</h2>
+            <h1 className="text-5xl font-display font-bold text-neutral-900 my-1" style={{textShadow: '0 2px 10px rgba(255,255,255,0.7)'}}>
+                {specialDay.title}
+            </h1>
+            <p className="text-neutral-700 max-w-xl mx-auto">{specialDay.description}</p>
+            <div className="mt-6 max-w-lg mx-auto">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Search celebrations by title or author..."
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-neutral-200/50 rounded-full text-neutral-900 placeholder-neutral-500 shadow-lg shadow-black/5 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                        aria-label="Search celebrations"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <SearchIcon className="w-5 h-5 text-neutral-500" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -44,16 +45,15 @@ const CelebrationCarousel: React.FC<{
     tomorrowSpecialDay: SpecialDay;
     selectedCelebrationId: number | null;
     onSelectCelebration: (id: number | null) => void;
-}> = ({ celebrations, tomorrowSpecialDay, selectedCelebrationId, onSelectCelebration }) => (
+}> = ({ celebrations, tomorrowSpecialDay, onSelectCelebration }) => (
     <div className="absolute bottom-24 left-0 right-0 z-10 animate-slide-up">
-        <div className="flex gap-4 overflow-x-auto pb-4 px-4">
+        <div className="flex gap-3 overflow-x-auto pb-4 px-4" style={{ scrollbarWidth: 'none' }}>
             {celebrations.map(c => {
-                const isSelected = c.id === selectedCelebrationId;
                 return (
                     <button 
                         key={c.id} 
                         onClick={() => onSelectCelebration(c.id)}
-                        className={`flex-shrink-0 w-52 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden text-left transition-all duration-300 ring-special-primary shadow-sm ${isSelected ? 'ring-2' : 'ring-0 hover:ring-2'}`}
+                        className="flex-shrink-0 w-48 bg-white/60 backdrop-blur-md rounded-2xl overflow-hidden text-left transition-all duration-300 border border-white/20 shadow-lg shadow-black/5 hover:border-white/50"
                     >
                         <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover" />
                         <div className="p-3">
@@ -63,7 +63,7 @@ const CelebrationCarousel: React.FC<{
                     </button>
                 )
             })}
-             <div className="flex-shrink-0 w-52 p-3 bg-neutral-100/50 backdrop-blur-sm border border-neutral-200/50 rounded-lg">
+             <div className="flex-shrink-0 w-48 p-3 bg-neutral-100/50 backdrop-blur-sm border border-neutral-200/30 rounded-2xl flex flex-col justify-center">
                 <p className="text-xs font-bold text-neutral-500 uppercase">Tomorrow</p>
                 <h3 className="font-bold text-special-secondary">{tomorrowSpecialDay.title}</h3>
                 <p className="text-xs text-neutral-500 mt-1 line-clamp-3">{tomorrowSpecialDay.description}</p>
@@ -83,7 +83,6 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
     );
 
     useEffect(() => {
-        // If the selected celebration is filtered out, deselect it
         if (selectedCelebrationId && !filteredCelebrations.some(c => c.id === selectedCelebrationId)) {
             setSelectedCelebrationId(null);
         }

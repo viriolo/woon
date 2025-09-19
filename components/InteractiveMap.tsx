@@ -1,11 +1,7 @@
-
 import React, { useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import type { Root } from 'react-dom/client';
 import mapboxgl from 'mapbox-gl';
 import type { Celebration } from '../types';
 import { USER_LOCATION, MAPBOX_ACCESS_TOKEN } from '../constants';
-import { HeartIcon, XIcon } from './icons';
 
 interface InteractiveMapProps {
     celebrations: Celebration[];
@@ -13,31 +9,11 @@ interface InteractiveMapProps {
     onSelectCelebration: (id: number | null) => void;
 }
 
-const CelebrationPopupCard: React.FC<{ celebration: Celebration; onClose: () => void; }> = ({ celebration, onClose }) => (
-    <div className="relative w-64 bg-white/80 backdrop-blur-xl text-neutral-900 rounded-lg overflow-hidden shadow-2xl shadow-black/20">
-        <button onClick={onClose} className="absolute top-2 right-2 z-10 p-1 bg-black/10 rounded-full text-black/50 hover:text-black/100 transition-colors" aria-label="Close popup">
-            <XIcon className="w-5 h-5" />
-        </button>
-        <img src={celebration.imageUrl} alt={celebration.title} className="w-full h-32 object-cover" />
-        <div className="p-3">
-            <h3 className="font-bold text-neutral-900 pr-6">{celebration.title}</h3>
-            <p className="text-sm text-neutral-500 mb-2">by {celebration.author}</p>
-            <div className="flex items-center text-special-primary">
-                <HeartIcon className="w-5 h-5 mr-1" />
-                <span className="font-bold">{celebration.likes}</span>
-            </div>
-        </div>
-    </div>
-);
-
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, selectedCelebrationId, onSelectCelebration }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
     const markersRef = useRef<{ [id: number]: { marker: mapboxgl.Marker, element: HTMLDivElement } }>({});
-    const popupRef = useRef<mapboxgl.Popup | null>(null);
-    const popupRootRef = useRef<Root | null>(null);
-    const isClosingProgrammatically = useRef(false);
-
+    
     // Initialize map
     useEffect(() => {
         if (map.current || !mapContainer.current) return;
@@ -48,7 +24,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
             style: 'mapbox://styles/mapbox/light-v11',
             center: [USER_LOCATION.lng, USER_LOCATION.lat],
             zoom: 12,
-            pitch: 60,
+            pitch: 30,
             antialias: true,
         });
         
@@ -91,7 +67,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
             if (!markersRef.current[celebration.id]) {
                 const el = document.createElement('div');
                 el.className = 'celebration-marker';
-                el.style.backgroundImage = `url(${celebration.imageUrl})`;
 
                 const marker = new mapboxgl.Marker(el)
                     .setLngLat([celebration.position.lng, celebration.position.lat])
@@ -107,97 +82,38 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
         });
     }, [celebrations, onSelectCelebration]);
 
-    // Handle selection: highlight marker and show popup
+    // Handle selection: fly to marker
     useEffect(() => {
-        Object.values(markersRef.current).forEach(({ element }) => {
-            element.classList.remove('selected');
-        });
-
-        isClosingProgrammatically.current = true;
-        popupRef.current?.remove();
-        popupRootRef.current?.unmount();
-        popupRootRef.current = null;
-        isClosingProgrammatically.current = false;
-        
         if (!selectedCelebrationId || !map.current) return;
         
         const selectedCelebration = celebrations.find(c => c.id === selectedCelebrationId);
         if (!selectedCelebration) return;
 
-        if (markersRef.current[selectedCelebrationId]) {
-            const { element } = markersRef.current[selectedCelebrationId];
-            element.classList.add('selected');
-        }
-
         map.current.flyTo({
             center: [selectedCelebration.position.lng, selectedCelebration.position.lat],
-            zoom: 15,
-            pitch: 60,
+            zoom: 14,
+            pitch: 45,
             duration: 2000,
             essential: true
         });
-
-        const popupNode = document.createElement('div');
-        const root = ReactDOM.createRoot(popupNode);
-        root.render(<CelebrationPopupCard celebration={selectedCelebration} onClose={() => onSelectCelebration(null)} />);
-        popupRootRef.current = root;
-
-        const popup = new mapboxgl.Popup({ 
-            offset: 25, 
-            closeButton: false,
-            className: 'mapbox-popup-custom'
-        })
-        .setLngLat([selectedCelebration.position.lng, selectedCelebration.position.lat])
-        .setDOMContent(popupNode)
-        .addTo(map.current);
-        
-        popup.on('close', () => {
-            if (!isClosingProgrammatically.current) {
-                onSelectCelebration(null);
-            }
-            root.unmount();
-            popupRootRef.current = null;
-        });
-
-        popupRef.current = popup;
 
     }, [selectedCelebrationId, celebrations, onSelectCelebration]);
 
     return (
         <>
             <style>{`
-                .mapbox-popup-custom .mapboxgl-popup-content {
-                    background: transparent;
-                    padding: 0;
-                    box-shadow: none;
-                }
-                .mapbox-popup-custom .mapboxgl-popup-tip {
-                    display: none;
-                }
                 .celebration-marker {
-                    width: 2rem;
-                    height: 2rem;
+                    width: 1.25rem;
+                    height: 1.25rem;
                     border-radius: 9999px;
-                    border-width: 2px;
-                    border-color: white;
-                    background-color: oklch(96% 0.01 250);
-                    background-size: cover;
+                    background-color: oklch(98% 0.01 250 / 0.8);
+                    border: 1px solid oklch(85% 0.01 250);
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
                     cursor: pointer;
-                    transition: transform 0.3s ease;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    transition: transform 0.2s ease;
                 }
-                .celebration-marker:hover {
-                    transform: scale(1.25);
-                }
-                .celebration-marker.selected {
-                    transform: scale(1.25);
-                    border-color: oklch(65% 0.15 250);
-                    z-index: 10;
-                    animation: pulse-border 2s infinite;
-                }
-                @keyframes pulse-border {
-                    0%, 100% { box-shadow: 0 0 0 0px oklch(65% 0.15 250 / 0.7), 0 2px 4px rgba(0,0,0,0.2); }
-                    50% { box-shadow: 0 0 0 4px oklch(65% 0.15 250 / 0), 0 2px 4px rgba(0,0,0,0.2); }
+                 .celebration-marker:hover {
+                    transform: scale(1.1);
                 }
             `}</style>
             <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
