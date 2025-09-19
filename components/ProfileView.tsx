@@ -129,7 +129,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
                         <SettingsItem icon={<CogIcon className="w-6 h-6" />} label="Subscription: Free Tier" />
-                         <button onClick={onLogout} className="w-full p-4 text-left text-red-500 bg-white hover:bg-neutral-100/50 transition-colors font-medium">
+                        <button onClick={onLogout} className="w-full p-4 text-left text-red-500 bg-white hover:bg-neutral-100/50 transition-colors font-medium">
                             Log Out
                         </button>
                     </div>
