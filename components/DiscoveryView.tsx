@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import type { SpecialDay, Celebration } from '../types';
 import { InteractiveMap } from './InteractiveMap';
 import { SearchIcon } from './icons';
+import { BottomSheet } from './BottomSheet';
 
 interface DiscoveryViewProps {
     specialDay: SpecialDay;
@@ -20,97 +21,99 @@ const HeroSection: React.FC<{
             <h1 className="text-5xl font-display font-bold text-neutral-900 my-1" style={{textShadow: '0 2px 10px rgba(255,255,255,0.7)'}}>
                 {specialDay.title}
             </h1>
-            <p className="text-neutral-700 max-w-xl mx-auto">{specialDay.description}</p>
-            <div className="mt-6 max-w-lg mx-auto">
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Search celebrations"
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-neutral-200/50 rounded-full text-neutral-900 placeholder-neutral-500 shadow-lg shadow-black/5 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
-                        aria-label="Search celebrations"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <SearchIcon className="w-5 h-5 text-neutral-500" />
-                    </div>
-                </div>
+            <p className="text-neutral-700 max-w-xl mx-auto">
+                {specialDay.description}
+            </p>
+            <div className="mt-6 max-w-md mx-auto relative">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+                <input
+                    type="text"
+                    placeholder="Search celebrations by title or author..."
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-white/90 border border-neutral-200/50 rounded-full shadow-md placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                />
             </div>
         </div>
     </div>
 );
 
-const CelebrationCarousel: React.FC<{
-    celebrations: Celebration[];
-    tomorrowSpecialDay: SpecialDay;
-    selectedCelebrationId: number | null;
-    onSelectCelebration: (id: number | null) => void;
-}> = ({ celebrations, tomorrowSpecialDay, onSelectCelebration }) => (
-    <div className="absolute bottom-24 left-0 right-0 z-10 animate-slide-up">
-        <div className="flex gap-3 overflow-x-auto pb-4 px-4" style={{ scrollbarWidth: 'none' }}>
-            {celebrations.map(c => {
-                return (
-                    <button 
-                        key={c.id} 
-                        onClick={() => onSelectCelebration(c.id)}
-                        className="flex-shrink-0 w-48 bg-white/60 backdrop-blur-md rounded-2xl overflow-hidden text-left transition-all duration-300 border border-white/20 shadow-lg shadow-black/5 hover:border-white/50"
-                    >
-                        <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover" />
-                        <div className="p-3">
-                            <p className="font-bold text-sm truncate text-neutral-900">{c.title}</p>
-                            <p className="text-xs text-neutral-500">by {c.author}</p>
-                        </div>
-                    </button>
-                )
-            })}
-             <div className="flex-shrink-0 w-48 p-3 bg-neutral-100/50 backdrop-blur-sm border border-neutral-200/30 rounded-2xl flex flex-col justify-center">
-                <p className="text-xs font-bold text-neutral-500 uppercase">Tomorrow</p>
-                <h3 className="font-bold text-special-secondary">{tomorrowSpecialDay.title}</h3>
-                <p className="text-xs text-neutral-500 mt-1 line-clamp-3">{tomorrowSpecialDay.description}</p>
-            </div>
+const CelebrationCard: React.FC<{
+    celebration: Celebration;
+    isSelected: boolean;
+    onClick: () => void;
+}> = ({ celebration, isSelected, onClick }) => (
+    <div
+        onClick={onClick}
+        className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 cursor-pointer ${
+            isSelected ? 'bg-white shadow-lg scale-[1.02]' : 'bg-white/70 hover:bg-white'
+        }`}
+    >
+        <img src={celebration.imageUrl} alt={celebration.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+        <div className="flex-grow overflow-hidden">
+            <h3 className="font-bold text-neutral-800 truncate">{celebration.title}</h3>
+            <p className="text-sm text-neutral-600">by {celebration.author}</p>
         </div>
     </div>
 );
 
+const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSpecialDay }) => (
+    <div className="w-full rounded-xl p-4 bg-neutral-800 text-white">
+        <h3 className="text-xs font-bold uppercase tracking-wider opacity-70">TOMORROW</h3>
+        <p className="text-lg font-bold text-white">{tomorrowSpecialDay.title}</p>
+        <p className="text-sm opacity-80 mt-1">{tomorrowSpecialDay.description}</p>
+    </div>
+);
 
 export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations }) => {
     const [selectedCelebrationId, setSelectedCelebrationId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSelectCelebration = useCallback((id: number) => {
+        setSelectedCelebrationId(prevId => prevId === id ? null : id);
+    }, []);
+    
+    useEffect(() => {
+        if (selectedCelebrationId && !searchQuery) return;
+        const isSelectedVisible = celebrations.some(c => c.id === selectedCelebrationId && 
+            (c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             c.author.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        if(!isSelectedVisible) {
+            setSelectedCelebrationId(null);
+        }
+    }, [searchQuery, selectedCelebrationId, celebrations]);
 
     const filteredCelebrations = celebrations.filter(c =>
         c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.author.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    useEffect(() => {
-        if (selectedCelebrationId && !filteredCelebrations.some(c => c.id === selectedCelebrationId)) {
-            setSelectedCelebrationId(null);
-        }
-    }, [filteredCelebrations, selectedCelebrationId]);
-
-
-    const handleSelectCelebration = useCallback((id: number | null) => {
-        setSelectedCelebrationId(id);
-    }, []);
-
     return (
-        <div className="h-full w-full animate-fade-in">
-            <HeroSection 
-                specialDay={specialDay} 
+        <div className="h-full w-full relative">
+            <InteractiveMap
+                celebrations={filteredCelebrations}
+                selectedCelebrationId={selectedCelebrationId}
+                onSelectCelebration={handleSelectCelebration}
+            />
+            <HeroSection
+                specialDay={specialDay}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
-            <InteractiveMap 
-                celebrations={filteredCelebrations} 
-                selectedCelebrationId={selectedCelebrationId}
-                onSelectCelebration={handleSelectCelebration}
-            />
-            <CelebrationCarousel 
-                celebrations={filteredCelebrations} 
-                tomorrowSpecialDay={tomorrowSpecialDay} 
-                selectedCelebrationId={selectedCelebrationId}
-                onSelectCelebration={handleSelectCelebration}
-            />
+            <BottomSheet>
+                <div className="space-y-3">
+                    {filteredCelebrations.map(c => (
+                        <CelebrationCard
+                            key={c.id}
+                            celebration={c}
+                            isSelected={selectedCelebrationId === c.id}
+                            onClick={() => handleSelectCelebration(c.id)}
+                        />
+                    ))}
+                    <TomorrowCard tomorrowSpecialDay={tomorrowSpecialDay} />
+                </div>
+            </BottomSheet>
         </div>
     );
 };
