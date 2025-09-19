@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import type { User, Event } from '../types';
-import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon, CalendarPlusIcon } from './icons';
+import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon, CalendarPlusIcon, UsersIcon, ClockIcon } from './icons';
 
 type Scope = 'local' | 'regional' | 'national' | 'global' | 'business';
 
@@ -37,12 +36,8 @@ const ScopePill: React.FC<ScopePillProps> = ({ label, icon, isActive, isPremium,
     </button>
 );
 
-const ScopeContent: React.FC<{ title: string, description: string, children: React.ReactNode }> = ({ title, description, children }) => (
-    <div className="p-4 animate-fade-in">
-        <h3 className="text-xl font-bold font-display text-special-secondary">{title}</h3>
-        <p className="text-neutral-500 mb-4">{description}</p>
-        <div className="space-y-4">{children}</div>
-    </div>
+const ScopeContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="p-4 animate-fade-in space-y-4">{children}</div>
 );
 
 const EventCard: React.FC<{ event: Event; onClick: () => void; }> = ({ event, onClick }) => (
@@ -53,12 +48,76 @@ const EventCard: React.FC<{ event: Event; onClick: () => void; }> = ({ event, on
     </button>
 );
 
-const MockContentCard: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
-    <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
-        <h4 className="font-bold text-neutral-900">{title}</h4>
-        <p className="text-sm text-neutral-500">{subtitle}</p>
-    </div>
-);
+const globalCelebrations = [
+  {
+    title: 'World Environment Day',
+    status: 'Live Now',
+    statusColor: 'green',
+    participants: 45623,
+    scope: 'Global',
+    peakTime: '14:00 UTC',
+    activities: ['Tree Planting (Asia)', 'Beach Cleanup (Americas)', 'Green Markets (Europe)'],
+  },
+  {
+    title: 'International Yoga Day',
+    status: 'Ending Soon',
+    statusColor: 'yellow',
+    participants: 23891,
+    scope: 'India + 89 countries',
+    peakTime: '06:00 IST',
+    activities: ['Mass Yoga (India)', 'Park Sessions (US)', 'Corporate Wellness (Europe)'],
+  },
+];
+
+const GlobalCelebrationCard: React.FC<{ celebration: typeof globalCelebrations[0] }> = ({ celebration }) => {
+    const statusClasses = {
+        green: 'bg-green-100 text-green-800',
+        yellow: 'bg-yellow-100 text-yellow-800',
+    };
+    
+    return (
+        <div className="bg-white rounded-lg border border-neutral-200/50 shadow-sm p-6 space-y-4">
+            <div className="flex justify-between items-start">
+                <div className="flex-grow">
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-neutral-900">{celebration.title}</h3>
+                        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusClasses[celebration.statusColor as keyof typeof statusClasses]}`}>
+                            {celebration.status}
+                        </span>
+                    </div>
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500 mt-1">
+                        <div className="flex items-center gap-1.5">
+                            <UsersIcon className="w-4 h-4" />
+                            <span>{celebration.participants.toLocaleString()} participants</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <GlobeAltIcon className="w-4 h-4" />
+                            <span>{celebration.scope}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <ClockIcon className="w-4 h-4" />
+                            <span>Peak: {celebration.peakTime}</span>
+                        </div>
+                    </div>
+                </div>
+                <button className="flex-shrink-0 ml-4 px-4 py-2 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition-opacity">
+                    Join Celebration
+                </button>
+            </div>
+            <div>
+                <h4 className="font-medium text-neutral-800">How the world is celebrating:</h4>
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {celebration.activities.map(activity => (
+                        <span key={activity} className="px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+                            {activity}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEventCreation, events, onViewEvent }) => {
     const [activeScope, setActiveScope] = useState<Scope>('local');
@@ -75,7 +134,7 @@ export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEve
         switch(activeScope) {
             case 'local':
                 return (
-                    <ScopeContent title="Your Neighborhood" description="See what's happening right around you.">
+                    <ScopeContent>
                         {currentUser && (
                              <button
                                 onClick={onShowEventCreation}
@@ -88,36 +147,32 @@ export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEve
                        {events.length > 0 ? (
                            events.map(event => <EventCard key={event.id} event={event} onClick={() => onViewEvent(event)} />)
                        ) : (
-                           <MockContentCard title="No local events yet" subtitle="Be the first to create one!" />
+                           <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
+                                <h4 className="font-bold text-neutral-900">No local events yet</h4>
+                                <p className="text-sm text-neutral-500">Be the first to create one!</p>
+                           </div>
                        )}
                     </ScopeContent>
                 );
             case 'regional':
-                return (
-                    <ScopeContent title="City-Wide Festivities" description="Explore celebrations across the entire region.">
-                        <MockContentCard title="Creativity Fair at City Hall" subtitle="Over 200 artists and creators featured." />
-                        <MockContentCard title="Regional Photo Contest" subtitle="Theme: 'What Creativity Means to You'." />
-                    </ScopeContent>
-                );
             case 'national':
-                return (
-                    <ScopeContent title="Across the Nation" description="Discover how the country is celebrating today.">
-                        <MockContentCard title="Trending: #WorldCreativityDay" subtitle="See top posts from all states." />
-                        <MockContentCard title="National Art Grants Announced" subtitle="Supporting creative projects nationwide." />
-                    </ScopeContent>
-                );
             case 'global':
                  return (
-                    <ScopeContent title="Around the World" description="Follow the celebration as it unfolds globally.">
-                        <MockContentCard title="Live from Paris: Eiffel Tower Light Show" subtitle="A stunning display of creative lighting." />
-                        <MockContentCard title="24-Hour Create-a-thon" subtitle="Join creators from different timezones." />
+                    <ScopeContent>
+                        {globalCelebrations.map(c => <GlobalCelebrationCard key={c.title} celebration={c} />)}
                     </ScopeContent>
                 );
             case 'business':
                  return (
-                    <ScopeContent title="Business Hub" description="Promotional tools for local businesses.">
-                        <MockContentCard title="Create a Campaign" subtitle="Engage customers with special day offers." />
-                        <MockContentCard title="Analytics Dashboard" subtitle="Track your promotion's impact." />
+                    <ScopeContent>
+                        <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
+                            <h4 className="font-bold text-neutral-900">Create a Campaign</h4>
+                            <p className="text-sm text-neutral-500">Engage customers with special day offers.</p>
+                        </div>
+                         <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
+                            <h4 className="font-bold text-neutral-900">Analytics Dashboard</h4>
+                            <p className="text-sm text-neutral-500">Track your promotion's impact.</p>
+                        </div>
                     </ScopeContent>
                 );
             default:
