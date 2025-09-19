@@ -1,23 +1,59 @@
 
 import type { User, NotificationPreferences } from '../types';
 import { userService } from './userService';
-import { initializeDatabase } from './database';
+import { initializeDatabase, sql } from './database';
 
-// Session storage key for browser-side session management
+// Session storage keys for browser-side session management
 const SESSION_STORAGE_KEY = 'woon_session_token';
+const USERS_STORAGE_KEY = 'woon_users';
+const SESSION_EMAIL_KEY = 'woon_session_email';
 
 // Initialize database on first import
 let dbInitialized = false;
 const ensureDbInitialized = async () => {
-    if (!dbInitialized) {
+    if (!dbInitialized && sql) {
         try {
             await initializeDatabase();
             dbInitialized = true;
         } catch (error) {
             console.error('Failed to initialize database:', error);
-            throw new Error('Database initialization failed');
+            // Don't throw - fall back to localStorage
         }
     }
+};
+
+// localStorage fallback functions (from original implementation)
+interface StoredUser extends User {
+    passwordHash: string;
+}
+
+const getStoredUsers = (): StoredUser[] => {
+    try {
+        const users = localStorage.getItem(USERS_STORAGE_KEY);
+        return users ? JSON.parse(users) : [];
+    } catch (e) {
+        console.error("Failed to parse users from localStorage", e);
+        return [];
+    }
+};
+
+const saveStoredUsers = (users: StoredUser[]) => {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+};
+
+const hashPassword = (password: string): string => {
+    // Simple hash for localStorage fallback
+    return `hashed_${password.split('').reverse().join('')}`;
+};
+
+const getUserFromStored = (email: string | null): User | null => {
+    if (!email) return null;
+    const users = getStoredUsers();
+    const storedUser = users.find(u => u.email === email);
+    if (!storedUser) return null;
+
+    const { passwordHash, ...user } = storedUser;
+    return user;
 };
 
 export const authService = {
@@ -25,26 +61,63 @@ export const authService = {
         await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 500)); // Simulate network delay
 
-        const user = await userService.createUser(name, email, password);
-        const sessionToken = await userService.createSession(user.id);
+        if (sql && dbInitialized) {
+            // Use database
+            const user = await userService.createUser(name, email, password);
+            const sessionToken = await userService.createSession(user.id);
+            localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+            return user;
+        } else {
+            // Fallback to localStorage
+            const users = getStoredUsers();
+            if (users.some(u => u.email === email)) {
+                throw new Error('An account with this email already exists.');
+            }
 
-        // Store session token in localStorage for client-side session management
-        localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+            const newUser: StoredUser = {
+                id: new Date().toISOString(),
+                name,
+                email,
+                passwordHash: hashPassword(password),
+                notificationPreferences: {
+                    dailySpecialDay: true,
+                    communityActivity: true,
+                },
+                likedCelebrationIds: [],
+            };
 
-        return user;
+            users.push(newUser);
+            saveStoredUsers(users);
+            localStorage.setItem(SESSION_EMAIL_KEY, email);
+
+            const { passwordHash, ...userToReturn } = newUser;
+            return userToReturn;
+        }
     },
 
     logIn: async (email: string, password: string): Promise<User> => {
         await ensureDbInitialized();
         await new Promise(res => setTimeout(res, 500)); // Simulate network delay
 
-        const user = await userService.authenticateUser(email, password);
-        const sessionToken = await userService.createSession(user.id);
+        if (sql && dbInitialized) {
+            // Use database
+            const user = await userService.authenticateUser(email, password);
+            const sessionToken = await userService.createSession(user.id);
+            localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+            return user;
+        } else {
+            // Fallback to localStorage
+            const users = getStoredUsers();
+            const storedUser = users.find(u => u.email === email);
 
-        // Store session token in localStorage for client-side session management
-        localStorage.setItem(SESSION_STORAGE_KEY, sessionToken);
+            if (!storedUser || storedUser.passwordHash !== hashPassword(password)) {
+                throw new Error('Invalid email or password.');
+            }
 
-        return user;
+            localStorage.setItem(SESSION_EMAIL_KEY, email);
+            const { passwordHash, ...userToReturn } = storedUser;
+            return userToReturn;
+        }
     },
 
     logOut: async (): Promise<void> => {
@@ -61,17 +134,21 @@ export const authService = {
     checkSession: async (): Promise<User | null> => {
         try {
             await ensureDbInitialized();
-            const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
 
-            if (!sessionToken) {
-                return null;
+            if (sql && dbInitialized) {
+                // Use database
+                const sessionToken = localStorage.getItem(SESSION_STORAGE_KEY);
+                if (!sessionToken) return null;
+                return await userService.getUserBySession(sessionToken);
+            } else {
+                // Fallback to localStorage
+                const email = localStorage.getItem(SESSION_EMAIL_KEY);
+                return getUserFromStored(email);
             }
-
-            return await userService.getUserBySession(sessionToken);
         } catch (error) {
             console.error('Error checking session:', error);
-            // Clean up invalid session token
             localStorage.removeItem(SESSION_STORAGE_KEY);
+            localStorage.removeItem(SESSION_EMAIL_KEY);
             return null;
         }
     },

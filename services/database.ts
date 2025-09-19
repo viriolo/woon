@@ -1,17 +1,26 @@
 import { neon } from '@neondatabase/serverless';
 
-// Database configuration
-const DATABASE_URL = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
+// Database configuration - supports multiple providers
+const DATABASE_URL = process.env.DATABASE_URL ||
+                     process.env.NEON_DATABASE_URL ||
+                     process.env.RAILWAY_DATABASE_URL ||
+                     process.env.SUPABASE_DATABASE_URL;
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL or NEON_DATABASE_URL environment variable is required');
+  console.warn('No DATABASE_URL found. App will fall back to localStorage for development.');
+  // Don't throw error - allow fallback to localStorage
 }
 
-// Create the database connection
-export const sql = neon(DATABASE_URL);
+// Create the database connection only if DATABASE_URL is available
+export const sql = DATABASE_URL ? neon(DATABASE_URL) : null;
 
 // Database initialization - create tables if they don't exist
 export const initializeDatabase = async () => {
+  if (!sql) {
+    console.log('No database connection available. Skipping database initialization.');
+    return;
+  }
+
   try {
     // Create users table
     await sql`
