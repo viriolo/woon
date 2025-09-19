@@ -4,7 +4,7 @@ export const BottomSheet: React.FC<{ children: React.ReactNode }> = ({ children 
     const [isOpen, setIsOpen] = useState(false);
     const dragStartRef = useRef<{ y: number } | null>(null);
 
-    const PEEKING_HEIGHT = 180; // The visible height when collapsed
+    const PEEKING_HEIGHT = 120; // The visible height when collapsed, reduced to show more map.
 
     const toggleSheet = useCallback(() => setIsOpen(prev => !prev), []);
 
