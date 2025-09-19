@@ -123,8 +123,8 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6" />} label="Privacy & Community" />
                     </div>
                 </div>
-            </Section>
-
+            </section>
+            
             <Section title="Account">
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
@@ -134,7 +134,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         </button>
                     </div>
                 </div>
-            </Section>
+            </section>
 
         </div>
     );
