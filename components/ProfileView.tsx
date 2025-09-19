@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { User } from '../types';
+import type { User, NotificationPreferences } from '../types';
 import { CELEBRATIONS } from '../constants';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon } from './icons';
 
@@ -8,6 +8,7 @@ interface ProfileViewProps {
     currentUser: User | null;
     onLogout: () => void;
     onShowAuth: () => void;
+    onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void;
 }
 
 const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
@@ -43,8 +44,36 @@ const SettingsItem: React.FC<{ icon: React.ReactNode, label: string }> = ({ icon
     </button>
 );
 
+const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (enabled: boolean) => void }> = ({ enabled, onChange }) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        onClick={() => onChange(!enabled)}
+        className={`${enabled ? 'bg-special-primary' : 'bg-neutral-600'}
+            relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-special-primary focus:ring-offset-2 focus:ring-offset-neutral-800`}
+    >
+        <span
+            aria-hidden="true"
+            className={`${enabled ? 'translate-x-5' : 'translate-x-0'}
+                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+        />
+    </button>
+);
 
-const LoggedInView: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLogout }) => {
+
+const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabled: boolean, onToggle: (isEnabled: boolean) => void }> = ({ label, description, isEnabled, onToggle }) => (
+    <div className="w-full flex items-center justify-between p-4 text-left bg-neutral-800/50 first:rounded-t-lg last:rounded-b-lg">
+        <div className="flex flex-col">
+            <span className="font-medium text-white">{label}</span>
+            <span className="text-sm text-neutral-400">{description}</span>
+        </div>
+        <ToggleSwitch enabled={isEnabled} onChange={onToggle} />
+    </div>
+);
+
+
+const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; }> = ({ user, onLogout, onPreferencesChange }) => {
     const userCelebrations = CELEBRATIONS.slice(0, 3);
     const avatarUrl = `https://i.pravatar.cc/150?u=${user.email}`;
 
@@ -75,8 +104,22 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void }> = ({ user, on
             <Section title="Preferences">
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-700/50">
-                        <SettingsItem icon={<BellIcon className="w-6 h-6" />} label="Notifications" />
+                        <SettingsToggleItem
+                            label="Daily Special Day Alerts"
+                            description="Get notified about today's celebration."
+                            isEnabled={user.notificationPreferences.dailySpecialDay}
+                            onToggle={(isEnabled) => onPreferencesChange({ dailySpecialDay: isEnabled })}
+                        />
+                         <div className="border-t border-neutral-700/50"></div>
+                        <SettingsToggleItem
+                            label="Community Activity Updates"
+                            description="Notifications from neighbors & events."
+                            isEnabled={user.notificationPreferences.communityActivity}
+                            onToggle={(isEnabled) => onPreferencesChange({ communityActivity: isEnabled })}
+                        />
+                        <div className="border-t border-neutral-700/50"></div>
                         <SettingsItem icon={<StarIcon className="w-6 h-6" />} label="Celebration Interests" />
+                        <div className="border-t border-neutral-700/50"></div>
                         <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6" />} label="Privacy & Community" />
                     </div>
                 </div>
@@ -97,6 +140,6 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void }> = ({ user, on
     );
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth }) => {
-    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} /> : <LoggedOutView onShowAuth={onShowAuth} />;
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange }) => {
+    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} /> : <LoggedOutView onShowAuth={onShowAuth} />;
 };

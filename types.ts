@@ -19,8 +19,14 @@ export interface UserLocation {
   lat: number;
 }
 
+export interface NotificationPreferences {
+  dailySpecialDay: boolean;
+  communityActivity: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
+  notificationPreferences: NotificationPreferences;
 }

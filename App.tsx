@@ -7,7 +7,7 @@ import { CreateView } from './components/CreateView';
 import { ConnectView } from './components/ConnectView';
 import { ProfileView } from './components/ProfileView';
 import { AuthView } from './components/AuthView';
-import type { SpecialDay, Celebration, User } from './types';
+import type { SpecialDay, Celebration, User, NotificationPreferences } from './types';
 import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
 
@@ -39,6 +39,20 @@ const App: React.FC = () => {
         }, 500);
     };
 
+    const handlePreferencesChange = async (newPrefs: Partial<NotificationPreferences>) => {
+        if (!currentUser) return;
+        
+        const updatedPreferences = { ...currentUser.notificationPreferences, ...newPrefs };
+        
+        try {
+            const updatedUser = await authService.updateNotificationPreferences(currentUser.id, updatedPreferences);
+            setCurrentUser(updatedUser); // Update state with the latest user object from the "backend"
+        } catch (error) {
+            console.error("Failed to update preferences:", error);
+            // Optionally: show an error message to the user
+        }
+    };
+
     const handleSetTab = (tab: string) => {
         if (tab === 'share' && !currentUser) {
             setIsAuthViewVisible(true); // Protect the share route
@@ -61,7 +75,7 @@ const App: React.FC = () => {
             case 'connect':
                 return <ConnectView />;
             case 'profile':
-                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} />;
+                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} />;
             default:
                 return <DiscoveryView specialDay={todaySpecialDay} tomorrowSpecialDay={tomorrowSpecialDay} celebrations={celebrations} />;
         }

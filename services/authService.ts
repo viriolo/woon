@@ -1,4 +1,4 @@
-import type { User } from '../types';
+import type { User, NotificationPreferences } from '../types';
 
 // In a real app, this would be a secure backend service.
 // For this demo, we simulate it with localStorage.
@@ -43,6 +43,10 @@ export const authService = {
                     name,
                     email,
                     password, // In a real app, this would be hashed
+                    notificationPreferences: {
+                        dailySpecialDay: true,
+                        communityActivity: true,
+                    },
                 };
                 const updatedUsers = [...users, newUser];
                 saveUsers(updatedUsers);
@@ -80,10 +84,40 @@ export const authService = {
             return null;
         }
         try {
-            return JSON.parse(userJson) as User;
+            // Add default preferences if user object is from an older version
+            const user = JSON.parse(userJson) as User;
+            if (!user.notificationPreferences) {
+                user.notificationPreferences = {
+                    dailySpecialDay: true,
+                    communityActivity: true,
+                };
+            }
+            return user;
         } catch (error) {
             console.error("Failed to parse current user from localStorage", error);
             return null;
         }
+    },
+
+    updateNotificationPreferences: (userId: string, prefs: NotificationPreferences): Promise<User> => {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                const users = getUsers();
+                const userIndex = users.findIndex(u => u.id === userId);
+                if (userIndex === -1) {
+                    return reject(new Error('User not found.'));
+                }
+
+                // Update the user in the main user list
+                users[userIndex].notificationPreferences = prefs;
+                saveUsers(users);
+
+                // Update the currently logged-in user session
+                const updatedPublicUser = toUser(users[userIndex]);
+                localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedPublicUser));
+                
+                resolve(updatedPublicUser);
+            }, 200); // Simulate short network delay
+        });
     }
 };
