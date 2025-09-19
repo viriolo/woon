@@ -25,7 +25,7 @@ const HeroSection: React.FC<{
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Search celebrations by title or author..."
+                        placeholder="Search celebrations"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-neutral-200/50 rounded-full text-neutral-900 placeholder-neutral-500 shadow-lg shadow-black/5 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
