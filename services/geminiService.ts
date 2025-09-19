@@ -1,48 +1,33 @@
-
 import { GoogleGenAI } from "@google/genai";
-import { configService } from "./configService";
+import { GEMINI_API_KEY } from "../constants";
 
 let ai: GoogleGenAI | null = null;
-let isInitializing = false;
-let initializationPromise: Promise<GoogleGenAI | null> | null = null;
+let isInitialized = false;
 
-const initializeAiClient = async (): Promise<GoogleGenAI | null> => {
-    if (ai) {
+const initializeAiClient = (): GoogleGenAI | null => {
+    if (isInitialized) {
         return ai;
     }
+    isInitialized = true;
     
-    if (isInitializing && initializationPromise) {
-        return initializationPromise;
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+        console.warn("Gemini API Key is not configured in constants.ts. AI features will not work.");
+        return null;
     }
 
-    isInitializing = true;
-    initializationPromise = (async () => {
-        try {
-            const config = await configService.getConfig();
-            const API_KEY = config?.geminiApiKey;
-
-            if (API_KEY) {
-                ai = new GoogleGenAI({ apiKey: API_KEY });
-                return ai;
-            }
-            
-            console.warn("API_KEY for Gemini was not fetched from config. AI features will not work.");
-            return null;
-        } catch (error) {
-            console.error("Failed to initialize Gemini client:", error);
-            return null;
-        } finally {
-            isInitializing = false;
-        }
-    })();
-    
-    return initializationPromise;
+    try {
+        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        return ai;
+    } catch (error) {
+        console.error("Failed to initialize Gemini client:", error);
+        return null;
+    }
 };
 
 export async function* generateDecorationIdeasStream(theme: string, items: string, skill: string, time: string): AsyncGenerator<string> {
-    const aiClient = await initializeAiClient();
+    const aiClient = initializeAiClient();
     if (!aiClient) {
-        yield "AI service is not configured. Please contact support.";
+        yield "AI service is not configured. Please check your API key in constants.ts.";
         return;
     }
 

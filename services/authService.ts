@@ -1,60 +1,113 @@
-
 import type { User, NotificationPreferences } from '../types';
 
-// In a real app, this service communicates with a secure backend API.
-// The API endpoints here are placeholders for your backend implementation (e.g., using Netlify Functions, Google Cloud Functions).
+// This service now uses localStorage to simulate a user database, making it functional without a backend.
 
-const handleResponse = async (response: Response) => {
-    if (response.status === 204) { // No Content
-        return null;
+const USERS_STORAGE_KEY = 'woon_users';
+const SESSION_STORAGE_KEY = 'woon_session_email';
+
+interface StoredUser extends User {
+    passwordHash: string;
+}
+
+const getStoredUsers = (): StoredUser[] => {
+    try {
+        const users = localStorage.getItem(USERS_STORAGE_KEY);
+        return users ? JSON.parse(users) : [];
+    } catch (e) {
+        console.error("Failed to parse users from localStorage", e);
+        return [];
     }
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
 };
 
+const saveStoredUsers = (users: StoredUser[]) => {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+};
+
+const hashPassword = (password: string): string => {
+    // In a real app, use a strong hashing algorithm like bcrypt.
+    // This is a simple simulation for demonstration purposes.
+    return `hashed_${password.split('').reverse().join('')}`;
+};
+
+const getUserFromStored = (email: string | null): User | null => {
+    if (!email) return null;
+    const users = getStoredUsers();
+    const storedUser = users.find(u => u.email === email);
+    if (!storedUser) return null;
+    
+    const { passwordHash, ...user } = storedUser;
+    return user;
+}
+
 export const authService = {
-    signUp: (name: string, email: string, password: string): Promise<User> => {
-        return fetch('/api/auth/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password }),
-        }).then(handleResponse);
+    signUp: async (name: string, email: string, password: string): Promise<User> => {
+        await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+        const users = getStoredUsers();
+        if (users.some(u => u.email === email)) {
+            throw new Error('An account with this email already exists.');
+        }
+
+        const newUser: StoredUser = {
+            id: new Date().toISOString(),
+            name,
+            email,
+            passwordHash: hashPassword(password),
+            notificationPreferences: {
+                dailySpecialDay: true,
+                communityActivity: true,
+            },
+        };
+        
+        users.push(newUser);
+        saveStoredUsers(users);
+        localStorage.setItem(SESSION_STORAGE_KEY, email);
+
+        const { passwordHash, ...userToReturn } = newUser;
+        return userToReturn;
     },
 
-    logIn: (email: string, password: string): Promise<User> => {
-        return fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        }).then(handleResponse);
+    logIn: async (email: string, password: string): Promise<User> => {
+        await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+        const users = getStoredUsers();
+        const storedUser = users.find(u => u.email === email);
+
+        if (!storedUser || storedUser.passwordHash !== hashPassword(password)) {
+            throw new Error('Invalid email or password.');
+        }
+        
+        localStorage.setItem(SESSION_STORAGE_KEY, email);
+        const { passwordHash, ...userToReturn } = storedUser;
+        return userToReturn;
     },
 
-    logOut: (): Promise<void> => {
-        return fetch('/api/auth/logout', {
-            method: 'POST',
-        }).then(handleResponse);
+    logOut: async (): Promise<void> => {
+        await new Promise(res => setTimeout(res, 300)); // Simulate network delay
+        localStorage.removeItem(SESSION_STORAGE_KEY);
     },
 
-    checkSession: (): Promise<User | null> => {
-        // This endpoint would check for a session cookie (e.g., httpOnly)
-        // and return the user object if logged in.
-        return fetch('/api/auth/me')
-            .then(response => {
-                if (response.status === 401) { // Unauthorized
-                    return null;
-                }
-                return handleResponse(response);
-            });
+    checkSession: (): User | null => {
+        // This is now a synchronous check against localStorage
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        return getUserFromStored(email);
     },
 
-    updateNotificationPreferences: (prefs: Partial<NotificationPreferences>): Promise<User> => {
-        return fetch('/api/user/preferences', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(prefs),
-        }).then(handleResponse);
+    updateNotificationPreferences: async (prefs: Partial<NotificationPreferences>): Promise<User> => {
+        await new Promise(res => setTimeout(res, 300)); // Simulate network delay
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex === -1) throw new Error("User not found.");
+
+        users[userIndex].notificationPreferences = {
+            ...users[userIndex].notificationPreferences,
+            ...prefs
+        };
+        saveStoredUsers(users);
+        
+        const { passwordHash, ...updatedUser } = users[userIndex];
+        return updatedUser;
     }
 };

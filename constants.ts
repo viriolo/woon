@@ -2,6 +2,8 @@ import type { SpecialDay, Celebration, UserLocation } from './types';
 
 // IMPORTANT: Replace with your own Mapbox access token from your mapbox.com account
 export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1Ijoidmlpbm5vIiwiYSI6ImNtZnA5bmh6ZDBkcDMybXBzbmZqMWs1cXAifQ.1LFslO7Ge-PEuiNEYT5DYw';
+// IMPORTANT: Replace with your own Gemini API Key from Google AI Studio
+export const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
 
 export const TODAY_SPECIAL_DAY: SpecialDay = {
     title: "World Creativity Day",

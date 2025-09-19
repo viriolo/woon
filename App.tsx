@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
@@ -12,7 +11,6 @@ import { EventDetailView } from './components/EventDetailView';
 import type { User, NotificationPreferences, Event } from './types';
 import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
-import { configService } from './services/configService';
 import { LoadingSpinner } from './components/icons';
 import { eventService } from './services/eventService';
 
@@ -29,15 +27,14 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                await Promise.all([
-                    configService.fetchConfig(),
-                    authService.checkSession().then(user => {
-                        if (user) {
-                            setCurrentUser(user);
-                        }
-                    }),
-                    eventService.getEvents().then(setEvents)
-                ]);
+                // Session check is now synchronous and fast
+                const user = authService.checkSession();
+                if (user) {
+                    setCurrentUser(user);
+                }
+                // Fetch events from localStorage
+                const storedEvents = await eventService.getEvents();
+                setEvents(storedEvents);
             } catch (error) {
                 console.error("Initialization failed:", error);
             } finally {
