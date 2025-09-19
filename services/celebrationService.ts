@@ -24,8 +24,6 @@ const saveStoredCelebrations = (celebrations: Celebration[]) => {
 
 const getAllCelebrations = (): Celebration[] => {
     const userCelebrations = getStoredCelebrations();
-    // In a real app, you'd fetch all from a DB. Here we merge localStorage with mocks.
-    // To prevent duplicates, we'll filter mocks that might have same ID as stored ones.
     const userCelebrationIds = new Set(userCelebrations.map(c => c.id));
     const uniqueMocks = MOCK_CELEBRATIONS.filter(c => !userCelebrationIds.has(c.id));
     return [...uniqueMocks, ...userCelebrations];
@@ -51,14 +49,14 @@ export const celebrationService = {
             authorId: user.id,
             author: user.name,
             likes: 0,
+            commentCount: 0,
             position: {
-                // Place it randomly near the user's general location
                 lng: USER_LOCATION.lng + (Math.random() - 0.5) * 0.1,
                 lat: USER_LOCATION.lat + (Math.random() - 0.5) * 0.1,
             }
         };
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const celebrations = getStoredCelebrations();
         celebrations.push(newCelebration);
@@ -68,26 +66,42 @@ export const celebrationService = {
     },
 
     updateLikeCount: async (celebrationId: number, increment: boolean): Promise<Celebration> => {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 100));
         const allCelebrations = getAllCelebrations();
         const celebrationIndex = allCelebrations.findIndex(c => c.id === celebrationId);
 
-        if (celebrationIndex === -1) {
-            throw new Error("Celebration not found.");
-        }
+        if (celebrationIndex === -1) throw new Error("Celebration not found.");
         
         const celebration = allCelebrations[celebrationIndex];
         celebration.likes += increment ? 1 : -1;
 
-        // Only save back the user-created celebrations part
-        const userCelebrations = allCelebrations.filter(c => getStoredCelebrations().some(sc => sc.id === c.id));
+        const userCelebrations = getStoredCelebrations();
         const userCelebrationIndex = userCelebrations.findIndex(c => c.id === celebrationId);
         if (userCelebrationIndex !== -1) {
              userCelebrations[userCelebrationIndex] = celebration;
              saveStoredCelebrations(userCelebrations);
         }
-        // Note: Mock celebrations' like counts will reset on page load as they aren't persisted.
 
         return celebration;
     },
+
+    incrementCommentCount: async (celebrationId: number): Promise<Celebration> => {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const allCelebrations = getAllCelebrations();
+        const celebrationIndex = allCelebrations.findIndex(c => c.id === celebrationId);
+
+        if (celebrationIndex === -1) throw new Error("Celebration not found.");
+
+        const celebration = allCelebrations[celebrationIndex];
+        celebration.commentCount += 1;
+
+        const userCelebrations = getStoredCelebrations();
+        const userCelebrationIndex = userCelebrations.findIndex(c => c.id === celebrationId);
+        if (userCelebrationIndex !== -1) {
+             userCelebrations[userCelebrationIndex] = celebration;
+             saveStoredCelebrations(userCelebrations);
+        }
+
+        return celebration;
+    }
 };

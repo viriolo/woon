@@ -30,7 +30,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                const user = await authService.checkSession();
+                const user = authService.checkSession();
                 if (user) {
                     setCurrentUser(user);
                 }
@@ -77,6 +77,16 @@ const App: React.FC = () => {
             setCurrentUser(updatedUser);
         } catch (error) {
             console.error("Failed to update preferences:", error);
+        }
+    };
+
+    const handleAvatarChange = async (base64Image: string) => {
+        if (!currentUser) return;
+        try {
+            const updatedUser = await authService.updateAvatar(base64Image);
+            setCurrentUser(updatedUser);
+        } catch (error) {
+            console.error("Failed to update avatar:", error);
         }
     };
     
@@ -157,7 +167,7 @@ const App: React.FC = () => {
             case 'connect':
                 return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
-                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} celebrations={celebrations} />;
+                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} onAvatarChange={handleAvatarChange} celebrations={celebrations} />;
             default:
                 return <DiscoveryView 
                             specialDay={TODAY_SPECIAL_DAY} 
