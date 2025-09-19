@@ -14,14 +14,14 @@ interface InteractiveMapProps {
 }
 
 const CelebrationPopupCard: React.FC<{ celebration: Celebration; onClose: () => void; }> = ({ celebration, onClose }) => (
-    <div className="relative w-64 bg-neutral-800/80 backdrop-blur-xl text-white rounded-lg overflow-hidden shadow-2xl shadow-black/50">
-        <button onClick={onClose} className="absolute top-2 right-2 z-10 p-1 bg-black/20 rounded-full text-white/70 hover:text-white/100 transition-colors" aria-label="Close popup">
+    <div className="relative w-64 bg-white/80 backdrop-blur-xl text-neutral-900 rounded-lg overflow-hidden shadow-2xl shadow-black/20">
+        <button onClick={onClose} className="absolute top-2 right-2 z-10 p-1 bg-black/10 rounded-full text-black/50 hover:text-black/100 transition-colors" aria-label="Close popup">
             <XIcon className="w-5 h-5" />
         </button>
         <img src={celebration.imageUrl} alt={celebration.title} className="w-full h-32 object-cover" />
         <div className="p-3">
-            <h3 className="font-bold text-white pr-6">{celebration.title}</h3>
-            <p className="text-sm text-neutral-400 mb-2">by {celebration.author}</p>
+            <h3 className="font-bold text-neutral-900 pr-6">{celebration.title}</h3>
+            <p className="text-sm text-neutral-500 mb-2">by {celebration.author}</p>
             <div className="flex items-center text-special-primary">
                 <HeartIcon className="w-5 h-5 mr-1" />
                 <span className="font-bold">{celebration.likes}</span>
@@ -45,7 +45,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
         map.current = new mapboxgl.Map({
             accessToken: MAPBOX_ACCESS_TOKEN,
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
+            style: 'mapbox://styles/mapbox/light-v11',
             center: [USER_LOCATION.lng, USER_LOCATION.lat],
             zoom: 12,
             pitch: 60,
@@ -56,9 +56,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
 
         currentMap.on('load', () => {
             const userEl = document.createElement('div');
-            userEl.className = 'w-4 h-4 rounded-full bg-blue-400 border-2 border-white relative';
+            userEl.className = 'w-4 h-4 rounded-full bg-blue-500 border-2 border-white relative shadow-md';
             const userPulse = document.createElement('div');
-            userPulse.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-400/50 animate-ping-slow';
+            userPulse.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-500/50 animate-ping-slow';
             userEl.appendChild(userPulse);
 
             new mapboxgl.Marker(userEl)
@@ -179,11 +179,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
                     height: 2rem;
                     border-radius: 9999px;
                     border-width: 2px;
-                    border-color: oklch(25% 0.01 250);
-                    background-color: oklch(29% 0.01 250);
+                    border-color: white;
+                    background-color: oklch(96% 0.01 250);
                     background-size: cover;
                     cursor: pointer;
                     transition: transform 0.3s ease;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
                 }
                 .celebration-marker:hover {
                     transform: scale(1.25);
@@ -195,8 +196,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
                     animation: pulse-border 2s infinite;
                 }
                 @keyframes pulse-border {
-                    0%, 100% { box-shadow: 0 0 0 0px oklch(65% 0.15 250 / 0.7); }
-                    50% { box-shadow: 0 0 0 4px oklch(65% 0.15 250 / 0); }
+                    0%, 100% { box-shadow: 0 0 0 0px oklch(65% 0.15 250 / 0.7), 0 2px 4px rgba(0,0,0,0.2); }
+                    50% { box-shadow: 0 0 0 4px oklch(65% 0.15 250 / 0), 0 2px 4px rgba(0,0,0,0.2); }
                 }
             `}</style>
             <div ref={mapContainer} className="absolute inset-0 w-full h-full" />

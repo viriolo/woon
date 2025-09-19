@@ -17,16 +17,16 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ label, icon, isActive, onClick, isCenter = false }) => {
     const baseClasses = "flex flex-col items-center justify-center transition-all duration-300 ease-in-out";
-    const activeClasses = isCenter ? "text-neutral-900" : "text-special-primary";
+    const activeClasses = "text-special-primary";
     const inactiveClasses = "text-neutral-500 hover:text-special-secondary";
 
     if (isCenter) {
         return (
             <button
                 onClick={onClick}
-                className={`${baseClasses} -mt-8 h-16 w-16 rounded-full bg-gradient-to-br from-special-primary to-purple-500 shadow-lg shadow-special-primary/20 ring-4 ring-neutral-800`}
+                className={`${baseClasses} -mt-8 h-16 w-16 rounded-full bg-gradient-to-br from-special-primary to-purple-500 shadow-lg shadow-special-primary/20 ring-4 ring-neutral-50`}
             >
-                <div className={`h-8 w-8 ${activeClasses}`}>
+                <div className={`h-8 w-8 text-white`}>
                     {icon}
                 </div>
             </button>
@@ -52,7 +52,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeTab, setActive
 
     return (
         <nav className="absolute bottom-0 left-0 right-0 z-20">
-            <div className="mx-auto max-w-md h-20 bg-neutral-800/70 backdrop-blur-lg border-t border-neutral-700/50 rounded-t-2xl flex justify-around items-center">
+            <div className="mx-auto max-w-md h-20 bg-neutral-100/70 backdrop-blur-lg border-t border-neutral-200/50 rounded-t-2xl flex justify-around items-center">
                  {navItems.map((item, index) => (
                     <NavItem
                         key={item.id}

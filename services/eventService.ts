@@ -32,7 +32,7 @@ export const eventService = {
     },
 
     createEvent: async (
-        eventData: Omit<Event, 'id' | 'authorId' | 'authorName'>,
+        eventData: Omit<Event, 'id' | 'authorId' | 'authorName' | 'locationCoords'>,
         user: User
     ): Promise<Event> => {
         if (!user) {
@@ -44,6 +44,11 @@ export const eventService = {
             ...eventData,
             authorId: user.id,
             authorName: user.name,
+            // Mock geocoding: add random coordinates around SF
+            locationCoords: {
+                lng: -122.4194 + (Math.random() - 0.5) * 0.08,
+                lat: 37.7749 + (Math.random() - 0.5) * 0.08,
+            }
         };
 
         // Simulate async API call

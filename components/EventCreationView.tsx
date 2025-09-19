@@ -43,18 +43,18 @@ export const EventCreationView: React.FC<EventCreationViewProps> = ({ user, onCl
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-neutral-900 flex flex-col" onClick={onClose}>
-            <div className="relative w-full h-full max-w-lg mx-auto bg-neutral-900 p-4 animate-slide-up overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-neutral-50 flex flex-col" onClick={onClose}>
+            <div className="relative w-full h-full max-w-lg mx-auto bg-neutral-50 p-4 animate-slide-up overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <header className="flex items-center justify-between py-4">
                     <h2 className="text-3xl font-display font-bold text-special-primary">
                         Create Event
                     </h2>
-                     <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors" aria-label="Close event creation">
+                     <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900 transition-colors" aria-label="Close event creation">
                         <XCircleIcon className="w-8 h-8" />
                     </button>
                 </header>
                 
-                <p className="text-neutral-400 mb-6">
+                <p className="text-neutral-500 mb-6">
                     Organize a gathering for your community to celebrate together.
                 </p>
 
@@ -62,37 +62,37 @@ export const EventCreationView: React.FC<EventCreationViewProps> = ({ user, onCl
                     <input
                         type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                         placeholder="Event Title" required disabled={isLoading}
-                        className="w-full p-3 bg-neutral-800 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                     />
                     <div className="grid grid-cols-2 gap-4">
                         <input
                             type="date" value={date} onChange={(e) => setDate(e.target.value)}
                             required disabled={isLoading}
-                            className="w-full p-3 bg-neutral-800 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                         />
                          <input
                             type="time" value={time} onChange={(e) => setTime(e.target.value)}
                             required disabled={isLoading}
-                            className="w-full p-3 bg-neutral-800 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                         />
                     </div>
                     <input
                         type="text" value={location} onChange={(e) => setLocation(e.target.value)}
                         placeholder="Location (e.g., Central Park)" required disabled={isLoading}
-                        className="w-full p-3 bg-neutral-800 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                     />
                      <textarea
                         value={description} onChange={(e) => setDescription(e.target.value)}
                         placeholder="Describe your event..." rows={5} required disabled={isLoading}
-                        className="w-full p-3 bg-neutral-800 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
                     />
                     
-                    {error && <p className="text-red-400 text-sm">{error}</p>}
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
                     
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 px-4 flex justify-center items-center gap-2 bg-special-primary text-neutral-900 font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                        className="w-full py-3 px-4 flex justify-center items-center gap-2 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
                     >
                         {isLoading ? (
                             <>

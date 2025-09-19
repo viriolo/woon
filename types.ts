@@ -41,4 +41,5 @@ export interface Event {
   description: string;
   authorId: string;
   authorName: string;
+  locationCoords: { lng: number; lat: number };
 }

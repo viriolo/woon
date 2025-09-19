@@ -9,6 +9,7 @@ interface ConnectViewProps {
     currentUser: User | null;
     onShowEventCreation: () => void;
     events: Event[];
+    onViewEvent: (event: Event) => void;
 }
 
 interface ScopePillProps {
@@ -24,8 +25,8 @@ const ScopePill: React.FC<ScopePillProps> = ({ label, icon, isActive, isPremium,
         onClick={onClick}
         className={`relative flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
             isActive
-                ? 'bg-special-primary text-neutral-900'
-                : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                ? 'bg-special-primary text-white'
+                : 'bg-neutral-200 text-neutral-700 hover:bg-neutral-300'
         }`}
     >
         {icon}
@@ -39,27 +40,27 @@ const ScopePill: React.FC<ScopePillProps> = ({ label, icon, isActive, isPremium,
 const ScopeContent: React.FC<{ title: string, description: string, children: React.ReactNode }> = ({ title, description, children }) => (
     <div className="p-4 animate-fade-in">
         <h3 className="text-xl font-bold font-display text-special-secondary">{title}</h3>
-        <p className="text-neutral-400 mb-4">{description}</p>
+        <p className="text-neutral-500 mb-4">{description}</p>
         <div className="space-y-4">{children}</div>
     </div>
 );
 
-const EventCard: React.FC<{ event: Event }> = ({ event }) => (
-    <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
-        <h4 className="font-bold text-neutral-100">{event.title}</h4>
-        <p className="text-sm text-neutral-400">{event.date} at {event.time} - {event.location}</p>
-        <p className="text-sm text-neutral-500 mt-1">Organized by {event.authorName}</p>
-    </div>
+const EventCard: React.FC<{ event: Event; onClick: () => void; }> = ({ event, onClick }) => (
+    <button onClick={onClick} className="w-full text-left p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm hover:bg-neutral-100/50 transition-colors">
+        <h4 className="font-bold text-neutral-900">{event.title}</h4>
+        <p className="text-sm text-neutral-500">{event.date} at {event.time} - {event.location}</p>
+        <p className="text-sm text-neutral-400 mt-1">Organized by {event.authorName}</p>
+    </button>
 );
 
 const MockContentCard: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
-    <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
-        <h4 className="font-bold text-neutral-100">{title}</h4>
-        <p className="text-sm text-neutral-400">{subtitle}</p>
+    <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
+        <h4 className="font-bold text-neutral-900">{title}</h4>
+        <p className="text-sm text-neutral-500">{subtitle}</p>
     </div>
 );
 
-export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEventCreation, events }) => {
+export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEventCreation, events, onViewEvent }) => {
     const [activeScope, setActiveScope] = useState<Scope>('local');
 
     const scopes: { id: Scope; label: string; icon: React.ReactNode; isPremium?: boolean }[] = [
@@ -85,7 +86,7 @@ export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEve
                             </button>
                         )}
                        {events.length > 0 ? (
-                           events.map(event => <EventCard key={event.id} event={event} />)
+                           events.map(event => <EventCard key={event.id} event={event} onClick={() => onViewEvent(event)} />)
                        ) : (
                            <MockContentCard title="No local events yet" subtitle="Be the first to create one!" />
                        )}
@@ -128,7 +129,7 @@ export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEve
         <div className="h-full flex flex-col animate-fade-in">
             <div className="pt-20 px-4 text-center">
                 <h2 className="text-3xl font-display font-bold text-special-primary">Connect</h2>
-                <p className="text-neutral-300">Discover celebrations near and far.</p>
+                <p className="text-neutral-700">Discover celebrations near and far.</p>
             </div>
             <div className="p-4">
                 <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">

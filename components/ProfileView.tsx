@@ -14,12 +14,12 @@ interface ProfileViewProps {
 const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
     <div className="flex-grow flex flex-col items-center justify-center text-center p-4 animate-fade-in">
         <h2 className="text-3xl font-display text-special-primary mb-2">Your Profile</h2>
-        <p className="text-neutral-300 max-w-md mb-6">
+        <p className="text-neutral-700 max-w-md mb-6">
             Sign in to save your favorite celebrations, share your own creations, and customize your experience.
         </p>
         <button
             onClick={onShowAuth}
-            className="px-6 py-3 text-base font-bold rounded-full bg-special-primary text-neutral-900 hover:opacity-90 transition-opacity"
+            className="px-6 py-3 text-base font-bold rounded-full bg-special-primary text-white hover:opacity-90 transition-opacity"
         >
             Log In or Sign Up
         </button>
@@ -35,7 +35,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 );
 
 const SettingsItem: React.FC<{ icon: React.ReactNode, label: string }> = ({ icon, label }) => (
-    <button className="w-full flex items-center justify-between p-4 text-left bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors first:rounded-t-lg last:rounded-b-lg">
+    <button className="w-full flex items-center justify-between p-4 text-left bg-white hover:bg-neutral-100/50 transition-colors first:rounded-t-lg last:rounded-b-lg">
         <div className="flex items-center gap-4">
             <div className="text-special-secondary">{icon}</div>
             <span className="font-medium">{label}</span>
@@ -50,8 +50,8 @@ const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (enabled: boolean) =>
         role="switch"
         aria-checked={enabled}
         onClick={() => onChange(!enabled)}
-        className={`${enabled ? 'bg-special-primary' : 'bg-neutral-600'}
-            relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-special-primary focus:ring-offset-2 focus:ring-offset-neutral-800`}
+        className={`${enabled ? 'bg-special-primary' : 'bg-neutral-300'}
+            relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-special-primary focus:ring-offset-2 focus:ring-offset-white`}
     >
         <span
             aria-hidden="true"
@@ -63,10 +63,10 @@ const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (enabled: boolean) =>
 
 
 const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabled: boolean, onToggle: (isEnabled: boolean) => void }> = ({ label, description, isEnabled, onToggle }) => (
-    <div className="w-full flex items-center justify-between p-4 text-left bg-neutral-800/50 first:rounded-t-lg last:rounded-b-lg">
+    <div className="w-full flex items-center justify-between p-4 text-left bg-white first:rounded-t-lg last:rounded-b-lg">
         <div className="flex flex-col">
-            <span className="font-medium text-white">{label}</span>
-            <span className="text-sm text-neutral-400">{description}</span>
+            <span className="font-medium text-neutral-900">{label}</span>
+            <span className="text-sm text-neutral-500">{description}</span>
         </div>
         <ToggleSwitch enabled={isEnabled} onChange={onToggle} />
     </div>
@@ -78,21 +78,21 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
     const avatarUrl = `https://i.pravatar.cc/150?u=${user.email}`;
 
     return (
-        <div className="h-full overflow-y-auto pb-24 animate-fade-in">
-            <div className="pt-20 p-4 flex items-center gap-4">
+        <div className="h-full overflow-y-auto pb-24 animate-fade-in bg-neutral-100">
+            <div className="pt-20 p-4 flex items-center gap-4 bg-neutral-50">
                 <img src={avatarUrl} alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-special-primary" />
                 <div>
                     <h2 className="text-2xl font-bold font-display">{user.name}</h2>
-                    <p className="text-neutral-400">Celebration Streak: 14 days 🔥</p>
+                    <p className="text-neutral-500">Celebration Streak: 14 days 🔥</p>
                 </div>
             </div>
 
-            <div className="px-4 mb-6">
+            <div className="px-4 py-6 bg-neutral-50">
                 <Section title="My Celebrations">
                     <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-2">
                          {userCelebrations.map(c => (
                             <div key={c.id} className="flex-shrink-0 w-40">
-                                <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1" />
+                                <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1 shadow-sm" />
                                 <p className="text-sm font-medium truncate">{c.title}</p>
                                 <p className="text-xs text-special-secondary">{c.likes} Likes</p>
                             </div>
@@ -103,38 +103,38 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
             
             <Section title="Preferences">
                 <div className="px-4">
-                    <div className="rounded-lg overflow-hidden border border-neutral-700/50">
+                    <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
                         <SettingsToggleItem
                             label="Daily Special Day Alerts"
                             description="Get notified about today's celebration."
                             isEnabled={user.notificationPreferences.dailySpecialDay}
                             onToggle={(isEnabled) => onPreferencesChange({ dailySpecialDay: isEnabled })}
                         />
-                         <div className="border-t border-neutral-700/50"></div>
+                         <div className="border-t border-neutral-200"></div>
                         <SettingsToggleItem
                             label="Community Activity Updates"
                             description="Notifications from neighbors & events."
                             isEnabled={user.notificationPreferences.communityActivity}
                             onToggle={(isEnabled) => onPreferencesChange({ communityActivity: isEnabled })}
                         />
-                        <div className="border-t border-neutral-700/50"></div>
+                        <div className="border-t border-neutral-200"></div>
                         <SettingsItem icon={<StarIcon className="w-6 h-6" />} label="Celebration Interests" />
-                        <div className="border-t border-neutral-700/50"></div>
+                        <div className="border-t border-neutral-200"></div>
                         <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6" />} label="Privacy & Community" />
                     </div>
                 </div>
-            </Section>
+            </section>
             
             <Section title="Account">
                 <div className="px-4">
-                    <div className="rounded-lg overflow-hidden border border-neutral-700/50">
+                    <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
                         <SettingsItem icon={<CogIcon className="w-6 h-6" />} label="Subscription: Free Tier" />
-                         <button onClick={onLogout} className="w-full p-4 text-left text-red-400 bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors font-medium">
+                         <button onClick={onLogout} className="w-full p-4 text-left text-red-500 bg-white hover:bg-neutral-100/50 transition-colors font-medium">
                             Log Out
                         </button>
                     </div>
                 </div>
-            </Section>
+            </section>
 
         </div>
     );

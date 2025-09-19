@@ -15,12 +15,12 @@ const HeroSection: React.FC<{
     searchQuery: string;
     onSearchChange: (query: string) => void;
 }> = ({ specialDay, searchQuery, onSearchChange }) => (
-    <div className="absolute top-0 left-0 right-0 pt-20 pb-10 px-4 z-10 text-center bg-gradient-to-b from-neutral-900 via-neutral-900/90 to-transparent">
+    <div className="absolute top-0 left-0 right-0 pt-20 pb-10 px-4 z-10 text-center bg-gradient-to-b from-neutral-50 via-neutral-50/90 to-transparent">
         <h2 className="text-sm font-medium text-special-secondary uppercase tracking-widest">{specialDay.date}</h2>
-        <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-special-surface to-special-secondary my-1">
+        <h1 className="text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 to-special-primary my-1">
             {specialDay.title}
         </h1>
-        <p className="text-neutral-300 max-w-xl mx-auto">{specialDay.description}</p>
+        <p className="text-neutral-700 max-w-xl mx-auto">{specialDay.description}</p>
         <div className="mt-4 max-w-lg mx-auto">
             <div className="relative">
                 <input
@@ -28,11 +28,11 @@ const HeroSection: React.FC<{
                     placeholder="Search celebrations by title or author..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-neutral-800/70 backdrop-blur-sm border border-neutral-700 rounded-full text-white placeholder-neutral-400 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 backdrop-blur-sm border border-neutral-300 rounded-full text-neutral-900 placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
                     aria-label="Search celebrations"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon className="w-5 h-5 text-neutral-400" />
+                    <SearchIcon className="w-5 h-5 text-neutral-500" />
                 </div>
             </div>
         </div>
@@ -53,20 +53,20 @@ const CelebrationCarousel: React.FC<{
                     <button 
                         key={c.id} 
                         onClick={() => onSelectCelebration(c.id)}
-                        className={`flex-shrink-0 w-52 bg-neutral-800/70 backdrop-blur-md rounded-lg overflow-hidden text-left transition-all duration-300 ring-special-primary ${isSelected ? 'ring-2' : 'ring-0 hover:ring-2'}`}
+                        className={`flex-shrink-0 w-52 bg-white/70 backdrop-blur-md rounded-lg overflow-hidden text-left transition-all duration-300 ring-special-primary shadow-sm ${isSelected ? 'ring-2' : 'ring-0 hover:ring-2'}`}
                     >
                         <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover" />
                         <div className="p-3">
-                            <p className="font-bold text-sm truncate text-neutral-100">{c.title}</p>
-                            <p className="text-xs text-neutral-400">by {c.author}</p>
+                            <p className="font-bold text-sm truncate text-neutral-900">{c.title}</p>
+                            <p className="text-xs text-neutral-500">by {c.author}</p>
                         </div>
                     </button>
                 )
             })}
-             <div className="flex-shrink-0 w-52 p-3 bg-neutral-800/50 backdrop-blur-sm border border-neutral-700/50 rounded-lg">
+             <div className="flex-shrink-0 w-52 p-3 bg-neutral-100/50 backdrop-blur-sm border border-neutral-200/50 rounded-lg">
                 <p className="text-xs font-bold text-neutral-500 uppercase">Tomorrow</p>
                 <h3 className="font-bold text-special-secondary">{tomorrowSpecialDay.title}</h3>
-                <p className="text-xs text-neutral-400 mt-1 line-clamp-3">{tomorrowSpecialDay.description}</p>
+                <p className="text-xs text-neutral-500 mt-1 line-clamp-3">{tomorrowSpecialDay.description}</p>
             </div>
         </div>
     </div>

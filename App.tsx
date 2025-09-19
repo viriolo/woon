@@ -8,6 +8,7 @@ import { ConnectView } from './components/ConnectView';
 import { ProfileView } from './components/ProfileView';
 import { AuthView } from './components/AuthView';
 import { EventCreationView } from './components/EventCreationView';
+import { EventDetailView } from './components/EventDetailView';
 import type { User, NotificationPreferences, Event } from './types';
 import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
@@ -23,6 +24,7 @@ const App: React.FC = () => {
     const [isInitializing, setIsInitializing] = useState(true);
     const [isEventCreationVisible, setIsEventCreationVisible] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
+    const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
 
     useEffect(() => {
         const initializeApp = async () => {
@@ -95,7 +97,7 @@ const App: React.FC = () => {
             case 'share':
                 return currentUser ? <CreateView specialDay={TODAY_SPECIAL_DAY} /> : null;
             case 'connect':
-                return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} />;
+                return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
                 return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} />;
             default:
@@ -105,7 +107,7 @@ const App: React.FC = () => {
     
     if (isInitializing) {
         return (
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-neutral-900">
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-neutral-50">
                 <h1 className="text-4xl font-celebration text-special-primary mb-4">Woon</h1>
                 <LoadingSpinner className="h-8 w-8 text-special-primary" />
             </div>
@@ -113,7 +115,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="h-screen w-screen flex flex-col bg-neutral-900 bg-gradient-to-br from-neutral-900 to-neutral-800">
+        <div className="h-screen w-screen flex flex-col bg-neutral-50">
             <Header 
                 isAuthLoading={isAuthLoading}
                 currentUser={currentUser} 
@@ -136,6 +138,12 @@ const App: React.FC = () => {
                     user={currentUser}
                     onClose={() => setIsEventCreationVisible(false)}
                     onEventCreated={handleEventCreated}
+                />
+            )}
+            {viewingEvent && (
+                <EventDetailView
+                    event={viewingEvent}
+                    onClose={() => setViewingEvent(null)}
                 />
             )}
         </div>
