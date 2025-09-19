@@ -1,12 +1,18 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 
-export const BottomSheet: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isOpen, setIsOpen] = useState(false);
+// FIX: Refactored to a controlled component to be managed by parent.
+interface BottomSheetProps {
+    children: React.ReactNode;
+    isOpen: boolean;
+    onStateChange: (isOpen: boolean) => void;
+}
+
+export const BottomSheet: React.FC<BottomSheetProps> = ({ children, isOpen, onStateChange }) => {
     const dragStartRef = useRef<{ y: number } | null>(null);
 
     const PEEKING_HEIGHT = 120; // The visible height when collapsed, reduced to show more map.
 
-    const toggleSheet = useCallback(() => setIsOpen(prev => !prev), []);
+    const toggleSheet = useCallback(() => onStateChange(!isOpen), [isOpen, onStateChange]);
 
     const handleDragStart = (e: React.TouchEvent) => {
         dragStartRef.current = { y: e.touches[0].clientY };
@@ -16,7 +22,10 @@ export const BottomSheet: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!dragStartRef.current) return;
         const deltaY = e.changedTouches[0].clientY - dragStartRef.current.y;
         if (Math.abs(deltaY) > 50) { // Threshold to prevent accidental swipes
-            setIsOpen(deltaY < 0); // Swipe up opens, swipe down closes
+            const shouldOpen = deltaY < 0; // Swipe up opens, swipe down closes
+            if (isOpen !== shouldOpen) {
+                onStateChange(shouldOpen);
+            }
         }
         dragStartRef.current = null;
     };

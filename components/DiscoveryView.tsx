@@ -1,8 +1,10 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import type { SpecialDay, Celebration, User } from '../types';
 import { InteractiveMap } from './InteractiveMap';
-import { SearchIcon, HeartIcon } from './icons';
+import { CelebrationDetailView } from './CelebrationDetailView';
+import { SearchIcon, HeartIcon, ChatBubbleLeftIcon } from './icons';
 import { BottomSheet } from './BottomSheet';
 
 interface DiscoveryViewProps {
@@ -23,18 +25,16 @@ const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) =
 
 
 const HeroSection: React.FC<{
-    specialDay: SpecialDay;
     searchQuery: string;
     onSearchChange: (query: string) => void;
-}> = ({ specialDay, searchQuery, onSearchChange }) => (
+}> = ({ searchQuery, onSearchChange }) => (
     <div className="absolute top-0 left-0 right-0 pt-16 pb-4 px-4 z-10 text-center pointer-events-none">
         <div className="pointer-events-auto flex flex-col items-center gap-4">
-            <SpecialDayBadge specialDay={specialDay} />
             <div className="w-full max-w-md mx-auto relative">
                 <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                 <input
                     type="text"
-                    placeholder="Search celebrations by title or author..."
+                    placeholder="Search celebrations..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 bg-white/90 border border-neutral-200/50 rounded-full shadow-md placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
@@ -46,33 +46,28 @@ const HeroSection: React.FC<{
 
 const CelebrationCard: React.FC<{
     celebration: Celebration;
-    isSelected: boolean;
-    isLiked: boolean;
     onClick: () => void;
-    onToggleLike: () => void;
-}> = ({ celebration, isSelected, isLiked, onClick, onToggleLike }) => (
-    <div
+}> = ({ celebration, onClick }) => (
+    <button
         onClick={onClick}
-        className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 cursor-pointer ${
-            isSelected ? 'bg-white shadow-lg scale-[1.02]' : 'bg-white/70 hover:bg-white'
-        }`}
+        className="w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 bg-white/70 hover:bg-white hover:shadow-lg hover:scale-[1.02]"
     >
         <img src={celebration.imageUrl} alt={celebration.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
-        <div className="flex-grow overflow-hidden">
+        <div className="flex-grow overflow-hidden text-left">
             <h3 className="font-bold text-neutral-800 truncate">{celebration.title}</h3>
             <p className="text-sm text-neutral-600">by {celebration.author}</p>
         </div>
-        <button 
-            onClick={(e) => {
-                e.stopPropagation();
-                onToggleLike();
-            }}
-            className="flex flex-col items-center justify-center p-2 rounded-full transition-colors group"
-        >
-            <HeartIcon className={`w-6 h-6 transition-all ${isLiked ? 'text-red-500 scale-110' : 'text-neutral-400 group-hover:text-red-400'}`} />
-            <span className="text-xs font-medium text-neutral-600">{celebration.likes}</span>
-        </button>
-    </div>
+        <div className="flex-shrink-0 flex items-center gap-4 text-sm text-neutral-600">
+             <div className="flex items-center gap-1">
+                <HeartIcon className="w-5 h-5 text-neutral-400" />
+                <span>{celebration.likes}</span>
+            </div>
+             <div className="flex items-center gap-1">
+                <ChatBubbleLeftIcon className="w-5 h-5 text-neutral-400" />
+                <span>{celebration.commentCount}</span>
+            </div>
+        </div>
+    </button>
 );
 
 const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSpecialDay }) => (
@@ -84,55 +79,80 @@ const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSp
 );
 
 export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations, currentUser, onToggleLike }) => {
-    const [selectedCelebrationId, setSelectedCelebrationId] = useState<number | null>(null);
+    const [selectedCelebration, setSelectedCelebration] = useState<Celebration | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const handleSelectCelebration = useCallback((id: number) => {
-        setSelectedCelebrationId(prevId => prevId === id ? null : id);
+    const handleSelectCelebration = useCallback((celebration: Celebration | null) => {
+        setSelectedCelebration(celebration);
     }, []);
     
     useEffect(() => {
-        if (selectedCelebrationId && !searchQuery) return;
-        const isSelectedVisible = celebrations.some(c => c.id === selectedCelebrationId && 
+        if (selectedCelebration && !searchQuery) return;
+        const isSelectedVisible = celebrations.some(c => c.id === selectedCelebration?.id && 
             (c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
              c.author.toLowerCase().includes(searchQuery.toLowerCase()))
         );
         if(!isSelectedVisible) {
-            setSelectedCelebrationId(null);
+            setSelectedCelebration(null);
         }
-    }, [searchQuery, selectedCelebrationId, celebrations]);
+    }, [searchQuery, selectedCelebration, celebrations]);
 
     const filteredCelebrations = celebrations.filter(c =>
         c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.author.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleCommentAdded = (celebrationId: number) => {
+        // This is a bit of a hack to force a re-render with the new comment count
+        const celebration = celebrations.find(c => c.id === celebrationId);
+        if (celebration) {
+            celebration.commentCount += 1;
+            setSelectedCelebration({ ...celebration });
+        }
+    };
+
+    const handleSheetStateChange = (isOpen: boolean) => {
+        if (!isOpen) {
+            setSelectedCelebration(null);
+        }
+    };
+
     return (
         <div className="h-full w-full relative">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
+                 <SpecialDayBadge specialDay={specialDay} />
+            </div>
             <InteractiveMap
                 celebrations={filteredCelebrations}
-                selectedCelebrationId={selectedCelebrationId}
-                onSelectCelebration={handleSelectCelebration}
+                selectedCelebrationId={selectedCelebration?.id ?? null}
+                onSelectCelebration={(id) => handleSelectCelebration(id ? filteredCelebrations.find(c => c.id === id) ?? null : null)}
             />
             <HeroSection
-                specialDay={specialDay}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
-            <BottomSheet>
-                <div className="space-y-3">
-                    {filteredCelebrations.map(c => (
-                        <CelebrationCard
-                            key={c.id}
-                            celebration={c}
-                            isSelected={selectedCelebrationId === c.id}
-                            isLiked={!!currentUser?.likedCelebrationIds.includes(c.id)}
-                            onClick={() => handleSelectCelebration(c.id)}
-                            onToggleLike={() => onToggleLike(c.id)}
-                        />
-                    ))}
-                    <TomorrowCard tomorrowSpecialDay={tomorrowSpecialDay} />
-                </div>
+            {/* FIX: Updated BottomSheet to be a controlled component, passing isOpen and onStateChange props to fix type error and improve UX. */}
+            <BottomSheet isOpen={!!selectedCelebration} onStateChange={handleSheetStateChange}>
+                {selectedCelebration ? (
+                    <CelebrationDetailView 
+                        celebration={selectedCelebration}
+                        currentUser={currentUser}
+                        onBack={() => handleSelectCelebration(null)}
+                        onToggleLike={onToggleLike}
+                        onCommentAdded={handleCommentAdded}
+                    />
+                ) : (
+                    <div className="space-y-3">
+                        {filteredCelebrations.map(c => (
+                            <CelebrationCard
+                                key={c.id}
+                                celebration={c}
+                                onClick={() => handleSelectCelebration(c)}
+                            />
+                        ))}
+                        <TomorrowCard tomorrowSpecialDay={tomorrowSpecialDay} />
+                    </div>
+                )}
             </BottomSheet>
         </div>
     );

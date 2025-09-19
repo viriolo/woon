@@ -14,6 +14,7 @@ export interface Celebration {
   description: string;
   imageUrl: string;
   likes: number;
+  commentCount: number;
   position: { lng: number; lat: number };
 }
 
@@ -31,6 +32,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string;
   notificationPreferences: NotificationPreferences;
   likedCelebrationIds: number[];
 }
@@ -45,4 +47,13 @@ export interface Event {
   authorId: string;
   authorName: string;
   locationCoords: { lng: number; lat: number };
+}
+
+export interface Comment {
+  id: string;
+  celebrationId: number;
+  authorId: string;
+  authorName: string;
+  text: string;
+  timestamp: string;
 }

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useRef } from 'react';
 import type { User, NotificationPreferences, Celebration } from '../types';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon } from './icons';
 
@@ -7,6 +8,7 @@ interface ProfileViewProps {
     onLogout: () => void;
     onShowAuth: () => void;
     onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void;
+    onAvatarChange: (base64Image: string) => void;
     celebrations: Celebration[];
 }
 
@@ -24,6 +26,7 @@ const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => 
         </button>
     </div>
 );
+
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <section className="mb-6">
@@ -59,6 +62,7 @@ const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (enabled: boolean) =>
     </button>
 );
 
+
 const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabled: boolean, onToggle: (isEnabled: boolean) => void }> = ({ label, description, isEnabled, onToggle }) => (
     <div className="w-full flex items-center justify-between p-4 text-left bg-white first:rounded-t-lg last:rounded-b-lg">
         <div className="flex flex-col">
@@ -69,14 +73,45 @@ const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabl
     </div>
 );
 
-const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; celebrations: Celebration[]; }> = ({ user, onLogout, onPreferencesChange, celebrations }) => {
+
+const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; onAvatarChange: (base64Image: string) => void; celebrations: Celebration[]; }> = ({ user, onLogout, onPreferencesChange, onAvatarChange, celebrations }) => {
     const userCelebrations = celebrations.filter(c => c.authorId === user.id);
-    const avatarUrl = `https://i.pravatar.cc/150?u=${user.email}`;
+    const avatarUrl = user.avatarUrl || `https://i.pravatar.cc/150?u=${user.email}`;
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    onAvatarChange(reader.result);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <div className="h-full overflow-y-auto pb-24 animate-fade-in bg-neutral-100">
             <div className="pt-20 p-4 flex items-center gap-4 bg-neutral-50">
-                <img src={avatarUrl} alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-special-primary" />
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                />
+                <button onClick={handleAvatarClick} className="relative group flex-shrink-0">
+                    <img src={avatarUrl} alt="User Avatar" className="w-16 h-16 rounded-full border-2 border-special-primary object-cover group-hover:opacity-75 transition-opacity" />
+                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <span className="text-white text-xs font-bold text-center">Change</span>
+                    </div>
+                </button>
                 <div>
                     <h2 className="text-2xl font-bold font-display">{user.name}</h2>
                     <p className="text-neutral-500">Celebration Streak: 14 days 🔥</p>
@@ -100,7 +135,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                     )}
                 </Section>
             </div>
-
+            
             <Section title="Preferences">
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
@@ -123,7 +158,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6" />} label="Privacy & Community" />
                     </div>
                 </div>
-            </Section>
+            </section>
             
             <Section title="Account">
                 <div className="px-4">
@@ -134,12 +169,12 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         </button>
                     </div>
                 </div>
-            </Section>
+            </section>
 
         </div>
     );
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, celebrations }) => {
-    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} celebrations={celebrations} /> : <LoggedOutView onShowAuth={onShowAuth} />;
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, onAvatarChange, celebrations }) => {
+    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} onAvatarChange={onAvatarChange} celebrations={celebrations} /> : <LoggedOutView onShowAuth={onShowAuth} />;
 };
