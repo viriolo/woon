@@ -1,8 +1,15 @@
 
 import React, { useState } from 'react';
-import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon } from './icons';
+import type { User, Event } from '../types';
+import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon, CalendarPlusIcon } from './icons';
 
 type Scope = 'local' | 'regional' | 'national' | 'global' | 'business';
+
+interface ConnectViewProps {
+    currentUser: User | null;
+    onShowEventCreation: () => void;
+    events: Event[];
+}
 
 interface ScopePillProps {
     label: string;
@@ -37,6 +44,14 @@ const ScopeContent: React.FC<{ title: string, description: string, children: Rea
     </div>
 );
 
+const EventCard: React.FC<{ event: Event }> = ({ event }) => (
+    <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
+        <h4 className="font-bold text-neutral-100">{event.title}</h4>
+        <p className="text-sm text-neutral-400">{event.date} at {event.time} - {event.location}</p>
+        <p className="text-sm text-neutral-500 mt-1">Organized by {event.authorName}</p>
+    </div>
+);
+
 const MockContentCard: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
     <div className="p-4 bg-neutral-800/50 rounded-lg border border-neutral-700/50">
         <h4 className="font-bold text-neutral-100">{title}</h4>
@@ -44,7 +59,7 @@ const MockContentCard: React.FC<{ title: string, subtitle: string }> = ({ title,
     </div>
 );
 
-export const ConnectView: React.FC = () => {
+export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEventCreation, events }) => {
     const [activeScope, setActiveScope] = useState<Scope>('local');
 
     const scopes: { id: Scope; label: string; icon: React.ReactNode; isPremium?: boolean }[] = [
@@ -60,8 +75,20 @@ export const ConnectView: React.FC = () => {
             case 'local':
                 return (
                     <ScopeContent title="Your Neighborhood" description="See what's happening right around you.">
-                        <MockContentCard title="Live Celebrations Nearby" subtitle="3 active displays within 0.5 miles." />
-                        <MockContentCard title="Upcoming: Park Cleanup" subtitle="Community event tomorrow at 10 AM." />
+                        {currentUser && (
+                             <button
+                                onClick={onShowEventCreation}
+                                className="w-full flex items-center justify-center gap-2 p-4 text-left bg-special-primary/10 text-special-secondary hover:bg-special-primary/20 transition-colors rounded-lg border border-special-primary/20"
+                            >
+                                <CalendarPlusIcon className="w-6 h-6" />
+                                <span className="font-bold">Create Community Event</span>
+                            </button>
+                        )}
+                       {events.length > 0 ? (
+                           events.map(event => <EventCard key={event.id} event={event} />)
+                       ) : (
+                           <MockContentCard title="No local events yet" subtitle="Be the first to create one!" />
+                       )}
                     </ScopeContent>
                 );
             case 'regional':

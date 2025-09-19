@@ -1,3 +1,4 @@
+
 export interface SpecialDay {
   title: string;
   description: string;
@@ -29,4 +30,15 @@ export interface User {
   name: string;
   email: string;
   notificationPreferences: NotificationPreferences;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+  authorId: string;
+  authorName: string;
 }

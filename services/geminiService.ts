@@ -1,29 +1,48 @@
 
 import { GoogleGenAI } from "@google/genai";
+import { configService } from "./configService";
 
 let ai: GoogleGenAI | null = null;
+let isInitializing = false;
+let initializationPromise: Promise<GoogleGenAI | null> | null = null;
 
-// Lazily initialize the AI client to prevent app crash on load if API key is missing.
-const getAiClient = (): GoogleGenAI | null => {
+const initializeAiClient = async (): Promise<GoogleGenAI | null> => {
     if (ai) {
         return ai;
     }
     
-    const API_KEY = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
-
-    if (API_KEY) {
-        ai = new GoogleGenAI({ apiKey: API_KEY });
-        return ai;
+    if (isInitializing && initializationPromise) {
+        return initializationPromise;
     }
+
+    isInitializing = true;
+    initializationPromise = (async () => {
+        try {
+            const config = await configService.getConfig();
+            const API_KEY = config?.geminiApiKey;
+
+            if (API_KEY) {
+                ai = new GoogleGenAI({ apiKey: API_KEY });
+                return ai;
+            }
+            
+            console.warn("API_KEY for Gemini was not fetched from config. AI features will not work.");
+            return null;
+        } catch (error) {
+            console.error("Failed to initialize Gemini client:", error);
+            return null;
+        } finally {
+            isInitializing = false;
+        }
+    })();
     
-    console.warn("API_KEY for Gemini is not set or `process.env` is not available. AI features will not work.");
-    return null;
-}
+    return initializationPromise;
+};
 
 export async function* generateDecorationIdeasStream(theme: string, items: string, skill: string, time: string): AsyncGenerator<string> {
-    const aiClient = getAiClient();
+    const aiClient = await initializeAiClient();
     if (!aiClient) {
-        yield "API Key not configured. Please set up your API_KEY environment variable.";
+        yield "AI service is not configured. Please contact support.";
         return;
     }
 

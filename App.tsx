@@ -7,21 +7,43 @@ import { CreateView } from './components/CreateView';
 import { ConnectView } from './components/ConnectView';
 import { ProfileView } from './components/ProfileView';
 import { AuthView } from './components/AuthView';
-import type { SpecialDay, Celebration, User, NotificationPreferences } from './types';
+import { EventCreationView } from './components/EventCreationView';
+import type { User, NotificationPreferences, Event } from './types';
 import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
+import { configService } from './services/configService';
+import { LoadingSpinner } from './components/icons';
+import { eventService } from './services/eventService';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState('today');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(false);
     const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
+    const [isEventCreationVisible, setIsEventCreationVisible] = useState(false);
+    const [events, setEvents] = useState<Event[]>([]);
 
     useEffect(() => {
-        const user = authService.getCurrentUser();
-        if (user) {
-            setCurrentUser(user);
-        }
+        const initializeApp = async () => {
+            try {
+                await Promise.all([
+                    configService.fetchConfig(),
+                    authService.checkSession().then(user => {
+                        if (user) {
+                            setCurrentUser(user);
+                        }
+                    }),
+                    eventService.getEvents().then(setEvents)
+                ]);
+            } catch (error) {
+                console.error("Initialization failed:", error);
+            } finally {
+                setIsInitializing(false);
+            }
+        };
+
+        initializeApp();
     }, []);
 
     const handleLoginSuccess = (user: User) => {
@@ -29,58 +51,67 @@ const App: React.FC = () => {
         setIsAuthViewVisible(false);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setIsAuthLoading(true);
-        setTimeout(() => { // Simulate async logout
-            authService.logOut();
+        try {
+            await authService.logOut();
             setCurrentUser(null);
-            setActiveTab('today'); // Go to a safe tab after logging out
+            setActiveTab('today');
+        } catch (error) {
+            console.error("Logout failed:", error);
+        } finally {
             setIsAuthLoading(false);
-        }, 500);
+        }
     };
 
     const handlePreferencesChange = async (newPrefs: Partial<NotificationPreferences>) => {
         if (!currentUser) return;
         
-        const updatedPreferences = { ...currentUser.notificationPreferences, ...newPrefs };
-        
         try {
-            const updatedUser = await authService.updateNotificationPreferences(currentUser.id, updatedPreferences);
-            setCurrentUser(updatedUser); // Update state with the latest user object from the "backend"
+            const updatedUser = await authService.updateNotificationPreferences(newPrefs);
+            setCurrentUser(updatedUser);
         } catch (error) {
             console.error("Failed to update preferences:", error);
-            // Optionally: show an error message to the user
         }
+    };
+    
+    const handleEventCreated = (newEvent: Event) => {
+        setEvents(prevEvents => [...prevEvents, newEvent]);
+        setIsEventCreationVisible(false);
     };
 
     const handleSetTab = (tab: string) => {
         if (tab === 'share' && !currentUser) {
-            setIsAuthViewVisible(true); // Protect the share route
+            setIsAuthViewVisible(true);
         } else {
             setActiveTab(tab);
         }
     };
 
-    const todaySpecialDay: SpecialDay = TODAY_SPECIAL_DAY;
-    const tomorrowSpecialDay: SpecialDay = TOMORROW_SPECIAL_DAY;
-    const celebrations: Celebration[] = CELEBRATIONS;
-
     const renderContent = () => {
         switch (activeTab) {
             case 'today':
-                return <DiscoveryView specialDay={todaySpecialDay} tomorrowSpecialDay={tomorrowSpecialDay} celebrations={celebrations} />;
+                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={CELEBRATIONS} />;
             case 'share':
-                // This view is protected by handleSetTab, so currentUser will exist here.
-                return currentUser ? <CreateView specialDay={todaySpecialDay} /> : null;
+                return currentUser ? <CreateView specialDay={TODAY_SPECIAL_DAY} /> : null;
             case 'connect':
-                return <ConnectView />;
+                return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} />;
             case 'profile':
                 return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} />;
             default:
-                return <DiscoveryView specialDay={todaySpecialDay} tomorrowSpecialDay={tomorrowSpecialDay} celebrations={celebrations} />;
+                return <DiscoveryView specialDay={TODAY_SPECIAL_DAY} tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} celebrations={CELEBRATIONS} />;
         }
     };
     
+    if (isInitializing) {
+        return (
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-neutral-900">
+                <h1 className="text-4xl font-celebration text-special-primary mb-4">Woon</h1>
+                <LoadingSpinner className="h-8 w-8 text-special-primary" />
+            </div>
+        );
+    }
+
     return (
         <div className="h-screen w-screen flex flex-col bg-neutral-900 bg-gradient-to-br from-neutral-900 to-neutral-800">
             <Header 
@@ -98,6 +129,13 @@ const App: React.FC = () => {
                     onClose={() => setIsAuthViewVisible(false)}
                     onLoginSuccess={handleLoginSuccess}
                     onSetAuthLoading={setIsAuthLoading}
+                />
+            )}
+            {isEventCreationVisible && currentUser && (
+                <EventCreationView
+                    user={currentUser}
+                    onClose={() => setIsEventCreationVisible(false)}
+                    onEventCreated={handleEventCreated}
                 />
             )}
         </div>
