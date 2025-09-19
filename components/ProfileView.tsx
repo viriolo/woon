@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { User, NotificationPreferences, Celebration } from '../types';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon } from './icons';
@@ -25,7 +24,6 @@ const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => 
         </button>
     </div>
 );
-
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <section className="mb-6">
@@ -61,7 +59,6 @@ const ToggleSwitch: React.FC<{ enabled: boolean; onChange: (enabled: boolean) =>
     </button>
 );
 
-
 const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabled: boolean, onToggle: (isEnabled: boolean) => void }> = ({ label, description, isEnabled, onToggle }) => (
     <div className="w-full flex items-center justify-between p-4 text-left bg-white first:rounded-t-lg last:rounded-b-lg">
         <div className="flex flex-col">
@@ -71,7 +68,6 @@ const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabl
         <ToggleSwitch enabled={isEnabled} onChange={onToggle} />
     </div>
 );
-
 
 const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; celebrations: Celebration[]; }> = ({ user, onLogout, onPreferencesChange, celebrations }) => {
     const userCelebrations = celebrations.filter(c => c.authorId === user.id);
@@ -104,7 +100,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                     )}
                 </Section>
             </div>
-            
+
             <Section title="Preferences">
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
