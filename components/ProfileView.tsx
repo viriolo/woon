@@ -1,7 +1,6 @@
 
 import React from 'react';
-import type { User, NotificationPreferences } from '../types';
-import { CELEBRATIONS } from '../constants';
+import type { User, NotificationPreferences, Celebration } from '../types';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon } from './icons';
 
 interface ProfileViewProps {
@@ -9,6 +8,7 @@ interface ProfileViewProps {
     onLogout: () => void;
     onShowAuth: () => void;
     onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void;
+    celebrations: Celebration[];
 }
 
 const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
@@ -73,8 +73,8 @@ const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabl
 );
 
 
-const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; }> = ({ user, onLogout, onPreferencesChange }) => {
-    const userCelebrations = CELEBRATIONS.slice(0, 3);
+const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; celebrations: Celebration[]; }> = ({ user, onLogout, onPreferencesChange, celebrations }) => {
+    const userCelebrations = celebrations.filter(c => c.authorId === user.id);
     const avatarUrl = `https://i.pravatar.cc/150?u=${user.email}`;
 
     return (
@@ -89,15 +89,19 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
 
             <div className="px-4 py-6 bg-neutral-50">
                 <Section title="My Celebrations">
-                    <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-2">
-                         {userCelebrations.map(c => (
-                            <div key={c.id} className="flex-shrink-0 w-40">
-                                <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1 shadow-sm" />
-                                <p className="text-sm font-medium truncate">{c.title}</p>
-                                <p className="text-xs text-special-secondary">{c.likes} Likes</p>
-                            </div>
-                        ))}
-                    </div>
+                    {userCelebrations.length > 0 ? (
+                        <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-2">
+                            {userCelebrations.map(c => (
+                                <div key={c.id} className="flex-shrink-0 w-40">
+                                    <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1 shadow-sm" />
+                                    <p className="text-sm font-medium truncate">{c.title}</p>
+                                    <p className="text-xs text-special-secondary">{c.likes} Likes</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-neutral-500 py-4">You haven't posted any celebrations yet.</div>
+                    )}
                 </Section>
             </div>
             
@@ -123,8 +127,8 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6" />} label="Privacy & Community" />
                     </div>
                 </div>
-            </Section>
-
+            </section>
+            
             <Section title="Account">
                 <div className="px-4">
                     <div className="rounded-lg overflow-hidden border border-neutral-200 shadow-sm">
@@ -134,12 +138,12 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                         </button>
                     </div>
                 </div>
-            </Section>
+            </section>
 
         </div>
     );
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange }) => {
-    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} /> : <LoggedOutView onShowAuth={onShowAuth} />;
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, celebrations }) => {
+    return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} celebrations={celebrations} /> : <LoggedOutView onShowAuth={onShowAuth} />;
 };

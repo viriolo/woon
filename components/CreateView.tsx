@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import type { SpecialDay } from '../types';
+import type { SpecialDay, User, Celebration } from '../types';
 import { generateDecorationIdeasStream } from '../services/geminiService';
-import { SparklesIcon } from './icons';
+import { celebrationService } from '../services/celebrationService';
+import { SparklesIcon, LoadingSpinner, CheckCircleIcon } from './icons';
 
 const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
     const [items, setItems] = useState('');
@@ -16,16 +17,11 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
         setError('');
         setSuggestion('');
         
-        const typeWriter = async (text: string) => {
-            for (const char of text) {
-                setSuggestion(prev => prev + char);
-                await new Promise(resolve => setTimeout(resolve, 5));
-            }
-        };
-
         try {
+            let fullText = "";
             for await (const chunk of generateDecorationIdeasStream(theme, items, skill, time)) {
-                await typeWriter(chunk);
+                fullText += chunk;
+                setSuggestion(fullText);
             }
         } catch (err) {
             setError('Failed to generate ideas. Please try again.');
@@ -72,7 +68,7 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
             </button>
             {(suggestion || isLoading) && (
                  <div className="mt-4 p-4 bg-neutral-100 rounded-lg whitespace-pre-wrap font-mono text-sm text-neutral-700 min-h-[5rem]">
-                    {suggestion}{isLoading && <span className="inline-block w-2 h-4 ml-1 bg-special-primary animate-blink" />}
+                    {suggestion}{isLoading && !suggestion && <span className="inline-block w-2 h-4 ml-1 bg-special-primary animate-blink" />}
                 </div>
             )}
             {error && <p className="mt-2 text-red-500">{error}</p>}
@@ -80,9 +76,19 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
     );
 };
 
+interface CreateViewProps {
+    user: User;
+    specialDay: SpecialDay;
+    onCelebrationCreated: (celebration: Celebration) => void;
+}
 
-export const CreateView: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => {
+export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCelebrationCreated }) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -95,6 +101,46 @@ export const CreateView: React.FC<{ specialDay: SpecialDay }> = ({ specialDay })
         }
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title || !description || !imagePreview) {
+            setError("Please fill out all fields and upload a photo.");
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const newCelebration = await celebrationService.createCelebration({
+                title,
+                description,
+                imageUrl: imagePreview,
+            }, user);
+            setIsSuccess(true);
+            setTimeout(() => {
+                onCelebrationCreated(newCelebration);
+            }, 2000); // Wait 2 seconds before navigating
+        } catch (err) {
+            setError("Failed to post celebration. Please try again.");
+            console.error(err);
+            setIsLoading(false);
+        }
+    };
+
+    if (isSuccess) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-3xl font-display font-bold text-special-primary">
+                    Celebration Posted!
+                </h2>
+                <p className="text-neutral-500 mt-2">
+                    Taking you to the map to see your creation...
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="h-full overflow-y-auto pb-24 p-4 animate-fade-in space-y-6">
             <div className="pt-16 text-center">
@@ -104,34 +150,47 @@ export const CreateView: React.FC<{ specialDay: SpecialDay }> = ({ specialDay })
             
             <AIGenerator theme={specialDay.title} />
 
-            <div>
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <input
                     type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     placeholder="Title for your display"
                     className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                    disabled={isLoading}
                 />
-            </div>
-            <div>
                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     placeholder="Add a short description..."
                     className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
                     rows={4}
+                    disabled={isLoading}
                 />
-            </div>
-            <div>
-                 <label className="block w-full cursor-pointer border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-special-primary transition">
+                 <label className={`block w-full cursor-pointer border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center  transition ${isLoading ? 'opacity-50' : 'hover:border-special-primary'}`}>
                     {imagePreview ? (
                         <img src={imagePreview} alt="Preview" className="mx-auto max-h-48 rounded-lg" />
                     ) : (
                         <span className="text-neutral-500">Tap to upload a photo</span>
                     )}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={isLoading} />
                 </label>
-            </div>
 
-            <button className="w-full py-3 px-4 bg-special-secondary text-white font-bold rounded-lg hover:opacity-90 transition">
-                Post Celebration
-            </button>
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+                <button 
+                    type="submit"
+                    className="w-full py-3 px-4 bg-special-secondary text-white font-bold rounded-lg hover:opacity-90 transition flex justify-center items-center gap-2 disabled:opacity-50"
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <>
+                            <LoadingSpinner className="h-5 w-5" />
+                            <span>Posting...</span>
+                        </>
+                    ) : 'Post Celebration'}
+                </button>
+            </form>
         </div>
     );
 };
