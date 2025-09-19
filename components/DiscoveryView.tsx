@@ -16,33 +16,35 @@ interface DiscoveryViewProps {
 }
 
 const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
-    <div className="inline-block bg-white/70 backdrop-blur-md border border-neutral-200/50 rounded-full px-4 py-2 shadow-md">
+    <div className="inline-block bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-md">
         <span className="font-bold text-neutral-800">{specialDay.title}</span>
         <span className="mx-2 text-neutral-400">•</span>
-        <span className="font-medium text-special-secondary">{specialDay.date}</span>
+        <span className="font-medium text-special-primary">{specialDay.date}</span>
     </div>
 );
 
-
-const HeroSection: React.FC<{
+const FloatingHeader: React.FC<{
+    specialDay: SpecialDay;
     searchQuery: string;
     onSearchChange: (query: string) => void;
-}> = ({ searchQuery, onSearchChange }) => (
-    <div className="absolute top-0 left-0 right-0 pt-16 pb-4 px-4 z-10 text-center pointer-events-none">
-        <div className="pointer-events-auto flex flex-col items-center gap-4">
-            <div className="w-full max-w-md mx-auto relative">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                <input
-                    type="text"
-                    placeholder="Search celebrations..."
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white/90 border border-neutral-200/50 rounded-full shadow-md placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
-                />
-            </div>
+}> = ({ specialDay, searchQuery, onSearchChange }) => (
+    <div className="absolute top-4 left-0 right-0 px-4 z-10 flex flex-col items-center gap-3 pointer-events-none">
+        <div className="pointer-events-auto">
+            <SpecialDayBadge specialDay={specialDay} />
+        </div>
+        <div className="w-full max-w-md mx-auto relative pointer-events-auto">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+            <input
+                type="text"
+                placeholder="Search celebrations..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white/90 backdrop-blur-md border border-neutral-200/50 rounded-full shadow-md placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+            />
         </div>
     </div>
 );
+
 
 const CelebrationCard: React.FC<{
     celebration: Celebration;
@@ -119,19 +121,16 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
 
     return (
         <div className="h-full w-full relative">
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
-                 <SpecialDayBadge specialDay={specialDay} />
-            </div>
             <InteractiveMap
                 celebrations={filteredCelebrations}
                 selectedCelebrationId={selectedCelebration?.id ?? null}
                 onSelectCelebration={(id) => handleSelectCelebration(id ? filteredCelebrations.find(c => c.id === id) ?? null : null)}
             />
-            <HeroSection
+            <FloatingHeader
+                specialDay={specialDay}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
-            {/* FIX: Updated BottomSheet to be a controlled component, passing isOpen and onStateChange props to fix type error and improve UX. */}
             <BottomSheet isOpen={!!selectedCelebration} onStateChange={handleSheetStateChange}>
                 {selectedCelebration ? (
                     <CelebrationDetailView 

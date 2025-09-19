@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
 import { DiscoveryView } from './components/DiscoveryView';
@@ -10,7 +10,7 @@ import { AuthView } from './components/AuthView';
 import { EventCreationView } from './components/EventCreationView';
 import { EventDetailView } from './components/EventDetailView';
 import type { User, NotificationPreferences, Event, Celebration } from './types';
-import { TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS as MOCK_CELEBRATIONS } from './constants';
+import { TODAY_SPECIAL_DAY as MOCK_TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS as MOCK_CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
 import { LoadingSpinner } from './components/icons';
 import { eventService } from './services/eventService';
@@ -26,6 +26,15 @@ const App: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [celebrations, setCelebrations] = useState<Celebration[]>([]);
     const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
+
+    const todaySpecialDay = useMemo(() => {
+        const today = new Date();
+        const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
+        return {
+            ...MOCK_TODAY_SPECIAL_DAY,
+            date: today.toLocaleDateString('en-US', options),
+        };
+    }, []);
 
     useEffect(() => {
         const initializeApp = async () => {
@@ -156,21 +165,21 @@ const App: React.FC = () => {
         switch (activeTab) {
             case 'today':
                 return <DiscoveryView 
-                            specialDay={TODAY_SPECIAL_DAY} 
+                            specialDay={todaySpecialDay} 
                             tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} 
                             celebrations={celebrations} 
                             currentUser={currentUser}
                             onToggleLike={handleToggleLike}
                        />;
             case 'share':
-                return currentUser ? <CreateView user={currentUser} specialDay={TODAY_SPECIAL_DAY} onCelebrationCreated={handleCelebrationCreated} /> : null;
+                return currentUser ? <CreateView user={currentUser} specialDay={todaySpecialDay} onCelebrationCreated={handleCelebrationCreated} /> : null;
             case 'connect':
                 return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
                 return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} onAvatarChange={handleAvatarChange} celebrations={celebrations} />;
             default:
                 return <DiscoveryView 
-                            specialDay={TODAY_SPECIAL_DAY} 
+                            specialDay={todaySpecialDay} 
                             tomorrowSpecialDay={TOMORROW_SPECIAL_DAY} 
                             celebrations={celebrations} 
                             currentUser={currentUser}
