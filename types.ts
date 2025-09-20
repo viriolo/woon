@@ -35,6 +35,8 @@ export interface User {
   avatarUrl?: string;
   notificationPreferences: NotificationPreferences;
   likedCelebrationIds: number[];
+  savedCelebrationIds: number[];
+  rsvpedEventIds: string[];
 }
 
 export interface Event {
@@ -47,6 +49,8 @@ export interface Event {
   authorId: string;
   authorName: string;
   locationCoords: { lng: number; lat: number };
+  attendeeCount: number;
+  attendees: { userId: string; userName: string; avatarUrl?: string }[];
 }
 
 export interface Comment {

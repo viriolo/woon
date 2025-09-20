@@ -1,5 +1,7 @@
 {
   "name": "Woon - Every Day is a Special Day",
   "description": "A celebration discovery and community engagement platform that helps users find, create, and share special day celebrations in their local neighborhoods.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

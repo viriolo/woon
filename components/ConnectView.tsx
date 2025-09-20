@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { User, Event } from '../types';
 import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon, CalendarPlusIcon, UsersIcon, ClockIcon } from './icons';
@@ -43,7 +44,15 @@ const ScopeContent: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 const EventCard: React.FC<{ event: Event; onClick: () => void; }> = ({ event, onClick }) => (
     <button onClick={onClick} className="w-full text-left p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm hover:bg-neutral-100/50 transition-colors">
         <h4 className="font-bold text-neutral-900">{event.title}</h4>
-        <p className="text-sm text-neutral-500">{event.date} at {event.time} - {event.location}</p>
+        <div className="flex justify-between items-center">
+            <p className="text-sm text-neutral-500">{event.date} at {event.time} - {event.location}</p>
+            {event.attendeeCount > 0 && (
+                <div className="flex items-center gap-1 text-sm text-special-secondary font-medium">
+                    <UsersIcon className="w-4 h-4"/>
+                    <span>{event.attendeeCount}</span>
+                </div>
+            )}
+        </div>
         <p className="text-sm text-neutral-400 mt-1">Organized by {event.authorName}</p>
     </button>
 );

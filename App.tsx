@@ -121,6 +121,7 @@ const App: React.FC = () => {
         const isLiked = currentUser.likedCelebrationIds.includes(celebrationId);
         
         // Optimistic UI updates
+        const originalUser = currentUser;
         setCurrentUser(prevUser => {
             if (!prevUser) return null;
             return {
@@ -137,20 +138,99 @@ const App: React.FC = () => {
         );
 
         try {
-            // Persist changes
-            const updatedUser = await authService.toggleLikeStatus(celebrationId);
+            await authService.toggleLikeStatus(celebrationId);
             await celebrationService.updateLikeCount(celebrationId, !isLiked);
-            // Sync state with persisted data
-            setCurrentUser(updatedUser);
         } catch (error) {
             console.error("Failed to toggle like:", error);
             // Revert optimistic updates on error
-            setCurrentUser(currentUser);
+            setCurrentUser(originalUser);
              setCelebrations(prevCelebrations =>
                 prevCelebrations.map(c =>
                     c.id === celebrationId ? { ...c, likes: c.likes + (isLiked ? 1 : -1) } : c
                 )
             );
+        }
+    };
+
+    const handleToggleSave = async (celebrationId: number) => {
+        if (!currentUser) {
+            setIsAuthViewVisible(true);
+            return;
+        }
+        const originalUser = currentUser;
+        const isSaved = currentUser.savedCelebrationIds.includes(celebrationId);
+        
+        setCurrentUser(prevUser => {
+            if (!prevUser) return null;
+            return {
+                ...prevUser,
+                savedCelebrationIds: isSaved
+                    ? prevUser.savedCelebrationIds.filter(id => id !== celebrationId)
+                    : [...prevUser.savedCelebrationIds, celebrationId]
+            };
+        });
+
+        try {
+            await authService.toggleSaveStatus(celebrationId);
+        } catch(error) {
+            console.error("Failed to toggle save:", error);
+            setCurrentUser(originalUser);
+        }
+    };
+    
+    const handleRsvpToggle = async (eventId: string) => {
+        if (!currentUser) {
+            setIsAuthViewVisible(true);
+            return;
+        }
+
+        const isRsvped = currentUser.rsvpedEventIds.includes(eventId);
+
+        const originalUser = currentUser;
+        const originalEvents = [...events];
+
+        setCurrentUser(prevUser => {
+            if (!prevUser) return null;
+            return {
+                ...prevUser,
+                rsvpedEventIds: isRsvped
+                    ? prevUser.rsvpedEventIds.filter(id => id !== eventId)
+                    : [...prevUser.rsvpedEventIds, eventId]
+            };
+        });
+
+        setEvents(prevEvents => prevEvents.map(e => {
+            if (e.id === eventId) {
+                const newAttendees = isRsvped
+                    ? e.attendees.filter(a => a.userId !== currentUser.id)
+                    : [...e.attendees, { userId: currentUser.id, userName: currentUser.name, avatarUrl: currentUser.avatarUrl }];
+                return {
+                    ...e,
+                    attendees: newAttendees,
+                    attendeeCount: newAttendees.length,
+                };
+            }
+            return e;
+        }));
+        
+        setViewingEvent(prevEvent => {
+            if(prevEvent?.id === eventId) {
+                 const newAttendees = isRsvped
+                    ? prevEvent.attendees.filter(a => a.userId !== currentUser.id)
+                    : [...prevEvent.attendees, { userId: currentUser.id, userName: currentUser.name, avatarUrl: currentUser.avatarUrl }];
+                 return { ...prevEvent, attendees: newAttendees, attendeeCount: newAttendees.length };
+            }
+            return prevEvent;
+        });
+
+        try {
+            await authService.toggleRsvpStatus(eventId);
+            await eventService.toggleRsvp(eventId, currentUser);
+        } catch (error) {
+            console.error("Failed to toggle RSVP", error);
+            setCurrentUser(originalUser);
+            setEvents(originalEvents);
+            setViewingEvent(originalEvents.find(e => e.id === eventId) || null);
         }
     };
 
@@ -172,6 +252,7 @@ const App: React.FC = () => {
                             celebrations={celebrations} 
                             currentUser={currentUser}
                             onToggleLike={handleToggleLike}
+                            onToggleSave={handleToggleSave}
                        />;
             case 'share':
                 return currentUser ? <CreateView user={currentUser} specialDay={todaySpecialDay} onCelebrationCreated={handleCelebrationCreated} /> : null;
@@ -186,6 +267,7 @@ const App: React.FC = () => {
                             celebrations={celebrations} 
                             currentUser={currentUser}
                             onToggleLike={handleToggleLike}
+                            onToggleSave={handleToggleSave}
                        />;
         }
     };
@@ -228,7 +310,9 @@ const App: React.FC = () => {
             {viewingEvent && (
                 <EventDetailView
                     event={viewingEvent}
+                    currentUser={currentUser}
                     onClose={() => setViewingEvent(null)}
+                    onRsvpToggle={handleRsvpToggle}
                 />
             )}
             {isMissionViewVisible && (

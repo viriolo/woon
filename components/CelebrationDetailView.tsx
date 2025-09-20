@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import type { Celebration, User, Comment } from '../types';
 import { commentService } from '../services/commentService';
 import { celebrationService } from '../services/celebrationService';
-import { HeartIcon, ArrowLeftIcon, LoadingSpinner } from './icons';
+import { HeartIcon, ArrowLeftIcon, LoadingSpinner, BookmarkIcon, ShareIcon } from './icons';
 
 interface CelebrationDetailViewProps {
     celebration: Celebration;
     currentUser: User | null;
     onBack: () => void;
     onToggleLike: (celebrationId: number) => void;
+    onToggleSave: (celebrationId: number) => void;
     onCommentAdded: (celebrationId: number) => void;
 }
 
@@ -25,13 +27,14 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
     );
 };
 
-export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ celebration, currentUser, onBack, onToggleLike, onCommentAdded }) => {
+export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ celebration, currentUser, onBack, onToggleLike, onToggleSave, onCommentAdded }) => {
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [isLoadingComments, setIsLoadingComments] = useState(true);
     const [isPostingComment, setIsPostingComment] = useState(false);
     
     const isLiked = !!currentUser?.likedCelebrationIds.includes(celebration.id);
+    const isSaved = !!currentUser?.savedCelebrationIds.includes(celebration.id);
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -47,6 +50,24 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
         };
         fetchComments();
     }, [celebration.id]);
+    
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: celebration.title,
+                    text: `Check out this celebration on Woon: ${celebration.description}`,
+                    url: window.location.href, // In a real app, this would be a deep link
+                });
+            } catch (error) {
+                console.error('Error sharing:', error);
+            }
+        } else {
+            // Fallback for desktop browsers
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }
+    };
 
     const handlePostComment = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,11 +89,17 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
 
     return (
         <div className="h-full flex flex-col animate-fade-in">
-            <header className="flex items-center gap-4 flex-shrink-0 mb-4">
+            <header className="flex items-center gap-2 flex-shrink-0 mb-4">
                 <button onClick={onBack} className="p-2 rounded-full hover:bg-neutral-200 transition-colors">
                     <ArrowLeftIcon className="w-6 h-6 text-neutral-600" />
                 </button>
-                <h2 className="text-xl font-bold truncate">{celebration.title}</h2>
+                <h2 className="text-xl font-bold truncate flex-grow">{celebration.title}</h2>
+                <button onClick={handleShare} className="p-2 rounded-full hover:bg-neutral-200 transition-colors group">
+                    <ShareIcon className="w-6 h-6 text-neutral-500 group-hover:text-special-secondary"/>
+                </button>
+                <button onClick={() => onToggleSave(celebration.id)} className="p-2 rounded-full hover:bg-neutral-200 transition-colors group">
+                     <BookmarkIcon className={`w-6 h-6 transition-all ${isSaved ? 'text-special-primary fill-special-primary/20' : 'text-neutral-500 group-hover:text-special-secondary'}`} />
+                </button>
             </header>
 
             <div className="flex-grow overflow-y-auto space-y-4">

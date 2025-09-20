@@ -1,3 +1,4 @@
+
 import type { User, NotificationPreferences } from '../types';
 
 // This service now uses localStorage to simulate a user database, making it functional without a backend.
@@ -58,6 +59,8 @@ export const authService = {
                 communityActivity: true,
             },
             likedCelebrationIds: [],
+            savedCelebrationIds: [],
+            rsvpedEventIds: [],
         };
         
         users.push(newUser);
@@ -104,6 +107,8 @@ export const authService = {
                     communityActivity: true,
                 },
                 likedCelebrationIds: [],
+                savedCelebrationIds: [],
+                rsvpedEventIds: [],
             };
             users.push(newUser);
             saveStoredUsers(users);
@@ -167,6 +172,52 @@ export const authService = {
         
         saveStoredUsers(users);
         
+        const { passwordHash, ...updatedUser } = user;
+        return updatedUser;
+    },
+
+    toggleSaveStatus: async (celebrationId: number): Promise<User> => {
+        await new Promise(res => setTimeout(res, 100));
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const userIndex = users.findIndex(u => u.email === email);
+        if (userIndex === -1) throw new Error("User not found.");
+
+        const user = users[userIndex];
+        const isSaved = user.savedCelebrationIds.includes(celebrationId);
+
+        if (isSaved) {
+            user.savedCelebrationIds = user.savedCelebrationIds.filter(id => id !== celebrationId);
+        } else {
+            user.savedCelebrationIds.push(celebrationId);
+        }
+        
+        saveStoredUsers(users);
+        const { passwordHash, ...updatedUser } = user;
+        return updatedUser;
+    },
+
+    toggleRsvpStatus: async (eventId: string): Promise<User> => {
+        await new Promise(res => setTimeout(res, 100));
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const userIndex = users.findIndex(u => u.email === email);
+        if (userIndex === -1) throw new Error("User not found.");
+
+        const user = users[userIndex];
+        const isRsvped = user.rsvpedEventIds.includes(eventId);
+
+        if (isRsvped) {
+            user.rsvpedEventIds = user.rsvpedEventIds.filter(id => id !== eventId);
+        } else {
+            user.rsvpedEventIds.push(eventId);
+        }
+        
+        saveStoredUsers(users);
         const { passwordHash, ...updatedUser } = user;
         return updatedUser;
     },

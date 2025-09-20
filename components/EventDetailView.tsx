@@ -1,19 +1,23 @@
+
 import React from 'react';
-import type { Event } from '../types';
+import type { Event, User } from '../types';
 import { MiniMap } from './MiniMap';
-import { XCircleIcon, MapPinIcon, CalendarDaysIcon } from './icons';
+import { XCircleIcon, MapPinIcon, CalendarDaysIcon, UsersIcon } from './icons';
 import { AddToCalendarButton } from 'add-to-calendar-button-react';
 
 interface EventDetailViewProps {
     event: Event;
+    currentUser: User | null;
     onClose: () => void;
+    onRsvpToggle: (eventId: string) => void;
 }
 
-export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose }) => {
-    const [hours, minutes] = event.time.split(':').map(Number);
+export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, currentUser, onClose, onRsvpToggle }) => {
     const endDate = new Date(`${event.date}T${event.time}`);
     endDate.setHours(endDate.getHours() + 1); // Assume 1 hour duration
     const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+    
+    const isRsvped = !!currentUser?.rsvpedEventIds.includes(event.id);
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in" onClick={onClose}>
@@ -34,11 +38,17 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose
                 </header>
 
                 <div className="overflow-y-auto space-y-4 pr-2 -mr-2">
-                    <div className="flex items-center gap-2 text-neutral-700">
-                        <CalendarDaysIcon className="w-5 h-5 text-neutral-500 flex-shrink-0" />
-                        <span className="font-medium">{event.date}</span>
-                        <span className="mx-1 text-neutral-400">•</span>
-                        <span>{event.time}</span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-neutral-700">
+                        <div className="flex items-center gap-2">
+                            <CalendarDaysIcon className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                            <span className="font-medium">{event.date} at {event.time}</span>
+                        </div>
+                        {event.attendeeCount > 0 && (
+                            <div className="flex items-center gap-2">
+                                <UsersIcon className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                                <span className="font-medium">{event.attendeeCount} going</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-start gap-2 text-neutral-700">
@@ -71,8 +81,15 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, onClose
                             options={['Apple','Google','iCal','Outlook.com','Yahoo']}
                         />
                     </div>
-                    <button className="w-full py-3 px-4 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition">
-                        Join Event
+                    <button 
+                        onClick={() => onRsvpToggle(event.id)}
+                        className={`w-full py-3 px-4 font-bold rounded-lg transition-colors ${
+                            isRsvped 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                : 'bg-special-primary text-white hover:opacity-90'
+                        }`}
+                    >
+                        {isRsvped ? "✓ You're Going!" : "RSVP to Event"}
                     </button>
                 </div>
             </div>

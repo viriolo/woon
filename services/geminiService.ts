@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { GEMINI_API_KEY } from "../constants";
 
 let ai: GoogleGenAI | null = null;
@@ -10,13 +11,17 @@ const initializeAiClient = (): GoogleGenAI | null => {
     }
     isInitialized = true;
     
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+    // In a production environment, the API key should be handled by a secure backend proxy.
+    // For this client-side example, we'll check for it directly.
+    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : GEMINI_API_KEY;
+
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
         console.warn("Gemini API Key is not configured in constants.ts. AI features will not work.");
         return null;
     }
 
     try {
-        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        ai = new GoogleGenAI({ apiKey });
         return ai;
     } catch (error) {
         console.error("Failed to initialize Gemini client:", error);
@@ -56,5 +61,53 @@ export async function* generateDecorationIdeasStream(theme: string, items: strin
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         yield "Sorry, I couldn't come up with ideas right now. Please try again later.";
+    }
+};
+
+export const generateCelebrationDetailsFromImage = async (
+    base64Image: string,
+    mimeType: string,
+    theme: string
+): Promise<{ title: string; description: string }> => {
+    const aiClient = initializeAiClient();
+    if (!aiClient) {
+        throw new Error("AI service is not configured.");
+    }
+    
+    const imagePart = {
+      inlineData: {
+        mimeType: mimeType,
+        data: base64Image,
+      },
+    };
+    
+    const textPart = {
+        text: `Based on this image and the theme "${theme}", generate a short, creative, and joyful title and description for a post on the 'Woon' app. The title should be under 10 words, and the description under 40 words.`
+    };
+
+    try {
+        const response = await aiClient.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        description: { type: Type.STRING },
+                    },
+                    required: ["title", "description"],
+                }
+            }
+        });
+        
+        const jsonText = response.text.trim();
+        const result = JSON.parse(jsonText);
+        return result;
+
+    } catch (error) {
+        console.error("Error calling Gemini API for image details:", error);
+        throw new Error("Sorry, I couldn't come up with ideas right now. Please try again later.");
     }
 };

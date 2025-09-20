@@ -13,6 +13,7 @@ interface DiscoveryViewProps {
     celebrations: Celebration[];
     currentUser: User | null;
     onToggleLike: (celebrationId: number) => void;
+    onToggleSave: (celebrationId: number) => void;
 }
 
 const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
@@ -80,7 +81,7 @@ const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSp
     </div>
 );
 
-export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations, currentUser, onToggleLike }) => {
+export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations, currentUser, onToggleLike, onToggleSave }) => {
     const [selectedCelebration, setSelectedCelebration] = useState<Celebration | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -138,6 +139,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
                         currentUser={currentUser}
                         onBack={() => handleSelectCelebration(null)}
                         onToggleLike={onToggleLike}
+                        onToggleSave={onToggleSave}
                         onCommentAdded={handleCommentAdded}
                     />
                 ) : (

@@ -1,4 +1,5 @@
 
+
 import type { Event, User } from '../types';
 
 const EVENTS_STORAGE_KEY = 'woon_events';
@@ -32,7 +33,7 @@ export const eventService = {
     },
 
     createEvent: async (
-        eventData: Omit<Event, 'id' | 'authorId' | 'authorName' | 'locationCoords'>,
+        eventData: Omit<Event, 'id' | 'authorId' | 'authorName' | 'locationCoords' | 'attendeeCount' | 'attendees'>,
         user: User
     ): Promise<Event> => {
         if (!user) {
@@ -44,6 +45,8 @@ export const eventService = {
             ...eventData,
             authorId: user.id,
             authorName: user.name,
+            attendeeCount: 0,
+            attendees: [],
             // Mock geocoding: add random coordinates around SF
             locationCoords: {
                 lng: -122.4194 + (Math.random() - 0.5) * 0.08,
@@ -60,4 +63,28 @@ export const eventService = {
 
         return newEvent;
     },
+
+    toggleRsvp: async (eventId: string, user: User): Promise<Event> => {
+        await new Promise(res => setTimeout(res, 100));
+        const events = getStoredEvents();
+        const eventIndex = events.findIndex(e => e.id === eventId);
+        if (eventIndex === -1) throw new Error("Event not found.");
+
+        const event = events[eventIndex];
+        const isAttending = event.attendees.some(a => a.userId === user.id);
+
+        if (isAttending) {
+            event.attendees = event.attendees.filter(a => a.userId !== user.id);
+        } else {
+            event.attendees.push({
+                userId: user.id,
+                userName: user.name,
+                avatarUrl: user.avatarUrl
+            });
+        }
+        event.attendeeCount = event.attendees.length;
+
+        saveStoredEvents(events);
+        return event;
+    }
 };

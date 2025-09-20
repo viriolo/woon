@@ -1,4 +1,5 @@
 
+
 import React, { useRef } from 'react';
 import type { User, NotificationPreferences, Celebration } from '../types';
 import { BellIcon, StarIcon, ShieldCheckIcon, CogIcon, ChevronRightIcon, SparklesIcon } from './icons';
@@ -77,6 +78,7 @@ const SettingsToggleItem: React.FC<{ label: string, description: string, isEnabl
 
 const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesChange: (newPrefs: Partial<NotificationPreferences>) => void; onAvatarChange: (base64Image: string) => void; celebrations: Celebration[]; onShowMission: () => void; }> = ({ user, onLogout, onPreferencesChange, onAvatarChange, celebrations, onShowMission }) => {
     const userCelebrations = celebrations.filter(c => c.authorId === user.id);
+    const savedCelebrations = celebrations.filter(c => user.savedCelebrationIds.includes(c.id));
     const avatarUrl = user.avatarUrl || `https://i.pravatar.cc/150?u=${user.email}`;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,7 +121,7 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                 </div>
             </div>
 
-            <div className="px-4 py-6 bg-neutral-50">
+            <div className="py-6 bg-neutral-50">
                 <Section title="My Celebrations">
                     {userCelebrations.length > 0 ? (
                         <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-2">
@@ -132,7 +134,22 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center text-neutral-500 py-4">You haven't posted any celebrations yet.</div>
+                        <div className="text-center text-neutral-500 py-4 px-4">You haven't posted any celebrations yet.</div>
+                    )}
+                </Section>
+                 <Section title="Saved Celebrations">
+                    {savedCelebrations.length > 0 ? (
+                        <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-2">
+                            {savedCelebrations.map(c => (
+                                <div key={c.id} className="flex-shrink-0 w-40">
+                                    <img src={c.imageUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1 shadow-sm" />
+                                    <p className="text-sm font-medium truncate">{c.title}</p>
+                                     <p className="text-xs text-neutral-500">by {c.author}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-neutral-500 py-4 px-4">You haven't saved any celebrations yet.</div>
                     )}
                 </Section>
             </div>

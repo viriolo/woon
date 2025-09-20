@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { SpecialDay, User, Celebration } from '../types';
-import { generateDecorationIdeasStream } from '../services/geminiService';
+import { generateDecorationIdeasStream, generateCelebrationDetailsFromImage } from '../services/geminiService';
 import { celebrationService } from '../services/celebrationService';
-import { SparklesIcon, LoadingSpinner, CheckCircleIcon } from './icons';
+import { SparklesIcon, LoadingSpinner, CheckCircleIcon, CameraIcon, XIcon } from './icons';
 
 const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
     const [items, setItems] = useState('');
@@ -76,6 +77,61 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
     );
 };
 
+const CameraView: React.FC<{ onCapture: (dataUrl: string) => void; onClose: () => void; }> = ({ onCapture, onClose }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const startCamera = async () => {
+            try {
+                if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    if(videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        streamRef.current = stream;
+                    }
+                } else {
+                    setError('Camera not supported on this device.');
+                }
+            } catch(err) {
+                setError('Could not access camera. Please check permissions.');
+                console.error(err);
+            }
+        };
+        startCamera();
+        
+        return () => {
+            streamRef.current?.getTracks().forEach(track => track.stop());
+        }
+    }, []);
+    
+    const handleCapture = () => {
+        if(videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            onCapture(canvas.toDataURL('image/jpeg'));
+            onClose();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+            {error && <p className="absolute top-4 text-white bg-red-500/80 p-2 rounded">{error}</p>}
+            <button onClick={onClose} className="absolute top-4 right-4 text-white"><XIcon className="w-8 h-8"/></button>
+            <button onClick={handleCapture} className="absolute bottom-8 w-20 h-20 rounded-full bg-white/50 border-4 border-white"></button>
+            <canvas ref={canvasRef} className="hidden"></canvas>
+        </div>
+    );
+};
+
+
 interface CreateViewProps {
     user: User;
     specialDay: SpecialDay;
@@ -89,6 +145,8 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -98,6 +156,25 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
                 setImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleGenerateDetails = async () => {
+        if (!imagePreview) return;
+        setIsGeneratingDetails(true);
+        setError('');
+        try {
+            const [metadata, base64Data] = imagePreview.split(',');
+            const mimeType = metadata.match(/:(.*?);/)?.[1];
+            if (!mimeType || !base64Data) throw new Error("Invalid image format");
+            
+            const result = await generateCelebrationDetailsFromImage(base64Data, mimeType, specialDay.title);
+            setTitle(result.title);
+            setDescription(result.description);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'AI generation failed.');
+        } finally {
+            setIsGeneratingDetails(false);
         }
     };
 
@@ -143,6 +220,7 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
 
     return (
         <div className="h-full overflow-y-auto pb-24 p-4 animate-fade-in space-y-6">
+            {isCameraOpen && <CameraView onCapture={setImagePreview} onClose={() => setIsCameraOpen(false)} />}
             <div className="pt-16 text-center">
                  <h2 className="text-3xl font-display font-bold text-special-primary">Share Your Creation</h2>
                  <p className="text-neutral-700">for {specialDay.title}</p>
@@ -151,6 +229,41 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
             <AIGenerator theme={specialDay.title} />
 
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="w-full border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center">
+                    {imagePreview ? (
+                        <div className="relative">
+                            <img src={imagePreview} alt="Preview" className="mx-auto max-h-48 rounded-lg" />
+                            <button type="button" onClick={() => setImagePreview(null)} className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md"><XIcon className="w-4 h-4 text-neutral-600"/></button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-4">
+                            <span className="text-neutral-500">Add a photo to your celebration</span>
+                            <div className="flex gap-4">
+                                <label className="cursor-pointer px-4 py-2 bg-white border border-neutral-300 rounded-lg font-medium text-neutral-700 hover:bg-neutral-100 transition">
+                                    Upload File
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={isLoading} />
+                                </label>
+                                <button type="button" onClick={() => setIsCameraOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg font-medium text-neutral-700 hover:bg-neutral-100 transition">
+                                    <CameraIcon className="w-5 h-5"/>
+                                    Take Photo
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {imagePreview && (
+                    <button
+                        type="button"
+                        onClick={handleGenerateDetails}
+                        disabled={isGeneratingDetails}
+                        className="w-full flex justify-center items-center gap-2 py-2 px-4 bg-special-primary/10 text-special-secondary font-bold rounded-lg hover:bg-special-primary/20 transition disabled:opacity-50"
+                    >
+                        {isGeneratingDetails ? <LoadingSpinner className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
+                        {isGeneratingDetails ? 'Generating...' : 'AI-generate Title & Description'}
+                    </button>
+                )}
+
                 <input
                     type="text"
                     value={title}
@@ -167,21 +280,13 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
                     rows={4}
                     disabled={isLoading}
                 />
-                 <label className={`block w-full cursor-pointer border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center  transition ${isLoading ? 'opacity-50' : 'hover:border-special-primary'}`}>
-                    {imagePreview ? (
-                        <img src={imagePreview} alt="Preview" className="mx-auto max-h-48 rounded-lg" />
-                    ) : (
-                        <span className="text-neutral-500">Tap to upload a photo</span>
-                    )}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={isLoading} />
-                </label>
 
                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
                 <button 
                     type="submit"
                     className="w-full py-3 px-4 bg-special-secondary text-white font-bold rounded-lg hover:opacity-90 transition flex justify-center items-center gap-2 disabled:opacity-50"
-                    disabled={isLoading}
+                    disabled={isLoading || !imagePreview}
                 >
                     {isLoading ? (
                         <>
