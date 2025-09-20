@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Celebration, User, Comment } from '../types';
 import { commentService } from '../services/commentService';
 import { celebrationService } from '../services/celebrationService';
-import { HeartIcon, ArrowLeftIcon, LoadingSpinner, BookmarkIcon, ShareIcon } from './icons';
+import { HeartIcon, ArrowLeftIcon, LoadingSpinner, BookmarkIcon } from './icons';
+import { ShareButton } from './ShareButton';
 
 interface CelebrationDetailViewProps {
     celebration: Celebration;
@@ -51,24 +51,6 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
         fetchComments();
     }, [celebration.id]);
     
-    const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: celebration.title,
-                    text: `Check out this celebration on Woon: ${celebration.description}`,
-                    url: window.location.href, // In a real app, this would be a deep link
-                });
-            } catch (error) {
-                console.error('Error sharing:', error);
-            }
-        } else {
-            // Fallback for desktop browsers
-            navigator.clipboard.writeText(window.location.href);
-            alert('Link copied to clipboard!');
-        }
-    };
-
     const handlePostComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim() || !currentUser) return;
@@ -94,9 +76,7 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
                     <ArrowLeftIcon className="w-6 h-6 text-neutral-600" />
                 </button>
                 <h2 className="text-xl font-bold truncate flex-grow">{celebration.title}</h2>
-                <button onClick={handleShare} className="p-2 rounded-full hover:bg-neutral-200 transition-colors group">
-                    <ShareIcon className="w-6 h-6 text-neutral-500 group-hover:text-special-secondary"/>
-                </button>
+                <ShareButton celebration={celebration} />
                 <button onClick={() => onToggleSave(celebration.id)} className="p-2 rounded-full hover:bg-neutral-200 transition-colors group">
                      <BookmarkIcon className={`w-6 h-6 transition-all ${isSaved ? 'text-special-primary fill-special-primary/20' : 'text-neutral-500 group-hover:text-special-secondary'}`} />
                 </button>
