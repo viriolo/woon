@@ -9,6 +9,7 @@ import { ProfileView } from './components/ProfileView';
 import { AuthView } from './components/AuthView';
 import { EventCreationView } from './components/EventCreationView';
 import { EventDetailView } from './components/EventDetailView';
+import { MissionView } from './components/MissionView';
 import type { User, NotificationPreferences, Event, Celebration } from './types';
 import { TODAY_SPECIAL_DAY as MOCK_TODAY_SPECIAL_DAY, TOMORROW_SPECIAL_DAY, CELEBRATIONS as MOCK_CELEBRATIONS } from './constants';
 import { authService } from './services/authService';
@@ -26,6 +27,7 @@ const App: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
     const [celebrations, setCelebrations] = useState<Celebration[]>([]);
     const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
+    const [isMissionViewVisible, setIsMissionViewVisible] = useState(false);
 
     const todaySpecialDay = useMemo(() => {
         const today = new Date();
@@ -176,7 +178,7 @@ const App: React.FC = () => {
             case 'connect':
                 return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
-                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} onAvatarChange={handleAvatarChange} celebrations={celebrations} />;
+                return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} onAvatarChange={handleAvatarChange} celebrations={celebrations} onShowMission={() => setIsMissionViewVisible(true)} />;
             default:
                 return <DiscoveryView 
                             specialDay={todaySpecialDay} 
@@ -228,6 +230,9 @@ const App: React.FC = () => {
                     event={viewingEvent}
                     onClose={() => setViewingEvent(null)}
                 />
+            )}
+            {isMissionViewVisible && (
+                <MissionView onClose={() => setIsMissionViewVisible(false)} />
             )}
         </div>
     );
