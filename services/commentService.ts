@@ -1,28 +1,33 @@
-import type { Comment, User } from '../types';
+import type { Comment, User } from "../types";
 
-const COMMENTS_STORAGE_KEY = 'woon_comments';
+const COMMENTS_STORAGE_KEY = "woon_comments";
 
-// This is a simulation of a comments database using localStorage.
-// For a real app, this would be a secure backend service.
-
-// Add some mock comments for demonstration
 const initialMockComments: Comment[] = [
-    { id: 'comment-1-1', celebrationId: 1, authorId: 'mock-2', authorName: 'David L.', text: 'Looks so peaceful! I love watercolor.', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), mentionedUserIds: [] },
-    { id: 'comment-1-2', celebrationId: 1, authorId: 'mock-3', authorName: 'Chloe T.', text: 'Beautiful setup!', timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(), mentionedUserIds: [] },
-    { id: 'comment-2-1', celebrationId: 2, authorId: 'mock-1', authorName: 'Maria S.', text: 'Wow, that must have taken forever!', timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), mentionedUserIds: [] },
+    { id: "comment-1-1", celebrationId: 1, authorId: "mock-2", authorName: "David L.", text: "Looks so peaceful! I love watercolor.", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), mentions: [] },
+    { id: "comment-1-2", celebrationId: 1, authorId: "mock-3", authorName: "Chloe T.", text: "Beautiful setup!", timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(), mentions: [] },
+    { id: "comment-2-1", celebrationId: 2, authorId: "mock-1", authorName: "Maria S.", text: "Wow, that must have taken forever!", timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), mentions: [] },
 ];
+
+const extractMentions = (text: string): string[] => {
+    const matches = text.match(/@([a-z0-9_]+)/gi);
+    if (!matches) return [];
+    return Array.from(new Set(matches.map(match => match.slice(1).toLowerCase())));
+};
 
 const getStoredComments = (): Comment[] => {
     try {
         const storedComments = localStorage.getItem(COMMENTS_STORAGE_KEY);
         if (storedComments) {
-            return JSON.parse(storedComments);
+            const parsed: Comment[] = JSON.parse(storedComments);
+            return parsed.map(comment => ({
+                ...comment,
+                mentions: comment.mentions ?? extractMentions(comment.text),
+            }));
         }
-        // If no comments are stored, initialize with mock data
         localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(initialMockComments));
         return initialMockComments;
     } catch (error) {
-        console.error('Failed to parse comments from localStorage', error);
+        console.error("Failed to parse comments from localStorage", error);
         return [];
     }
 };
@@ -31,13 +36,12 @@ const saveStoredComments = (comments: Comment[]) => {
     try {
         localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
     } catch (error) {
-        console.error('Failed to save comments to localStorage', error);
+        console.error("Failed to save comments to localStorage", error);
     }
 };
 
 export const commentService = {
     getCommentsForCelebration: async (celebrationId: number): Promise<Comment[]> => {
-        // Simulate async API call
         await new Promise(resolve => setTimeout(resolve, 300));
         const allComments = getStoredComments();
         return allComments
@@ -48,12 +52,13 @@ export const commentService = {
     addComment: async (
         celebrationId: number,
         text: string,
-        user: User,
-        mentionedUserIds: string[] = []
+        user: User
     ): Promise<Comment> => {
         if (!user) {
-            throw new Error('Authentication required to add a comment.');
+            throw new Error("Authentication required to add a comment.");
         }
+
+        const mentions = extractMentions(text);
 
         const newComment: Comment = {
             id: new Date().toISOString() + Math.random(),
@@ -62,10 +67,9 @@ export const commentService = {
             authorId: user.id,
             authorName: user.name,
             timestamp: new Date().toISOString(),
-            mentionedUserIds,
+            mentions,
         };
 
-        // Simulate async API call
         await new Promise(resolve => setTimeout(resolve, 600));
 
         const comments = getStoredComments();

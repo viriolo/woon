@@ -1,4 +1,3 @@
-
 export interface SpecialDay {
   title: string;
   description: string;
@@ -28,6 +27,13 @@ export interface NotificationPreferences {
   communityActivity: boolean;
 }
 
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  earnedAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -38,6 +44,17 @@ export interface User {
   likedCelebrationIds: number[];
   savedCelebrationIds: number[];
   rsvpedEventIds: string[];
+  followingUserIds: string[];
+  streakDays: number;
+  experiencePoints: number;
+  achievements: Achievement[];
+  level: number;
+}
+
+export interface EventAttendee {
+  userId: string;
+  userName: string;
+  avatarUrl?: string;
 }
 
 export interface Event {
@@ -49,9 +66,9 @@ export interface Event {
   description: string;
   authorId: string;
   authorName: string;
-  locationCoords: { lng: number; lat: number };
   attendeeCount: number;
-  attendees: { userId: string; userName: string; avatarUrl?: string }[];
+  attendees: EventAttendee[];
+  locationCoords: { lng: number; lat: number };
 }
 
 export interface Comment {
@@ -61,6 +78,14 @@ export interface Comment {
   authorName: string;
   text: string;
   timestamp: string;
-  mentionedUserIds?: string[];
+  mentions?: string[];
 }
 
+export interface FriendConnection {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  location: UserLocation;
+  celebrationMessage: string;
+  isNearby: boolean;
+}

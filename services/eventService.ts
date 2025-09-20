@@ -1,16 +1,21 @@
+import type { Event, User, EventAttendee } from "../types";
 
+const EVENTS_STORAGE_KEY = "woon_events";
 
-import type { Event, User } from '../types';
-
-const EVENTS_STORAGE_KEY = 'woon_events';
-
-// In a real app, this service would communicate with a secure backend API.
-// For now, we simulate this with localStorage.
+const normalizeEvent = (event: Event): Event => ({
+    ...event,
+    attendees: event.attendees ?? [],
+    attendeeCount: event.attendeeCount ?? (event.attendees ? event.attendees.length : 0),
+});
 
 const getStoredEvents = (): Event[] => {
     try {
         const storedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
-        return storedEvents ? JSON.parse(storedEvents) : [];
+        if (!storedEvents) {
+            return [];
+        }
+        const parsed: Event[] = JSON.parse(storedEvents);
+        return parsed.map(normalizeEvent);
     } catch (error) {
         console.error("Failed to parse events from localStorage", error);
         return [];
@@ -27,13 +32,12 @@ const saveStoredEvents = (events: Event[]) => {
 
 export const eventService = {
     getEvents: async (): Promise<Event[]> => {
-        // Simulate async API call
         await new Promise(resolve => setTimeout(resolve, 100));
         return getStoredEvents();
     },
 
     createEvent: async (
-        eventData: Omit<Event, 'id' | 'authorId' | 'authorName' | 'locationCoords' | 'attendeeCount' | 'attendees'>,
+        eventData: Omit<Event, "id" | "authorId" | "authorName" | "locationCoords" | "attendeeCount" | "attendees">,
         user: User
     ): Promise<Event> => {
         if (!user) {
@@ -47,16 +51,14 @@ export const eventService = {
             authorName: user.name,
             attendeeCount: 0,
             attendees: [],
-            // Mock geocoding: add random coordinates around SF
             locationCoords: {
                 lng: -122.4194 + (Math.random() - 0.5) * 0.08,
                 lat: 37.7749 + (Math.random() - 0.5) * 0.08,
-            }
+            },
         };
 
-        // Simulate async API call
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         const events = getStoredEvents();
         events.push(newEvent);
         saveStoredEvents(events);
@@ -76,15 +78,16 @@ export const eventService = {
         if (isAttending) {
             event.attendees = event.attendees.filter(a => a.userId !== user.id);
         } else {
-            event.attendees.push({
+            const attendee: EventAttendee = {
                 userId: user.id,
                 userName: user.name,
-                avatarUrl: user.avatarUrl
-            });
+                avatarUrl: user.avatarUrl,
+            };
+            event.attendees.push(attendee);
         }
         event.attendeeCount = event.attendees.length;
 
         saveStoredEvents(events);
         return event;
-    }
+    },
 };

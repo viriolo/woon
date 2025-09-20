@@ -1,19 +1,112 @@
-
-import React, { useRef, useEffect } from 'react';
-import mapboxgl, { GeoJSONSource } from 'mapbox-gl';
-import type { Celebration } from '../types';
-import { USER_LOCATION, MAPBOX_ACCESS_TOKEN } from '../constants';
+import React, { useRef, useEffect, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import type { Celebration, UserLocation, FriendConnection } from "../types";
+import { USER_LOCATION, MAPBOX_ACCESS_TOKEN } from "../constants";
 
 interface InteractiveMapProps {
     celebrations: Celebration[];
     selectedCelebrationId: number | null;
     onSelectCelebration: (id: number | null) => void;
+    friends: FriendConnection[];
+    showFriendsLayer: boolean;
+    onSelectFriend: (id: string | null) => void;
+    highlightedFriendId: string | null;
 }
 
-export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, selectedCelebrationId, onSelectCelebration }) => {
+export const InteractiveMap: React.FC<InteractiveMapProps> = ({
+    celebrations,
+    selectedCelebrationId,
+    onSelectCelebration,
+    friends,
+    showFriendsLayer,
+    onSelectFriend,
+    highlightedFriendId,
+}) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
-    const selectedIdRef = useRef<number | null>(null);
+    const markersRef = useRef<{ [id: number]: { marker: mapboxgl.Marker; element: HTMLDivElement } }>({});
+    const friendMarkersRef = useRef<{ [id: string]: { marker: mapboxgl.Marker; element: HTMLDivElement } }>({});
+    const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+
+    const [userLocation, setUserLocation] = useState<UserLocation>(USER_LOCATION);
+    const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied">("loading");
+
+    useEffect(() => {
+        const getUserLocation = async () => {
+            if (!navigator.geolocation) {
+                setLocationStatus("denied");
+                return;
+            }
+
+            try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 8000,
+                        maximumAge: 600000,
+                    });
+                });
+
+                const newLocation = {
+                    lng: position.coords.longitude,
+                    lat: position.coords.latitude,
+                };
+
+                setUserLocation(newLocation);
+                setLocationStatus("granted");
+
+                if (map.current) {
+                    map.current.flyTo({
+                        center: [newLocation.lng, newLocation.lat],
+                        zoom: 12,
+                        duration: 1500,
+                    });
+                }
+            } catch (error) {
+                console.log("Location access not available, using default location");
+                setLocationStatus("denied");
+            }
+        };
+
+        const timeoutId = setTimeout(getUserLocation, 1000);
+        return () => clearTimeout(timeoutId);
+    }, []);
+
+    const updateUserMarker = (mapInstance: mapboxgl.Map) => {
+        if (userMarkerRef.current) {
+            userMarkerRef.current.remove();
+        }
+
+        const userEl = document.createElement("div");
+        const color = locationStatus === "granted" ? "bg-blue-500" : "bg-gray-500";
+        const borderColor = locationStatus === "granted" ? "border-blue-600" : "border-gray-600";
+
+        userEl.className = `w-4 h-4 rounded-full ${color} border-2 border-white ${borderColor} relative shadow-md cursor-pointer`;
+
+        const userPulse = document.createElement("div");
+        userPulse.className = "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-500/30 animate-ping-slow";
+        userEl.appendChild(userPulse);
+
+        const tooltip = document.createElement("div");
+        tooltip.className = "absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none transition-opacity whitespace-nowrap";
+        tooltip.textContent = locationStatus === "granted" ? "Your current location" : "Default location (SF)";
+        userEl.appendChild(tooltip);
+
+        userEl.addEventListener("mouseenter", () => {
+            tooltip.classList.remove("opacity-0");
+        });
+        userEl.addEventListener("mouseleave", () => {
+            tooltip.classList.add("opacity-0");
+        });
+
+        userMarkerRef.current = new mapboxgl.Marker(userEl).setLngLat([userLocation.lng, userLocation.lat]).addTo(mapInstance);
+    };
+
+    useEffect(() => {
+        if (map.current) {
+            updateUserMarker(map.current);
+        }
+    }, [userLocation, locationStatus]);
 
     useEffect(() => {
         if (map.current || !mapContainer.current) return;
@@ -21,169 +114,149 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ celebrations, se
         map.current = new mapboxgl.Map({
             accessToken: MAPBOX_ACCESS_TOKEN,
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/light-v11',
-            center: [USER_LOCATION.lng, USER_LOCATION.lat],
+            style: "mapbox://styles/mapbox/light-v11",
+            center: [userLocation.lng, userLocation.lat],
             zoom: 12,
             pitch: 30,
             antialias: true,
         });
-        
+
         const currentMap = map.current;
 
-        currentMap.on('load', () => {
-            // Add user location marker
-            const userEl = document.createElement('div');
-            userEl.className = 'w-4 h-4 rounded-full bg-blue-500 border-2 border-white relative shadow-md';
-            const userPulse = document.createElement('div');
-            userPulse.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-blue-500/50 animate-ping-slow';
-            userEl.appendChild(userPulse);
+        currentMap.on("load", () => {
+            updateUserMarker(currentMap);
+        });
 
-            new mapboxgl.Marker(userEl)
-                .setLngLat([USER_LOCATION.lng, USER_LOCATION.lat])
-                .addTo(currentMap);
-            
-            // Add a new source from our GeoJSON data and set the
-            // 'cluster' option to true.
-            currentMap.addSource('celebrations', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: [] },
-                cluster: true,
-                clusterMaxZoom: 13, // Max zoom to cluster points on
-                clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
-            });
-
-            // Layer for clusters
-            currentMap.addLayer({
-                id: 'clusters',
-                type: 'circle',
-                source: 'celebrations',
-                filter: ['has', 'point_count'],
-                paint: {
-                    'circle-color': 'oklch(62% 0.17 240)',
-                    'circle-radius': ['step', ['get', 'point_count'], 20, 10, 30, 30, 40],
-                    'circle-opacity': 0.8,
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#fff'
-                }
-            });
-
-            // Layer for cluster count text
-            currentMap.addLayer({
-                id: 'cluster-count',
-                type: 'symbol',
-                source: 'celebrations',
-                filter: ['has', 'point_count'],
-                layout: {
-                    'text-field': '{point_count_abbreviated}',
-                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                    'text-size': 14
-                },
-                paint: {
-                    'text-color': '#ffffff'
-                }
-            });
-
-            // Layer for unclustered points
-            currentMap.addLayer({
-                id: 'unclustered-point',
-                type: 'circle',
-                source: 'celebrations',
-                filter: ['!', ['has', 'point_count']],
-                paint: {
-                    'circle-color': 'oklch(98% 0.01 250)',
-                    'circle-radius': 8,
-                    'circle-stroke-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, 1],
-                    'circle-stroke-color': ['case', ['boolean', ['feature-state', 'selected'], false], 'oklch(62% 0.17 240)', 'oklch(85% 0.01 250)'],
-                }
-            });
-
-            // inspect a cluster on click
-            currentMap.on('click', 'clusters', (e) => {
-                const features = currentMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-                if (!features.length) return;
-                const clusterId = features[0].properties?.cluster_id;
-                (currentMap.getSource('celebrations') as GeoJSONSource).getClusterExpansionZoom(clusterId, (err, zoom) => {
-                    if (err) return;
-                    currentMap.easeTo({
-                        center: (features[0].geometry as any).coordinates,
-                        zoom: zoom
-                    });
-                });
-            });
-
-            // select an unclustered point on click
-            currentMap.on('click', 'unclustered-point', (e) => {
-                if (!e.features?.length) return;
-                const celebrationId = e.features[0].properties?.id;
-                onSelectCelebration(celebrationId);
-            });
-
-            currentMap.on('mouseenter', ['clusters', 'unclustered-point'], () => { currentMap.getCanvas().style.cursor = 'pointer'; });
-            currentMap.on('mouseleave', ['clusters', 'unclustered-point'], () => { currentMap.getCanvas().style.cursor = ''; });
+        currentMap.on("click", () => {
+            onSelectFriend(null);
+            onSelectCelebration(null);
         });
 
         return () => {
             map.current?.remove();
             map.current = null;
         };
-    }, []);
+    }, [userLocation, onSelectCelebration, onSelectFriend]);
 
-    // Sync GeoJSON data with celebrations prop
     useEffect(() => {
-        if (!map.current || !map.current.isStyleLoaded()) return;
+        if (!map.current) return;
+        const currentMap = map.current;
 
-        const geojsonData: GeoJSON.FeatureCollection<GeoJSON.Geometry> = {
-            type: 'FeatureCollection',
-            features: celebrations.map(c => ({
-                type: 'Feature',
-                properties: { ...c },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [c.position.lng, c.position.lat],
-                },
-                id: c.id,
-            })),
-        };
+        const currentMarkerIds = Object.keys(markersRef.current).map(Number);
+        const newCelebrationIds = celebrations.map(c => c.id);
 
-        const source = map.current.getSource('celebrations') as GeoJSONSource;
-        if (source) {
-            source.setData(geojsonData);
-        }
-    }, [celebrations]);
+        currentMarkerIds.forEach(id => {
+            if (!newCelebrationIds.includes(id)) {
+                markersRef.current[id].marker.remove();
+                delete markersRef.current[id];
+            }
+        });
 
+        celebrations.forEach(celebration => {
+            if (!markersRef.current[celebration.id]) {
+                const el = document.createElement("div");
+                el.className = "celebration-marker";
 
-    // Handle selection state
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat([celebration.position.lng, celebration.position.lat])
+                    .addTo(currentMap);
+
+                el.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    onSelectFriend(null);
+                    onSelectCelebration(celebration.id);
+                });
+
+                markersRef.current[celebration.id] = { marker, element: el };
+            }
+        });
+    }, [celebrations, onSelectCelebration, onSelectFriend]);
+
     useEffect(() => {
-        if (!map.current || !map.current.isStyleLoaded()) return;
+        if (!map.current) return;
+        const currentMap = map.current;
 
-        if (selectedIdRef.current) {
-            map.current.setFeatureState(
-                { source: 'celebrations', id: selectedIdRef.current },
-                { selected: false }
-            );
+        Object.values(friendMarkersRef.current).forEach(({ marker }) => marker.remove());
+        friendMarkersRef.current = {};
+
+        if (!showFriendsLayer) {
+            return;
         }
-        
-        if (selectedCelebrationId !== null) {
-            map.current.setFeatureState(
-                { source: 'celebrations', id: selectedCelebrationId },
-                { selected: true }
-            );
-            
-            const selectedCelebration = celebrations.find(c => c.id === selectedCelebrationId);
-            if (selectedCelebration) {
-                map.current.flyTo({
-                    center: [selectedCelebration.position.lng, selectedCelebration.position.lat],
+
+        friends.forEach(friend => {
+            const el = document.createElement("div");
+            el.className = "friend-marker";
+            if (friend.id === highlightedFriendId) {
+                el.classList.add("friend-marker--active");
+            }
+
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([friend.location.lng, friend.location.lat])
+                .addTo(currentMap);
+
+            el.addEventListener("click", (event) => {
+                event.stopPropagation();
+                onSelectCelebration(null);
+                onSelectFriend(friend.id);
+                currentMap.flyTo({
+                    center: [friend.location.lng, friend.location.lat],
                     zoom: 14,
                     pitch: 45,
-                    duration: 2000,
-                    essential: true
+                    duration: 1500,
                 });
-            }
-        }
-        
-        selectedIdRef.current = selectedCelebrationId;
+            });
 
+            friendMarkersRef.current[friend.id] = { marker, element: el };
+        });
+    }, [friends, showFriendsLayer, highlightedFriendId, onSelectCelebration, onSelectFriend]);
+
+    useEffect(() => {
+        if (!selectedCelebrationId || !map.current) return;
+
+        const selectedCelebration = celebrations.find(c => c.id === selectedCelebrationId);
+        if (!selectedCelebration) return;
+
+        map.current.flyTo({
+            center: [selectedCelebration.position.lng, selectedCelebration.position.lat],
+            zoom: 14,
+            pitch: 45,
+            duration: 2000,
+            essential: true,
+        });
     }, [selectedCelebrationId, celebrations]);
 
-    return <div ref={mapContainer} className="absolute inset-0 w-full h-full" />;
+    return (
+        <>
+            <style>{`
+                .celebration-marker {
+                    width: 1.25rem;
+                    height: 1.25rem;
+                    border-radius: 9999px;
+                    background-color: oklch(98% 0.01 250 / 0.85);
+                    border: 1px solid oklch(85% 0.01 250);
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+                    cursor: pointer;
+                    transition: transform 0.2s ease;
+                }
+                .celebration-marker:hover {
+                    transform: scale(1.08);
+                }
+                .friend-marker {
+                    width: 1.5rem;
+                    height: 1.5rem;
+                    border-radius: 9999px;
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    border: 2px solid white;
+                    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+                    cursor: pointer;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+                .friend-marker:hover, .friend-marker--active {
+                    transform: scale(1.12);
+                    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.55);
+                }
+            `}</style>
+            <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+        </>
+    );
 };

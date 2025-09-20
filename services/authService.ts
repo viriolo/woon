@@ -1,30 +1,45 @@
+import type { User, NotificationPreferences, Achievement } from "../types";
 
-import type { User, NotificationPreferences } from '../types';
-
-// This service now uses localStorage to simulate a user database, making it functional without a backend.
-
-const USERS_STORAGE_KEY = 'woon_users';
-const SESSION_STORAGE_KEY = 'woon_session_email';
+const USERS_STORAGE_KEY = "woon_users";
+const SESSION_STORAGE_KEY = "woon_session_email";
 
 interface StoredUser extends User {
     passwordHash: string;
 }
 
+const LEVEL_THRESHOLDS = [0, 200, 500, 900, 1400, 2000];
+const EXPERIENCE_PER_CELEBRATION = 75;
+const EXPERIENCE_PER_EVENT = 50;
+
 const generateHandle = (name: string) => {
-    const sanitized = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const sanitized = name.toLowerCase().replace(/[^a-z0-9_]/g, "");
     if (sanitized.length > 0) {
         return sanitized;
     }
-    const condensed = name.toLowerCase().replace(/\s+/g, '');
+    const condensed = name.toLowerCase().replace(/\s+/g, "");
     return condensed || name.toLowerCase();
+};
+
+const ensureUserDefaults = (user: StoredUser): StoredUser => {
+    user.handle = user.handle ?? generateHandle(user.name);
+    user.likedCelebrationIds = user.likedCelebrationIds ?? [];
+    user.savedCelebrationIds = user.savedCelebrationIds ?? [];
+    user.rsvpedEventIds = user.rsvpedEventIds ?? [];
+    user.followingUserIds = user.followingUserIds ?? [];
+    user.streakDays = user.streakDays ?? 1;
+    user.experiencePoints = user.experiencePoints ?? 0;
+    user.level = user.level ?? 1;
+    user.achievements = user.achievements ?? [];
+    return user;
 };
 
 const getStoredUsers = (): StoredUser[] => {
     try {
         const users = localStorage.getItem(USERS_STORAGE_KEY);
-        return users ? JSON.parse(users) : [];
-    } catch (e) {
-        console.error("Failed to parse users from localStorage", e);
+        const parsed: StoredUser[] = users ? JSON.parse(users) : [];
+        return parsed.map(ensureUserDefaults);
+    } catch (error) {
+        console.error("Failed to parse users from localStorage", error);
         return [];
     }
 };
@@ -34,9 +49,29 @@ const saveStoredUsers = (users: StoredUser[]) => {
 };
 
 const hashPassword = (password: string): string => {
-    // In a real app, use a strong hashing algorithm like bcrypt.
-    // This is a simple simulation for demonstration purposes.
-    return `hashed_${password.split('').reverse().join('')}`;
+    return `hashed_${password.split("").reverse().join("")}`;
+};
+
+const recalculateLevel = (user: StoredUser) => {
+    const nextLevel = LEVEL_THRESHOLDS.reduce((level, threshold, index) => {
+        if (user.experiencePoints >= threshold) {
+            return index + 1;
+        }
+        return level;
+    }, 1);
+    user.level = nextLevel;
+};
+
+const addExperience = (user: StoredUser, amount: number) => {
+    user.experiencePoints += amount;
+    recalculateLevel(user);
+};
+
+const awardAchievement = (user: StoredUser, achievement: Achievement) => {
+    const alreadyEarned = user.achievements.some(item => item.id === achievement.id);
+    if (!alreadyEarned) {
+        user.achievements.push(achievement);
+    }
 };
 
 const getUserFromStored = (email: string | null): User | null => {
@@ -44,24 +79,31 @@ const getUserFromStored = (email: string | null): User | null => {
     const users = getStoredUsers();
     const storedUser = users.find(u => u.email === email);
     if (!storedUser) return null;
-    
+
     const { passwordHash, ...user } = storedUser;
-    if (!user.handle) {
-        user.handle = generateHandle(user.name);
-    }
     return user;
-}
+};
+
+const writeUser = (users: StoredUser[], index: number, updater: (user: StoredUser) => void): StoredUser => {
+    const user = ensureUserDefaults(users[index]);
+    updater(user);
+    ensureUserDefaults(user);
+    saveStoredUsers(users);
+    const { passwordHash, ...publicUser } = user;
+    return publicUser;
+};
 
 export const authService = {
     signUp: async (name: string, email: string, password: string): Promise<User> => {
-        await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 500));
         const users = getStoredUsers();
         if (users.some(u => u.email === email)) {
-            throw new Error('An account with this email already exists.');
+            throw new Error("An account with this email already exists.");
         }
 
-        const newUser: StoredUser = {
-            id: new Date().toISOString(),
+        const now = new Date().toISOString();
+        const newUser: StoredUser = ensureUserDefaults({
+            id: now,
             name,
             email,
             passwordHash: hashPassword(password),
@@ -74,8 +116,18 @@ export const authService = {
             likedCelebrationIds: [],
             savedCelebrationIds: [],
             rsvpedEventIds: [],
-        };
-        
+            followingUserIds: [],
+            streakDays: 1,
+            experiencePoints: 0,
+            achievements: [{
+                id: "first_login",
+                name: "First Steps",
+                description: "Signed in to begin your celebration journey.",
+                earnedAt: now,
+            }],
+            level: 1,
+        });
+
         users.push(newUser);
         saveStoredUsers(users);
         localStorage.setItem(SESSION_STORAGE_KEY, email);
@@ -85,35 +137,35 @@ export const authService = {
     },
 
     logIn: async (email: string, password: string): Promise<User> => {
-        await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 500));
         const users = getStoredUsers();
         const storedUser = users.find(u => u.email === email);
 
         if (!storedUser || storedUser.passwordHash !== hashPassword(password)) {
-            throw new Error('Invalid email or password.');
+            throw new Error("Invalid email or password.");
         }
-        
+
         localStorage.setItem(SESSION_STORAGE_KEY, email);
         const { passwordHash, ...userToReturn } = storedUser;
         return userToReturn;
     },
 
-    socialLogIn: async (provider: 'google' | 'facebook'): Promise<User> => {
-        await new Promise(res => setTimeout(res, 700)); // Simulate network delay
+    socialLogIn: async (provider: "google" | "facebook"): Promise<User> => {
+        await new Promise(res => setTimeout(res, 700));
         const users = getStoredUsers();
-        
+
         const mockEmail = `social_user_${provider}@example.com`;
-        const mockName = provider === 'google' ? 'Google User' : 'Facebook User';
+        const mockName = provider === "google" ? "Google User" : "Facebook User";
 
         let storedUser = users.find(u => u.email === mockEmail);
 
         if (!storedUser) {
-            // If user doesn't exist, create a new one (first-time social login)
-            const newUser: StoredUser = {
-                id: new Date().toISOString(),
+            const now = new Date().toISOString();
+            const newUser: StoredUser = ensureUserDefaults({
+                id: now,
                 name: mockName,
                 email: mockEmail,
-                passwordHash: hashPassword('social_login_dummy_password'),
+                passwordHash: hashPassword("social_login_dummy_password"),
                 avatarUrl: undefined,
                 handle: generateHandle(mockName),
                 notificationPreferences: {
@@ -123,7 +175,17 @@ export const authService = {
                 likedCelebrationIds: [],
                 savedCelebrationIds: [],
                 rsvpedEventIds: [],
-            };
+                followingUserIds: [],
+                streakDays: 1,
+                experiencePoints: 0,
+                achievements: [{
+                    id: "first_login",
+                    name: "First Steps",
+                    description: "Signed in to begin your celebration journey.",
+                    earnedAt: now,
+                }],
+                level: 1,
+            });
             users.push(newUser);
             saveStoredUsers(users);
             storedUser = newUser;
@@ -135,59 +197,50 @@ export const authService = {
     },
 
     logOut: async (): Promise<void> => {
-        await new Promise(res => setTimeout(res, 300)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 300));
         localStorage.removeItem(SESSION_STORAGE_KEY);
     },
 
     checkSession: (): User | null => {
-        // This is now a synchronous check against localStorage
         const email = localStorage.getItem(SESSION_STORAGE_KEY);
         return getUserFromStored(email);
     },
 
     updateNotificationPreferences: async (prefs: Partial<NotificationPreferences>): Promise<User> => {
-        await new Promise(res => setTimeout(res, 300)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 300));
         const email = localStorage.getItem(SESSION_STORAGE_KEY);
         if (!email) throw new Error("User not authenticated.");
 
         const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        
-        if (userIndex === -1) throw new Error("User not found.");
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
 
-        users[userIndex].notificationPreferences = {
-            ...users[userIndex].notificationPreferences,
-            ...prefs
-        };
-        saveStoredUsers(users);
-        
-        const { passwordHash, ...updatedUser } = users[userIndex];
-        return updatedUser;
+        return writeUser(users, index, user => {
+            user.notificationPreferences = {
+                ...user.notificationPreferences,
+                ...prefs,
+            };
+        });
     },
-    
+
     toggleLikeStatus: async (celebrationId: number): Promise<User> => {
-        await new Promise(res => setTimeout(res, 100)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 100));
         const email = localStorage.getItem(SESSION_STORAGE_KEY);
         if (!email) throw new Error("User not authenticated.");
 
         const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        
-        if (userIndex === -1) throw new Error("User not found.");
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
 
-        const user = users[userIndex];
-        const isLiked = user.likedCelebrationIds.includes(celebrationId);
-
-        if (isLiked) {
-            user.likedCelebrationIds = user.likedCelebrationIds.filter(id => id !== celebrationId);
-        } else {
-            user.likedCelebrationIds.push(celebrationId);
-        }
-        
-        saveStoredUsers(users);
-        
-        const { passwordHash, ...updatedUser } = user;
-        return updatedUser;
+        return writeUser(users, index, user => {
+            const isLiked = user.likedCelebrationIds.includes(celebrationId);
+            if (isLiked) {
+                user.likedCelebrationIds = user.likedCelebrationIds.filter(id => id !== celebrationId);
+            } else {
+                user.likedCelebrationIds.push(celebrationId);
+                addExperience(user, 5);
+            }
+        });
     },
 
     toggleSaveStatus: async (celebrationId: number): Promise<User> => {
@@ -196,21 +249,41 @@ export const authService = {
         if (!email) throw new Error("User not authenticated.");
 
         const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        if (userIndex === -1) throw new Error("User not found.");
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
 
-        const user = users[userIndex];
-        const isSaved = user.savedCelebrationIds.includes(celebrationId);
+        return writeUser(users, index, user => {
+            const isSaved = user.savedCelebrationIds.includes(celebrationId);
+            if (isSaved) {
+                user.savedCelebrationIds = user.savedCelebrationIds.filter(id => id !== celebrationId);
+            } else {
+                user.savedCelebrationIds.push(celebrationId);
+                addExperience(user, 5);
+            }
+        });
+    },
 
-        if (isSaved) {
-            user.savedCelebrationIds = user.savedCelebrationIds.filter(id => id !== celebrationId);
-        } else {
-            user.savedCelebrationIds.push(celebrationId);
-        }
-        
-        saveStoredUsers(users);
-        const { passwordHash, ...updatedUser } = user;
-        return updatedUser;
+    toggleFollowStatus: async (targetUserId: string): Promise<User> => {
+        await new Promise(res => setTimeout(res, 150));
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
+
+        return writeUser(users, index, user => {
+            if (user.id === targetUserId) {
+                return;
+            }
+            const isFollowing = user.followingUserIds.includes(targetUserId);
+            if (isFollowing) {
+                user.followingUserIds = user.followingUserIds.filter(id => id !== targetUserId);
+            } else {
+                user.followingUserIds.push(targetUserId);
+                addExperience(user, 10);
+            }
+        });
     },
 
     toggleRsvpStatus: async (eventId: string): Promise<User> => {
@@ -219,39 +292,74 @@ export const authService = {
         if (!email) throw new Error("User not authenticated.");
 
         const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        if (userIndex === -1) throw new Error("User not found.");
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
 
-        const user = users[userIndex];
-        const isRsvped = user.rsvpedEventIds.includes(eventId);
-
-        if (isRsvped) {
-            user.rsvpedEventIds = user.rsvpedEventIds.filter(id => id !== eventId);
-        } else {
-            user.rsvpedEventIds.push(eventId);
-        }
-        
-        saveStoredUsers(users);
-        const { passwordHash, ...updatedUser } = user;
-        return updatedUser;
+        return writeUser(users, index, user => {
+            const isRsvped = user.rsvpedEventIds.includes(eventId);
+            if (isRsvped) {
+                user.rsvpedEventIds = user.rsvpedEventIds.filter(id => id !== eventId);
+            } else {
+                user.rsvpedEventIds.push(eventId);
+                addExperience(user, EXPERIENCE_PER_EVENT / 2);
+            }
+        });
     },
 
     updateAvatar: async (base64Image: string): Promise<User> => {
-        await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+        await new Promise(res => setTimeout(res, 500));
         const email = localStorage.getItem(SESSION_STORAGE_KEY);
         if (!email) throw new Error("User not authenticated.");
 
         const users = getStoredUsers();
-        const userIndex = users.findIndex(u => u.email === email);
-        
-        if (userIndex === -1) throw new Error("User not found.");
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
 
-        users[userIndex].avatarUrl = base64Image;
-        saveStoredUsers(users);
-        
-        const { passwordHash, ...updatedUser } = users[userIndex];
-        return updatedUser;
-    }
+        return writeUser(users, index, user => {
+            user.avatarUrl = base64Image;
+        });
+    },
+
+    recordCelebrationContribution: async (): Promise<User> => {
+        await new Promise(res => setTimeout(res, 100));
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
+
+        return writeUser(users, index, user => {
+            user.streakDays = Math.min(user.streakDays + 1, 365);
+            addExperience(user, EXPERIENCE_PER_CELEBRATION);
+            if (user.streakDays === 7) {
+                awardAchievement(user, {
+                    id: "streak_7",
+                    name: "One Week Wonder",
+                    description: "Celebrated seven days in a row.",
+                    earnedAt: new Date().toISOString(),
+                });
+            }
+        });
+    },
+
+    recordEventContribution: async (): Promise<User> => {
+        await new Promise(res => setTimeout(res, 120));
+        const email = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!email) throw new Error("User not authenticated.");
+
+        const users = getStoredUsers();
+        const index = users.findIndex(u => u.email === email);
+        if (index === -1) throw new Error("User not found.");
+
+        return writeUser(users, index, user => {
+            addExperience(user, EXPERIENCE_PER_EVENT);
+            awardAchievement(user, {
+                id: "event_host",
+                name: "Community Host",
+                description: "Published your first community event.",
+                earnedAt: new Date().toISOString(),
+            });
+        });
+    },
 };
-
-
