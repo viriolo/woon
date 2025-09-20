@@ -18,7 +18,10 @@ import { eventService } from './services/eventService';
 import { celebrationService } from './services/celebrationService';
 
 const App: React.FC = () => {
-    const [activeTab, setActiveTab] = useState('today');
+    const [activeTab, setActiveTab] = useState(() => {
+        const savedTab = localStorage.getItem('woon-active-tab');
+        return savedTab || 'today';
+    });
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(false);
     const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
@@ -236,14 +239,18 @@ const App: React.FC = () => {
 
 
     const handleSetTab = (tab: string) => {
+        console.log('handleSetTab called with:', tab, 'currentUser:', currentUser);
         if (tab === 'share' && !currentUser) {
             setIsAuthViewVisible(true);
         } else {
             setActiveTab(tab);
+            localStorage.setItem('woon-active-tab', tab);
+            console.log('activeTab set to:', tab);
         }
     };
 
     const renderContent = () => {
+        console.log('renderContent called with activeTab:', activeTab);
         switch (activeTab) {
             case 'today':
                 return <DiscoveryView 
@@ -259,6 +266,7 @@ const App: React.FC = () => {
             case 'connect':
                 return <ConnectView currentUser={currentUser} onShowEventCreation={() => setIsEventCreationVisible(true)} events={events} onViewEvent={setViewingEvent} />;
             case 'profile':
+                console.log('Rendering ProfileView for profile tab');
                 return <ProfileView currentUser={currentUser} onLogout={handleLogout} onShowAuth={() => setIsAuthViewVisible(true)} onPreferencesChange={handlePreferencesChange} onAvatarChange={handleAvatarChange} celebrations={celebrations} onShowMission={() => setIsMissionViewVisible(true)} />;
             default:
                 return <DiscoveryView 
