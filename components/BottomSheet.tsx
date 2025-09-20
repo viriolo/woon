@@ -10,7 +10,7 @@ interface BottomSheetProps {
 export const BottomSheet: React.FC<BottomSheetProps> = ({ children, isOpen, onStateChange }) => {
     const dragStartRef = useRef<{ y: number } | null>(null);
 
-    const PEEKING_HEIGHT = 120; // The visible height when collapsed, reduced to show more map.
+    const PEEKING_HEIGHT = 160; // The visible height when collapsed, increased to show card previews.
 
     const toggleSheet = useCallback(() => onStateChange(!isOpen), [isOpen, onStateChange]);
 

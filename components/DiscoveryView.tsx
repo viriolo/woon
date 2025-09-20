@@ -84,9 +84,13 @@ const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSp
 export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorrowSpecialDay, celebrations, currentUser, onToggleLike, onToggleSave }) => {
     const [selectedCelebration, setSelectedCelebration] = useState<Celebration | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
     const handleSelectCelebration = useCallback((celebration: Celebration | null) => {
         setSelectedCelebration(celebration);
+        if (celebration) {
+            setIsSheetExpanded(true);
+        }
     }, []);
     
     useEffect(() => {
@@ -114,8 +118,9 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
         }
     };
 
-    const handleSheetStateChange = (isOpen: boolean) => {
-        if (!isOpen) {
+    const handleSheetStateChange = (isExpanded: boolean) => {
+        setIsSheetExpanded(isExpanded);
+        if (!isExpanded && selectedCelebration) {
             setSelectedCelebration(null);
         }
     };
@@ -132,12 +137,15 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
-            <BottomSheet isOpen={!!selectedCelebration} onStateChange={handleSheetStateChange}>
+            <BottomSheet isOpen={isSheetExpanded || !!selectedCelebration} onStateChange={handleSheetStateChange}>
                 {selectedCelebration ? (
                     <CelebrationDetailView 
                         celebration={selectedCelebration}
                         currentUser={currentUser}
-                        onBack={() => handleSelectCelebration(null)}
+                        onBack={() => {
+                            setSelectedCelebration(null);
+                            setIsSheetExpanded(false);
+                        }}
                         onToggleLike={onToggleLike}
                         onToggleSave={onToggleSave}
                         onCommentAdded={handleCommentAdded}
