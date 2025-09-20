@@ -16,22 +16,51 @@ interface DiscoveryViewProps {
     onToggleSave: (celebrationId: number) => void;
 }
 
-const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
-    <div className="inline-block bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-md">
-        <span className="font-bold text-neutral-800">{specialDay.title}</span>
-        <span className="mx-2 text-neutral-400">•</span>
-        <span className="font-medium text-special-primary">{specialDay.date}</span>
-    </div>
+const SpecialDayBadge: React.FC<{
+    specialDay: SpecialDay;
+    isExpanded: boolean;
+    onToggle: () => void;
+}> = ({ specialDay, isExpanded, onToggle }) => (
+    <button
+        onClick={onToggle}
+        className={`bg-white/90 backdrop-blur-md shadow-md transition-all duration-300 cursor-pointer hover:bg-white/95 ${
+            isExpanded
+                ? 'rounded-2xl px-6 py-4 max-w-sm mx-auto'
+                : 'rounded-full px-4 py-2'
+        }`}
+    >
+        <div className="flex items-center justify-center gap-2">
+            <span className="font-bold text-neutral-800">{specialDay.title}</span>
+            <span className="mx-2 text-neutral-400">•</span>
+            <span className="font-medium text-special-primary">{specialDay.date}</span>
+        </div>
+        {isExpanded && (
+            <div className="mt-3 pt-3 border-t border-neutral-200">
+                <p className="text-sm text-neutral-600 leading-relaxed">{specialDay.description}</p>
+                <div className="mt-2">
+                    <span className="inline-block bg-neutral-100 text-neutral-700 text-xs px-2 py-1 rounded-full">
+                        {specialDay.category}
+                    </span>
+                </div>
+            </div>
+        )}
+    </button>
 );
 
 const FloatingHeader: React.FC<{
     specialDay: SpecialDay;
     searchQuery: string;
     onSearchChange: (query: string) => void;
-}> = ({ specialDay, searchQuery, onSearchChange }) => (
+    isSpecialDayExpanded: boolean;
+    onToggleSpecialDay: () => void;
+}> = ({ specialDay, searchQuery, onSearchChange, isSpecialDayExpanded, onToggleSpecialDay }) => (
     <div className="absolute top-4 left-0 right-0 px-4 z-10 flex flex-col items-center gap-3 pointer-events-none">
         <div className="pointer-events-auto">
-            <SpecialDayBadge specialDay={specialDay} />
+            <SpecialDayBadge
+                specialDay={specialDay}
+                isExpanded={isSpecialDayExpanded}
+                onToggle={onToggleSpecialDay}
+            />
         </div>
         <div className="w-full max-w-md mx-auto relative pointer-events-auto">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
@@ -85,6 +114,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
     const [selectedCelebration, setSelectedCelebration] = useState<Celebration | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+    const [isSpecialDayExpanded, setIsSpecialDayExpanded] = useState(false);
 
     const handleSelectCelebration = useCallback((celebration: Celebration | null) => {
         setSelectedCelebration(celebration);
@@ -125,6 +155,10 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
         }
     };
 
+    const handleToggleSpecialDay = () => {
+        setIsSpecialDayExpanded(!isSpecialDayExpanded);
+    };
+
     return (
         <div className="h-full w-full relative">
             <InteractiveMap
@@ -136,6 +170,8 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
                 specialDay={specialDay}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                isSpecialDayExpanded={isSpecialDayExpanded}
+                onToggleSpecialDay={handleToggleSpecialDay}
             />
             <BottomSheet isOpen={isSheetExpanded || !!selectedCelebration} onStateChange={handleSheetStateChange}>
                 {selectedCelebration ? (
