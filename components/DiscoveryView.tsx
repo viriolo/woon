@@ -22,10 +22,13 @@ const SpecialDayBadge: React.FC<{
     onToggle: () => void;
 }> = ({ specialDay, isExpanded, onToggle }) => (
     <button
-        onClick={onToggle}
-        className={`bg-white/90 backdrop-blur-md shadow-md transition-all duration-300 cursor-pointer hover:bg-white/95 ${
+        onClick={(e) => {
+            console.log('SpecialDayBadge button clicked', e);
+            onToggle();
+        }}
+        className={`bg-white/90 backdrop-blur-md shadow-md transition-all duration-300 cursor-pointer hover:bg-white/95 hover:shadow-lg active:scale-95 ${
             isExpanded
-                ? 'rounded-2xl px-6 py-4 max-w-sm mx-auto'
+                ? 'rounded-2xl px-6 py-4 max-w-sm mx-auto w-full'
                 : 'rounded-full px-4 py-2'
         }`}
     >
@@ -54,7 +57,7 @@ const FloatingHeader: React.FC<{
     isSpecialDayExpanded: boolean;
     onToggleSpecialDay: () => void;
 }> = ({ specialDay, searchQuery, onSearchChange, isSpecialDayExpanded, onToggleSpecialDay }) => (
-    <div className="absolute top-4 left-0 right-0 px-4 z-10 flex flex-col items-center gap-3 pointer-events-none">
+    <div className="absolute top-4 left-0 right-0 px-4 z-20 flex flex-col items-center gap-3 pointer-events-none">
         <div className="pointer-events-auto">
             <SpecialDayBadge
                 specialDay={specialDay}
@@ -156,6 +159,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({ specialDay, tomorr
     };
 
     const handleToggleSpecialDay = () => {
+        console.log('Special day toggle clicked, current state:', isSpecialDayExpanded);
         setIsSpecialDayExpanded(!isSpecialDayExpanded);
     };
 
