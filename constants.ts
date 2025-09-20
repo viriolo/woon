@@ -1,6 +1,6 @@
 import type { SpecialDay, Celebration, UserLocation, FriendConnection } from './types';
 
-export const MAPBOX_ACCESS_TOKEN = (import.meta as any)?.env?.VITE_MAPBOX_ACCESS_TOKEN || '';
+export const MAPBOX_ACCESS_TOKEN = (import.meta as any)?.env?.VITE_MAPBOX_ACCESS_TOKEN || (process as any)?.env?.VITE_MAPBOX_ACCESS_TOKEN || '';
 export const GEMINI_API_KEY = (import.meta as any)?.env?.VITE_GEMINI_API_KEY || '';
 
 if (!MAPBOX_ACCESS_TOKEN) {
