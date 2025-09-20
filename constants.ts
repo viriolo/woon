@@ -1,7 +1,17 @@
 import type { SpecialDay, Celebration, UserLocation, FriendConnection } from './types';
 
+console.log('Environment check:', {
+    importMeta: (import.meta as any)?.env,
+    process: typeof process !== 'undefined' ? (process as any)?.env : 'undefined'
+});
+
 export const MAPBOX_ACCESS_TOKEN = (import.meta as any)?.env?.VITE_MAPBOX_ACCESS_TOKEN || (process as any)?.env?.VITE_MAPBOX_ACCESS_TOKEN || '';
 export const GEMINI_API_KEY = (import.meta as any)?.env?.VITE_GEMINI_API_KEY || '';
+
+console.log('Loaded tokens:', {
+    mapbox: MAPBOX_ACCESS_TOKEN ? 'loaded' : 'missing',
+    gemini: GEMINI_API_KEY ? 'loaded' : 'missing'
+});
 
 if (!MAPBOX_ACCESS_TOKEN) {
     console.warn('Mapbox access token is not configured. Set VITE_MAPBOX_ACCESS_TOKEN in your environment.');

@@ -23,6 +23,7 @@ import { celebrationService } from "./services/celebrationService";
 const ACTIVE_TAB_KEY = "woon-active-tab";
 
 const App: React.FC = () => {
+    console.log('App component is loading...');
     const [activeTab, setActiveTab] = useState(() => localStorage.getItem(ACTIVE_TAB_KEY) || "today");
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(false);
