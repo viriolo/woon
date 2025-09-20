@@ -10,6 +10,15 @@ interface StoredUser extends User {
     passwordHash: string;
 }
 
+const generateHandle = (name: string) => {
+    const sanitized = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (sanitized.length > 0) {
+        return sanitized;
+    }
+    const condensed = name.toLowerCase().replace(/\s+/g, '');
+    return condensed || name.toLowerCase();
+};
+
 const getStoredUsers = (): StoredUser[] => {
     try {
         const users = localStorage.getItem(USERS_STORAGE_KEY);
@@ -37,6 +46,9 @@ const getUserFromStored = (email: string | null): User | null => {
     if (!storedUser) return null;
     
     const { passwordHash, ...user } = storedUser;
+    if (!user.handle) {
+        user.handle = generateHandle(user.name);
+    }
     return user;
 }
 
@@ -54,6 +66,7 @@ export const authService = {
             email,
             passwordHash: hashPassword(password),
             avatarUrl: undefined,
+            handle: generateHandle(name),
             notificationPreferences: {
                 dailySpecialDay: true,
                 communityActivity: true,
@@ -102,6 +115,7 @@ export const authService = {
                 email: mockEmail,
                 passwordHash: hashPassword('social_login_dummy_password'),
                 avatarUrl: undefined,
+                handle: generateHandle(mockName),
                 notificationPreferences: {
                     dailySpecialDay: true,
                     communityActivity: true,
@@ -239,3 +253,5 @@ export const authService = {
         return updatedUser;
     }
 };
+
+

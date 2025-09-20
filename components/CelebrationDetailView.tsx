@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Celebration, User, Comment } from '../types';
 import { commentService } from '../services/commentService';
 import { celebrationService } from '../services/celebrationService';
 import { HeartIcon, ArrowLeftIcon, LoadingSpinner, BookmarkIcon } from './icons';
 import { ShareButton } from './ShareButton';
+import { MentionInput } from './MentionInput';
 
 interface CelebrationDetailViewProps {
     celebration: Celebration;
@@ -14,14 +15,88 @@ interface CelebrationDetailViewProps {
     onCommentAdded: (celebrationId: number) => void;
 }
 
-const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
+interface MentionableUser {
+    id: string;
+    name: string;
+    handle: string;
+    avatarUrl?: string;
+}
+
+const buildHandle = (name: string, fallback: string) => {
+    const sanitized = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (sanitized.length > 0) {
+        return sanitized;
+    }
+    const condensed = name.toLowerCase().replace(/\s+/g, '');
+    return condensed || fallback;
+};
+
+const createMentionableUser = (id: string | undefined, name: string | undefined, avatarUrl?: string): MentionableUser | null => {
+    if (!id || !name) {
+        return null;
+    }
+    const handle = buildHandle(name, id.toLowerCase());
+    return { id, name, handle, avatarUrl };
+};
+
+const renderCommentText = (
+    comment: Comment,
+    mentionUsersByHandle: Map<string, MentionableUser>
+) => {
+    const mentionIds = new Set(comment.mentionedUserIds ?? []);
+    if (mentionIds.size === 0) {
+        return comment.text;
+    }
+
+    const parts: React.ReactNode[] = [];
+    const regex = /@([a-z0-9_]+)/gi;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(comment.text)) !== null) {
+        const start = match.index;
+        const end = regex.lastIndex;
+        if (start > lastIndex) {
+            parts.push(comment.text.slice(lastIndex, start));
+        }
+
+        const handle = match[1].toLowerCase();
+        const mentionUser = mentionUsersByHandle.get(handle);
+        const isValidMention = mentionUser && mentionIds.has(mentionUser.id);
+
+        if (isValidMention && mentionUser) {
+            parts.push(
+                <span key={`${comment.id}-${start}`} className="text-special-secondary font-medium">
+                    @{mentionUser.name}
+                </span>
+            );
+        } else {
+            parts.push(comment.text.slice(start, end));
+        }
+
+        lastIndex = end;
+    }
+
+    if (lastIndex < comment.text.length) {
+        parts.push(comment.text.slice(lastIndex));
+    }
+
+    return parts;
+};
+
+const CommentItem: React.FC<{
+    comment: Comment;
+    mentionUsersByHandle: Map<string, MentionableUser>;
+}> = ({ comment, mentionUsersByHandle }) => {
     const avatarUrl = `https://i.pravatar.cc/150?u=${comment.authorId}`;
     return (
         <div className="flex items-start gap-3">
             <img src={avatarUrl} alt={comment.authorName} className="w-8 h-8 rounded-full bg-neutral-200 flex-shrink-0" />
             <div className="flex-grow bg-neutral-200/60 rounded-lg px-3 py-2">
                 <p className="font-bold text-sm text-neutral-800">{comment.authorName}</p>
-                <p className="text-sm text-neutral-700">{comment.text}</p>
+                <p className="text-sm text-neutral-700">
+                    {renderCommentText(comment, mentionUsersByHandle)}
+                </p>
             </div>
         </div>
     );
@@ -29,10 +104,9 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
 
 export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ celebration, currentUser, onBack, onToggleLike, onToggleSave, onCommentAdded }) => {
     const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState('');
     const [isLoadingComments, setIsLoadingComments] = useState(true);
     const [isPostingComment, setIsPostingComment] = useState(false);
-    
+
     const isLiked = !!currentUser?.likedCelebrationIds.includes(celebration.id);
     const isSaved = !!currentUser?.savedCelebrationIds.includes(celebration.id);
 
@@ -43,27 +117,62 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
                 const fetchedComments = await commentService.getCommentsForCelebration(celebration.id);
                 setComments(fetchedComments);
             } catch (error) {
-                console.error("Failed to fetch comments:", error);
+                console.error('Failed to fetch comments:', error);
             } finally {
                 setIsLoadingComments(false);
             }
         };
         fetchComments();
     }, [celebration.id]);
-    
-    const handlePostComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newComment.trim() || !currentUser) return;
+
+    const mentionableUsers = useMemo(() => {
+        const userMap = new Map<string, MentionableUser>();
+
+        const addUser = (user: MentionableUser | null) => {
+            if (!user) return;
+            if (!userMap.has(user.id)) {
+                userMap.set(user.id, user);
+            }
+        };
+
+        addUser(createMentionableUser(celebration.authorId, celebration.author));
+        if (currentUser) {
+            const handleSource = currentUser.handle ?? buildHandle(currentUser.name, currentUser.id.toLowerCase());
+            addUser({ id: currentUser.id, name: currentUser.name, handle: handleSource, avatarUrl: currentUser.avatarUrl });
+        }
+        comments.forEach(comment => {
+            addUser(createMentionableUser(comment.authorId, comment.authorName));
+            (comment.mentionedUserIds ?? []).forEach(id => {
+                if (!userMap.has(id)) {
+                    addUser({ id, name: id, handle: buildHandle(id, id), avatarUrl: undefined });
+                }
+            });
+        });
+
+        return Array.from(userMap.values());
+    }, [celebration.author, celebration.authorId, comments, currentUser]);
+
+    const mentionUsersByHandle = useMemo(() => {
+        const map = new Map<string, MentionableUser>();
+        mentionableUsers.forEach(user => {
+            map.set(user.handle.toLowerCase(), user);
+        });
+        return map;
+    }, [mentionableUsers]);
+
+    const handlePostComment = async ({ text, mentionedUserIds }: { text: string; mentionedUserIds: string[] }) => {
+        if (!currentUser) {
+            return;
+        }
 
         setIsPostingComment(true);
         try {
-            const addedComment = await commentService.addComment(celebration.id, newComment.trim(), currentUser);
+            const addedComment = await commentService.addComment(celebration.id, text, currentUser, mentionedUserIds);
             await celebrationService.incrementCommentCount(celebration.id);
             setComments(prev => [...prev, addedComment]);
             onCommentAdded(celebration.id);
-            setNewComment('');
         } catch (error) {
-            console.error("Failed to post comment:", error);
+            console.error('Failed to post comment:', error);
         } finally {
             setIsPostingComment(false);
         }
@@ -104,7 +213,13 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
                         <div className="flex justify-center py-4"><LoadingSpinner className="w-6 h-6 text-special-primary" /></div>
                     ) : (
                         comments.length > 0 ? (
-                           comments.map(comment => <CommentItem key={comment.id} comment={comment} />)
+                           comments.map(comment => (
+                               <CommentItem
+                                   key={comment.id}
+                                   comment={comment}
+                                   mentionUsersByHandle={mentionUsersByHandle}
+                               />
+                           ))
                         ) : (
                             <p className="text-sm text-neutral-500 text-center py-4">Be the first to comment!</p>
                         )
@@ -113,19 +228,13 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({ ce
             </div>
 
             {currentUser && (
-                <form onSubmit={handlePostComment} className="flex-shrink-0 mt-4 flex gap-2">
-                    <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        disabled={isPostingComment}
-                        className="w-full p-3 bg-white border border-neutral-300 rounded-full placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                <div className="flex-shrink-0 mt-4">
+                    <MentionInput
+                        mentionableUsers={mentionableUsers}
+                        isSubmitting={isPostingComment}
+                        onSubmit={handlePostComment}
                     />
-                    <button type="submit" disabled={isPostingComment || !newComment.trim()} className="px-4 py-2 bg-special-primary text-white font-bold rounded-full hover:opacity-90 transition disabled:opacity-50">
-                        {isPostingComment ? <LoadingSpinner className="w-5 h-5"/> : 'Post'}
-                    </button>
-                </form>
+                </div>
             )}
         </div>
     );

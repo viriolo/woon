@@ -33,6 +33,7 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
+  handle?: string;
   notificationPreferences: NotificationPreferences;
   likedCelebrationIds: number[];
   savedCelebrationIds: number[];
@@ -60,4 +61,6 @@ export interface Comment {
   authorName: string;
   text: string;
   timestamp: string;
+  mentionedUserIds?: string[];
 }
+
