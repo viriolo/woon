@@ -14,7 +14,9 @@ interface ProfileViewProps {
     onShowMission: () => void;
 }
 
-const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
+const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => {
+    console.log('LoggedOutView rendering');
+    return (
     <div className="flex-grow flex flex-col items-center justify-center text-center p-4 animate-fade-in">
         <h2 className="text-3xl font-display text-special-primary mb-2">Your Profile</h2>
         <p className="text-neutral-700 max-w-md mb-6">
@@ -27,7 +29,8 @@ const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => 
             Log In or Sign Up
         </button>
     </div>
-);
+    );
+};
 
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -202,5 +205,6 @@ const LoggedInView: React.FC<{ user: User; onLogout: () => void; onPreferencesCh
 };
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, onAvatarChange, celebrations, onShowMission }) => {
+    console.log('ProfileView rendering, currentUser:', currentUser);
     return currentUser ? <LoggedInView user={currentUser} onLogout={onLogout} onPreferencesChange={onPreferencesChange} onAvatarChange={onAvatarChange} celebrations={celebrations} onShowMission={onShowMission} /> : <LoggedOutView onShowAuth={onShowAuth} />;
 };
