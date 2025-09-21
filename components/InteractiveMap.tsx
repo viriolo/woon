@@ -30,6 +30,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     const [userLocation, setUserLocation] = useState<UserLocation>(USER_LOCATION);
     const [locationStatus, setLocationStatus] = useState<"loading" | "granted" | "denied">("loading");
+    const [mapLoadError, setMapLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         const getUserLocation = async () => {
@@ -111,15 +112,30 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     useEffect(() => {
         if (map.current || !mapContainer.current) return;
 
-        map.current = new mapboxgl.Map({
-            accessToken: MAPBOX_ACCESS_TOKEN,
-            container: mapContainer.current,
-            style: "mapbox://styles/mapbox/light-v11",
-            center: [userLocation.lng, userLocation.lat],
-            zoom: 12,
-            pitch: 30,
-            antialias: true,
-        });
+        console.log('Initializing map with token:', MAPBOX_ACCESS_TOKEN ? 'token present' : 'token missing');
+
+        if (!MAPBOX_ACCESS_TOKEN) {
+            console.error('Mapbox access token is missing, map will not load');
+            setMapLoadError('Map configuration missing. Please check environment variables.');
+            return;
+        }
+
+        try {
+            map.current = new mapboxgl.Map({
+                accessToken: MAPBOX_ACCESS_TOKEN,
+                container: mapContainer.current,
+                style: "mapbox://styles/mapbox/light-v11",
+                center: [userLocation.lng, userLocation.lat],
+                zoom: 12,
+                pitch: 30,
+                antialias: true,
+            });
+            console.log('Map initialized successfully');
+            setMapLoadError(null);
+        } catch (error) {
+            console.error('Failed to initialize map:', error);
+            setMapLoadError(`Failed to load map: ${error}`);
+        }
 
         const currentMap = map.current;
 
@@ -224,6 +240,23 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             essential: true,
         });
     }, [selectedCelebrationId, celebrations]);
+
+    if (mapLoadError) {
+        return (
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-100">
+                <div className="text-center p-6">
+                    <h3 className="text-lg font-semibold text-neutral-800 mb-2">Map Unavailable</h3>
+                    <p className="text-sm text-neutral-600">{mapLoadError}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-4 py-2 bg-special-primary text-white rounded-full text-sm font-medium hover:opacity-90"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
