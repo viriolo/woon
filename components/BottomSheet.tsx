@@ -32,7 +32,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ children, isOpen, onSt
 
     return (
         <div
-            className="fixed bottom-0 left-0 right-0 z-10 bg-neutral-100/80 backdrop-blur-lg rounded-t-2xl shadow-2xl transition-transform duration-300 ease-in-out"
+            className="fixed bottom-0 left-0 right-0 z-20 rounded-t-[2rem] bg-background-light/95 shadow-brand backdrop-blur-xl transition-transform duration-300 ease-in-out ring-1 ring-white/55"
             style={{
                 height: '70vh',
                 transform: isOpen ? 'translateY(0)' : `translateY(calc(100% - ${PEEKING_HEIGHT}px))`,
@@ -45,9 +45,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ children, isOpen, onSt
                 className="w-full h-8 flex justify-center items-center flex-shrink-0 cursor-pointer"
                 onClick={toggleSheet}
             >
-                <div className="w-10 h-1.5 bg-neutral-400 rounded-full" />
+                <div className="h-1.5 w-10 rounded-full bg-ink-300" />
             </div>
-            <div className="overflow-y-auto h-full pb-24 px-4">
+            <div className="h-full overflow-y-auto px-6 pb-28">
                 {children}
             </div>
         </div>

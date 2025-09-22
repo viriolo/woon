@@ -1,6 +1,6 @@
-import React from 'react';
-import type { User } from '../types';
-import { LoadingSpinner } from './icons';
+import React from "react";
+import type { User } from "../types";
+import { LoadingSpinner } from "./icons";
 
 interface HeaderProps {
     isAuthLoading: boolean;
@@ -10,29 +10,33 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ isAuthLoading, currentUser, setActiveTab, onShowAuth }) => {
-    
-    const handleButtonClick = () => {
+    const handleClick = () => {
         if (currentUser) {
-            setActiveTab('profile');
+            setActiveTab("profile");
         } else {
             onShowAuth();
         }
     };
 
     return (
-        <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-white/50 to-transparent">
-            <h1 className="text-3xl font-celebration text-special-primary">Woon</h1>
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-4 pt-4 sm:px-6 sm:pt-6">
+            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface-light/90 px-4 py-2 text-sm font-semibold text-ink-700 shadow-brand ring-1 ring-white/40">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-white font-bold">W</span>
+                <div className="hidden sm:block">
+                    <p className="text-xs uppercase tracking-[0.2em] text-ink-500">Neighborly</p>
+                    <p className="text-sm font-semibold text-ink-900">Celebrations</p>
+                </div>
+            </div>
             <button
+                type="button"
+                onClick={handleClick}
                 disabled={isAuthLoading}
-                onClick={handleButtonClick}
-                className="px-4 py-2 text-sm font-bold rounded-full text-special-primary hover:bg-special-primary/10 transition-colors flex items-center justify-center min-w-[5rem] disabled:opacity-50"
+                className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface-light/90 px-4 py-2 text-sm font-semibold text-ink-700 shadow-brand ring-1 ring-white/40 transition hover:translate-y-0.5 hover:bg-primary/10 disabled:opacity-60"
             >
                 {isAuthLoading ? (
-                    <LoadingSpinner className="h-5 w-5" />
+                    <LoadingSpinner className="h-4 w-4" />
                 ) : (
-                    <span>
-                        {currentUser ? 'Profile' : 'Log In'}
-                    </span>
+                    <span>{currentUser ? "View profile" : "Sign in"}</span>
                 )}
             </button>
         </header>

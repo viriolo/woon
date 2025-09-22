@@ -21,6 +21,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     showFriendsLayer,
     onSelectFriend,
     highlightedFriendId,
+    onMapReady,
 }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
@@ -138,6 +139,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         }
 
         const currentMap = map.current;
+        if (currentMap && onMapReady) {
+            onMapReady(currentMap);
+        }
 
         currentMap.on("load", () => {
             updateUserMarker(currentMap);

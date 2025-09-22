@@ -274,7 +274,7 @@ const App: React.FC = () => {
         localStorage.setItem(ACTIVE_TAB_KEY, tab);
     }, [currentUser]);
 
-    const renderContent = () => {
+    const isMapView = activeTab === "today";\r\n\r\n    const renderContent = () => {
         switch (activeTab) {
             case "today":
                 return (
@@ -349,10 +349,10 @@ const App: React.FC = () => {
                 setActiveTab={handleSetTab}
                 onShowAuth={() => setIsAuthViewVisible(true)}
             />
-            <main className="flex-grow overflow-hidden relative">
+            <main className={`relative flex-1 overflow-hidden ${isMapView ? "bg-transparent" : "bg-background-light"}`}> 
                 {renderContent()}
             </main>
-            <BottomNavBar activeTab={activeTab} setActiveTab={handleSetTab} />
+            <BottomNavBar activeTab={activeTab} setActiveTab={handleSetTab} isMapView={isMapView} />
             {isAuthViewVisible && (
                 <AuthView
                     onClose={() => setIsAuthViewVisible(false)}

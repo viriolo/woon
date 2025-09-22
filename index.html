@@ -4,72 +4,49 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Woon App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Woon • Neighborhood Celebrations</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Poppins:wght@700;800&family=Lobster&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Lobster&display=swap" rel="stylesheet">
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        'special-primary': 'oklch(62% 0.17 240)',
-                        'special-secondary': 'oklch(55% 0.15 240)',
-                        'special-surface': 'oklch(98% 0.02 240)',
-                        'neutral-900': 'oklch(20% 0.01 250)',
-                        'neutral-800': 'oklch(25% 0.01 250)',
-                        'neutral-700': 'oklch(40% 0.01 250)',
-                        'neutral-500': 'oklch(60% 0.01 250)',
-                        'neutral-300': 'oklch(85% 0.01 250)',
-                        'neutral-200': 'oklch(91% 0.01 250)',
-                        'neutral-100': 'oklch(96% 0.01 250)',
-                        'neutral-50': 'oklch(98.5% 0.01 250)',
+                        primary: "#f47b25",
+                        "primary-dark": "#d8630d",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221710",
+                        "surface-light": "rgba(248,247,245,0.92)",
+                        "surface-dark": "rgba(34,23,16,0.92)",
+                        "ink-900": "#1c120c",
+                        "ink-700": "#3d3129",
+                        "ink-500": "#6f6055",
+                        "ink-300": "#b9ada4",
+                        "ink-200": "#ded6cf",
+                        "ink-100": "#efe9e4",\r\n                        "special-primary": "#f47b25",\r\n                        "special-secondary": "#d8630d",\r\n                        "special-surface": "rgba(248,247,245,0.92)"
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Poppins', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                        manrope: ['Manrope', 'sans-serif'],
                         celebration: ['Lobster', 'cursive'],
                     },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.5s ease-in-out',
-                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                        'blink': 'blink 1s step-end infinite',
+                    borderRadius: {
+                        xl: '1.5rem',
                     },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: 0 },
-                            '100%': { opacity: 1 },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: 0 },
-                            '100%': { transform: 'translateY(0)', opacity: 1 },
-                        },
-                        blink: {
-                            '0%, 100%': { opacity: 1 },
-                            '50%': { opacity: 0 },
-                        }
-                    }
+                    boxShadow: {
+                        brand: '0 20px 45px -25px rgba(34, 23, 16, 0.45)',
+                    },
                 }
             }
         }
     </script>
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "mapbox-gl": "https://esm.sh/mapbox-gl@3.4.0",
-    "add-to-calendar-button-react": "https://esm.sh/add-to-calendar-button-react@2.4.2"
-  }
-}
-</script>
 </head>
-<body class="bg-neutral-50 text-neutral-800 font-sans antialiased overflow-hidden">
+<body class="bg-background-light text-ink-900 font-display antialiased overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

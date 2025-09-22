@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import type mapboxgl from "mapbox-gl";
 import type { SpecialDay, Celebration, User, FriendConnection } from "../types";
 import { friendService } from "../services/friendService";
 import { InteractiveMap } from "./InteractiveMap";
 import { CelebrationDetailView } from "./CelebrationDetailView";
 import { SearchIcon, HeartIcon, ChatBubbleLeftIcon, UsersIcon } from "./icons";
 import { BottomSheet } from "./BottomSheet";
+import { USER_LOCATION } from "../constants";
 
 interface DiscoveryViewProps {
     specialDay: SpecialDay;
@@ -16,44 +18,75 @@ interface DiscoveryViewProps {
     onToggleFollow: (userId: string) => void;
 }
 
-const SpecialDayBadge: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
-    <div className="inline-block bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-md">
-        <span className="font-bold text-neutral-800">{specialDay.title}</span>
-        <span className="mx-2 text-neutral-400">&bull;</span>
-        <span className="font-medium text-special-primary">{specialDay.date}</span>
+const TodaySpotlightCard: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
+    <div className="w-full max-w-[17rem] rounded-2xl bg-surface-light/95 px-5 py-4 text-ink-700 shadow-brand ring-1 ring-white/40 backdrop-blur">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Today’s special</p>
+        <h2 className="mt-2 text-xl font-bold text-ink-900">{specialDay.title}</h2>
+        <p className="mt-1 text-sm text-ink-500 overflow-hidden text-ellipsis">{specialDay.description}</p>
+    </div>
+);
+
+const IconButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className = "", children, ...props }) => (
+    <button
+        {...props}
+        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-surface-light/90 text-ink-700 shadow-brand transition hover:bg-primary/10 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+    >
+        {children}
+    </button>
+);
+
+const MapUtilityStack: React.FC<{
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    onRecenter: () => void;
+    disabled: boolean;
+}> = ({ onZoomIn, onZoomOut, onRecenter, disabled }) => (
+    <div className="flex flex-col rounded-2xl bg-surface-light/95 p-2 shadow-brand ring-1 ring-white/40 backdrop-blur">
+        <IconButton onClick={onZoomIn} disabled={disabled} className="rounded-xl rounded-b-none border-b border-white/40">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"></path>
+            </svg>
+        </IconButton>
+        <IconButton onClick={onZoomOut} disabled={disabled} className="rounded-none">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z"></path>
+            </svg>
+        </IconButton>
+        <IconButton onClick={onRecenter} disabled={disabled} className="rounded-xl rounded-t-none">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                <path d="M229.33,98.21,53.41,33a16,16,0,0,0-20.51,19.89l65.21,175.92A16,16,0,0,0,128,232h.21a16,16,0,0,0,15-11.29l23.56-76.56,76.56-23.56a16,16,0,0,0,.62-30.38ZM224,113.3l-76.56,23.56a16,16,0,0,0-10.58,10.58L113.3,224h0L48,48l175.82,65.22Z"></path>
+            </svg>
+        </IconButton>
     </div>
 );
 
 const FloatingHeader: React.FC<{
-    specialDay: SpecialDay;
     searchQuery: string;
     onSearchChange: (query: string) => void;
     onToggleFriendsLayer: () => void;
     showFriendsLayer: boolean;
-}> = ({ specialDay, searchQuery, onSearchChange, onToggleFriendsLayer, showFriendsLayer }) => (
-    <div className="absolute top-4 left-0 right-0 px-4 z-10 flex flex-col items-center gap-3 pointer-events-none">
-        <div className="pointer-events-auto">
-            <SpecialDayBadge specialDay={specialDay} />
-        </div>
-        <div className="w-full max-w-md mx-auto relative pointer-events-auto flex gap-2">
-            <div className="relative flex-1">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
+}> = ({ searchQuery, onSearchChange, onToggleFriendsLayer, showFriendsLayer }) => (
+    <div className="pointer-events-none absolute inset-x-0 top-4 z-10 px-4 sm:px-6">
+        <div className="pointer-events-auto flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-1 items-center rounded-full bg-surface-light/95 px-4 py-2.5 text-ink-700 shadow-brand ring-1 ring-white/40 backdrop-blur">
+                <SearchIcon className="mr-2 h-5 w-5 text-ink-500" />
                 <input
                     type="text"
-                    placeholder="Search celebrations..."
+                    placeholder="Search celebrations"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white/90 backdrop-blur-md border border-neutral-200/50 rounded-full shadow-md placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition"
+                    className="w-full bg-transparent text-sm font-medium text-ink-800 placeholder:text-ink-400 focus:outline-none"
                 />
             </div>
             <button
+                type="button"
                 onClick={onToggleFriendsLayer}
-                className={`flex items-center gap-2 px-4 py-3 rounded-full border transition-colors ${
-                    showFriendsLayer ? "bg-special-primary text-white border-special-primary" : "bg-white/90 text-neutral-700 border-neutral-200"
+                className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none ${
+                    showFriendsLayer ? "bg-primary text-white shadow-brand" : "bg-surface-light/95 text-ink-700 shadow-brand ring-1 ring-white/40"
                 }`}
             >
-                <UsersIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Nearby</span>
+                <UsersIcon className="h-5 w-5" />
+                Nearby creators
             </button>
         </div>
     </div>
@@ -66,34 +99,27 @@ const CelebrationCard: React.FC<{
 }> = ({ celebration, isSaved, onClick }) => (
     <button
         onClick={onClick}
-        className="w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-300 bg-white/70 hover:bg-white hover:shadow-lg hover:scale-[1.02]"
+        type="button"
+        className="flex w-full items-center gap-4 rounded-2xl bg-white/90 p-4 text-left shadow-brand ring-1 ring-white/60 transition hover:-translate-y-1 hover:bg-white"
     >
-        <img src={celebration.imageUrl} alt={celebration.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
-        <div className="flex-grow overflow-hidden text-left">
-            <h3 className="font-bold text-neutral-800 truncate">{celebration.title}</h3>
-            <p className="text-sm text-neutral-600">by {celebration.author}</p>
-        </div>
-        <div className="flex-shrink-0 flex items-center gap-4 text-sm text-neutral-600">
-             <div className="flex items-center gap-1">
-                <HeartIcon className="w-5 h-5 text-neutral-400" />
-                <span>{celebration.likes}</span>
+        <img src={celebration.imageUrl} alt={celebration.title} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
+        <div className="flex flex-1 flex-col overflow-hidden">
+            <h3 className="truncate text-base font-semibold text-ink-900">{celebration.title}</h3>
+            <p className="text-sm text-ink-500">by {celebration.author}</p>
+            <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-ink-500">
+                <span className="inline-flex items-center gap-1"><HeartIcon className="h-4 w-4" />{celebration.likes}</span>
+                <span className="inline-flex items-center gap-1"><ChatBubbleLeftIcon className="h-4 w-4" />{celebration.commentCount}</span>
+                {isSaved && <span className="text-primary">Saved</span>}
             </div>
-             <div className="flex items-center gap-1">
-                <ChatBubbleLeftIcon className="w-5 h-5 text-neutral-400" />
-                <span>{celebration.commentCount}</span>
-            </div>
-             {isSaved && (
-                <span className="text-xs font-semibold text-special-primary">Saved</span>
-             )}
         </div>
     </button>
 );
 
 const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSpecialDay }) => (
-    <div className="w-full rounded-xl p-4 bg-neutral-800 text-white">
-        <h3 className="text-xs font-bold uppercase tracking-wider opacity-70">Tomorrow</h3>
-        <p className="text-lg font-bold text-white">{tomorrowSpecialDay.title}</p>
-        <p className="text-sm opacity-80 mt-1">{tomorrowSpecialDay.description}</p>
+    <div className="rounded-2xl bg-primary text-white px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Tomorrow</p>
+        <p className="mt-2 text-lg font-bold">{tomorrowSpecialDay.title}</p>
+        <p className="mt-1 text-sm text-white/80 overflow-hidden text-ellipsis">{tomorrowSpecialDay.description}</p>
     </div>
 );
 
@@ -102,26 +128,22 @@ const FriendCard: React.FC<{
     isFollowing: boolean;
     onFollowToggle: (friendId: string) => void;
 }> = ({ friend, isFollowing, onFollowToggle }) => (
-    <div className="space-y-4">
-        <div className="flex items-center gap-3">
-            <img src={friend.avatarUrl} alt={friend.name} className="w-12 h-12 rounded-full object-cover" />
+    <div className="space-y-6">
+        <div className="flex items-center gap-4">
+            <img src={friend.avatarUrl} alt={friend.name} className="h-14 w-14 rounded-xl object-cover" />
             <div>
-                <h3 className="text-lg font-semibold text-neutral-800">{friend.name}</h3>
-                <p className="text-sm text-neutral-500">
-                    {friend.isNearby ? "A short walk away" : "In your wider community"}
-                </p>
+                <h3 className="text-lg font-semibold text-ink-900">{friend.name}</h3>
+                <p className="text-sm text-ink-500">{friend.celebrationMessage}</p>
             </div>
         </div>
-        <p className="text-neutral-700 bg-neutral-100/70 rounded-xl px-4 py-3">
-            {friend.celebrationMessage}
-        </p>
         <button
+            type="button"
             onClick={() => onFollowToggle(friend.id)}
-            className={`w-full py-3 px-4 font-bold rounded-lg transition-colors ${
-                isFollowing ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-special-primary text-white hover:opacity-90"
+            className={`w-full rounded-full px-4 py-2 text-sm font-semibold transition ${
+                isFollowing ? "bg-ink-200 text-ink-700" : "bg-primary text-white"
             }`}
         >
-            {isFollowing ? "Following" : "Follow & say hi"}
+            {isFollowing ? "Following" : "Follow"}
         </button>
     </div>
 );
@@ -141,6 +163,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
     const [searchInput, setSearchInput] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [showFriendsLayer, setShowFriendsLayer] = useState(true);
+    const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
 
     const bookmarkedIds = currentUser?.savedCelebrationIds ?? [];
     const followingIds = currentUser?.followingUserIds ?? [];
@@ -206,8 +229,27 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
         }
     };
 
+    const handleZoom = useCallback((direction: "in" | "out") => {
+        if (!mapInstance) return;
+        if (direction === "in") {
+            mapInstance.zoomIn({ duration: 350 });
+        } else {
+            mapInstance.zoomOut({ duration: 350 });
+        }
+    }, [mapInstance]);
+
+    const handleRecenter = useCallback(() => {
+        if (!mapInstance) return;
+        mapInstance.flyTo({
+            center: [USER_LOCATION.lng, USER_LOCATION.lat],
+            zoom: 12,
+            pitch: 45,
+            duration: 1200,
+        });
+    }, [mapInstance]);
+
     return (
-        <div className="h-full w-full relative">
+        <div className="relative h-full w-full">
             <InteractiveMap
                 celebrations={filteredCelebrations}
                 selectedCelebrationId={selectedCelebration?.id ?? null}
@@ -216,14 +258,18 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                 showFriendsLayer={showFriendsLayer}
                 onSelectFriend={handleSelectFriend}
                 highlightedFriendId={selectedFriendId}
+                onMapReady={setMapInstance}
             />
             <FloatingHeader
-                specialDay={specialDay}
                 searchQuery={searchInput}
                 onSearchChange={setSearchInput}
                 onToggleFriendsLayer={() => setShowFriendsLayer(prev => !prev)}
                 showFriendsLayer={showFriendsLayer}
             />
+            <div className="pointer-events-none absolute bottom-[11rem] left-4 right-4 flex justify-between gap-4 sm:left-6 sm:right-6 md:left-1/2 md:right-auto md:w-full md:max-w-3xl md:-translate-x-1/2">
+                <div className="pointer-events-auto"><TodaySpotlightCard specialDay={specialDay} /></div>
+                <div className="pointer-events-auto"><MapUtilityStack onZoomIn={() => handleZoom("in")} onZoomOut={() => handleZoom("out")} onRecenter={handleRecenter} disabled={!mapInstance} /></div>
+            </div>
             <BottomSheet isOpen={!!selectedCelebration || !!selectedFriend} onStateChange={handleSheetStateChange}>
                 {selectedCelebration ? (
                     <CelebrationDetailView
@@ -241,15 +287,21 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                         onFollowToggle={onToggleFollow}
                     />
                 ) : (
-                    <div className="space-y-3">
-                        {filteredCelebrations.map(c => (
-                            <CelebrationCard
-                                key={c.id}
-                                celebration={c}
-                                isSaved={bookmarkedIds.includes(c.id)}
-                                onClick={() => handleSelectCelebration(c)}
-                            />
-                        ))}
+                    <div className="space-y-5">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-ink-900">Nearby celebrations</h3>
+                            <span className="text-xs font-medium uppercase tracking-[0.2em] text-ink-400">{filteredCelebrations.length} spots</span>
+                        </div>
+                        <div className="space-y-4">
+                            {filteredCelebrations.map(c => (
+                                <CelebrationCard
+                                    key={c.id}
+                                    celebration={c}
+                                    isSaved={bookmarkedIds.includes(c.id)}
+                                    onClick={() => handleSelectCelebration(c)}
+                                />
+                            ))}
+                        </div>
                         <TomorrowCard tomorrowSpecialDay={tomorrowSpecialDay} />
                     </div>
                 )}

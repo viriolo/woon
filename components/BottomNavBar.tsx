@@ -1,68 +1,64 @@
-
-import React from 'react';
-import { HomeIcon, AddCircleIcon, ConnectIcon, ProfileIcon } from './icons';
+import React from "react";
+import { HomeIcon, AddCircleIcon, ConnectIcon, ProfileIcon } from "./icons";
 
 interface BottomNavBarProps {
     activeTab: string;
     setActiveTab: (tab: string) => void;
+    isMapView: boolean;
 }
 
-interface NavItemProps {
-    label: string;
-    icon: React.ReactNode;
-    isActive: boolean;
-    onClick: () => void;
-    isCenter?: boolean;
-}
+const baseItemClasses = "flex flex-col items-center gap-1 text-xs font-semibold transition-colors";
 
-const NavItem: React.FC<NavItemProps> = ({ label, icon, isActive, onClick, isCenter = false }) => {
-    const baseClasses = "flex flex-col items-center justify-center transition-all duration-300 ease-in-out";
-    const activeClasses = "text-special-primary";
-    const inactiveClasses = "text-neutral-500 hover:text-special-secondary";
-
-    if (isCenter) {
-        return (
-            <button
-                onClick={onClick}
-                className={`${baseClasses} -mt-8 h-16 w-16 rounded-full bg-gradient-to-br from-special-primary to-purple-500 shadow-lg shadow-special-primary/20 ring-4 ring-neutral-50`}
-            >
-                <div className={`h-8 w-8 text-white`}>
-                    {icon}
-                </div>
-            </button>
-        );
+const getLabel = (id: string) => {
+    switch (id) {
+        case "today":
+            return "Map";
+        case "share":
+            return "Celebrate";
+        case "connect":
+            return "Connect";
+        case "profile":
+            return "Profile";
+        default:
+            return id;
     }
-    
-    return (
-        <button onClick={onClick} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses} w-16`}>
-            <div className="h-6 w-6">{icon}</div>
-            <span className={`text-xs mt-1 font-medium transition-opacity ${isActive ? 'opacity-100' : 'opacity-0'}`}>{label}</span>
-        </button>
-    );
 };
 
-
-export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeTab, setActiveTab }) => {
+export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeTab, setActiveTab, isMapView }) => {
     const navItems = [
-        { id: 'today', label: 'Today', icon: <HomeIcon /> },
-        { id: 'share', label: 'Share', icon: <AddCircleIcon />, isCenter: true },
-        { id: 'connect', label: 'Connect', icon: <ConnectIcon /> },
-        { id: 'profile', label: 'Profile', icon: <ProfileIcon /> }
+        { id: "today", icon: <HomeIcon className="h-6 w-6" /> },
+        { id: "connect", icon: <ConnectIcon className="h-6 w-6" /> },
+        { id: "profile", icon: <ProfileIcon className="h-6 w-6" /> },
     ];
 
     return (
-        <nav className="absolute bottom-0 left-0 right-0 z-20">
-            <div className="mx-auto max-w-md h-20 bg-neutral-100/70 backdrop-blur-lg border-t border-neutral-200/50 rounded-t-2xl flex justify-around items-center">
-                 {navItems.map((item, index) => (
-                    <NavItem
-                        key={item.id}
-                        label={item.label}
-                        icon={item.icon}
-                        isActive={activeTab === item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        isCenter={item.isCenter}
-                    />
-                 ))}
+        <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-30 pb-6">
+            <div className="pointer-events-auto relative mx-auto flex max-w-md items-end justify-between rounded-t-[1.75rem] bg-background-light/95 px-6 pb-4 pt-8 shadow-brand backdrop-blur">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab("share")}
+                    className="absolute left-1/2 top-0 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-brand transition-transform hover:scale-105"
+                >
+                    <AddCircleIcon className="h-8 w-8" />
+                </button>
+                <div className="flex w-full items-end justify-around pt-1">
+                    {navItems.map(({ id, icon }) => {
+                        const isActive = activeTab === id;
+                        return (
+                            <button
+                                type="button"
+                                key={id}
+                                onClick={() => setActiveTab(id)}
+                                className={`${baseItemClasses} ${
+                                    isActive ? "text-primary" : "text-ink-500 hover:text-primary"
+                                } ${id === "today" && isMapView ? "text-primary" : ""}`}
+                            >
+                                <span className="flex h-8 w-8 items-center justify-center">{icon}</span>
+                                <span>{getLabel(id)}</span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </nav>
     );
