@@ -336,23 +336,34 @@ const App: React.FC = () => {
 
     if (isInitializing) {
         return (
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-neutral-50">
-                <h1 className="text-4xl font-celebration text-special-primary mb-4">Woon</h1>
-                <LoadingSpinner className="h-8 w-8 text-special-primary" />
+            <div className="app-shell flex min-h-screen items-center justify-center">
+                <div className="glass-panel px-10 py-12 text-center space-y-4">
+                    <span className="section-heading">Woon</span>
+                    <p className="text-heading text-2xl">Setting the stage for today's celebrations</p>
+                    <LoadingSpinner className="mx-auto h-10 w-10 text-primary" />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen w-screen flex flex-col bg-neutral-50">
-            <Header
-                isAuthLoading={isAuthLoading}
-                currentUser={currentUser}
-                setActiveTab={handleSetTab}
-                onShowAuth={() => setIsAuthViewVisible(true)}
-            />
-            <main className={`relative flex-1 overflow-hidden ${isMapView ? "bg-transparent" : "bg-background-light"}`}> 
-                {renderContent()}
+        <div className="app-shell flex min-h-screen flex-col">
+            {isMapView && (
+                <Header
+                    isAuthLoading={isAuthLoading}
+                    currentUser={currentUser}
+                    setActiveTab={handleSetTab}
+                    onShowAuth={() => setIsAuthViewVisible(true)}
+                />
+            )}
+            <main className="relative flex-1 overflow-hidden">
+                {isMapView ? (
+                    renderContent()
+                ) : (
+                    <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-4 pb-28 pt-10 sm:px-6 lg:px-8">
+                        {renderContent()}
+                    </div>
+                )}
             </main>
             <BottomNavBar activeTab={activeTab} setActiveTab={handleSetTab} isMapView={isMapView} />
             {isAuthViewVisible && (
@@ -385,3 +396,8 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
+

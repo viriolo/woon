@@ -26,7 +26,7 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
                 const value = segment.slice(1).toLowerCase();
                 if (mentionSet.has(value)) {
                     return (
-                        <span key={`${comment.id}-${index}`} className="text-special-primary font-medium">
+                        <span key={`${comment.id}-${index}`} className="text-primary font-semibold">
                             {segment}
                         </span>
                     );
@@ -38,17 +38,17 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
 
     return (
         <div className="flex items-start gap-3">
-            <img src={avatarUrl} alt={comment.authorName} className="w-8 h-8 rounded-full bg-neutral-200 flex-shrink-0" />
-            <div className="flex-grow bg-neutral-200/60 rounded-lg px-3 py-2">
-                <p className="font-bold text-sm text-neutral-800">{comment.authorName}</p>
-                <p className="text-sm text-neutral-700">{formattedText}</p>
+            <img src={avatarUrl} alt={comment.authorName} className="h-9 w-9 flex-shrink-0 rounded-full object-cover" />
+            <div className="surface-card surface-card--tight flex-1 rounded-2xl px-4 py-3">
+                <p className="text-sm font-semibold text-ink-900">{comment.authorName}</p>
+                <p className="text-sm text-ink-600">{formattedText}</p>
             </div>
         </div>
     );
 };
 
 const composeShareMessage = (celebration: Celebration) =>
-    `${celebration.title} — ${celebration.description}\n\nSee how ${celebration.author} is celebrating today on Woon!`;
+    `${celebration.title} - ${celebration.description}\n\nSee how ${celebration.author} is celebrating today on Woon!`;
 
 export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
     celebration,
@@ -84,8 +84,8 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
         fetchComments();
     }, [celebration.id]);
 
-    const handlePostComment = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handlePostComment = async (event: React.FormEvent) => {
+        event.preventDefault();
         if (!newComment.trim() || !currentUser) return;
 
         setIsPostingComment(true);
@@ -116,125 +116,126 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
                 await navigator.clipboard.writeText(`${message}\n${shareData.url}`);
                 setShareStatus("Copied to clipboard");
             }
-            setTimeout(() => setShareStatus(null), 2000);
+            setTimeout(() => setShareStatus(null), 1800);
         } catch (error) {
             console.error("Share failed:", error);
             setShareStatus("Unable to share");
-            setTimeout(() => setShareStatus(null), 2000);
+            setTimeout(() => setShareStatus(null), 1800);
         }
     };
 
     const insertMention = (name: string) => {
-        const handle = name.trim().split(" ")[0].toLowerCase();
-        setNewComment(prev => {
-            const insertion = prev.endsWith(" ") || prev.length === 0 ? "" : " ";
-            return `${prev}${insertion}@${handle} `;
-        });
+        const trimmed = newComment.trimEnd();
+        const separator = trimmed.length === 0 || trimmed.endsWith("@") ? "" : " ";
+        setNewComment(`${trimmed}${separator}@${name.split(" ")[0]} `);
     };
 
     return (
-        <div className="h-full flex flex-col animate-fade-in">
-            <header className="flex items-center gap-4 flex-shrink-0 mb-4">
-                <button onClick={onBack} className="p-2 rounded-full hover:bg-neutral-200 transition-colors" aria-label="Back to celebrations">
-                    <ArrowLeftIcon className="w-6 h-6 text-neutral-600" />
-                </button>
-                <div className="flex items-center gap-3 flex-grow overflow-hidden">
-                    <h2 className="text-xl font-bold truncate flex-1">{celebration.title}</h2>
-                    <button
-                        onClick={() => onToggleFollow(celebration.authorId)}
-                        className={`px-3 py-1 text-sm font-semibold rounded-full border transition-colors ${
-                            isFollowingAuthor ? "bg-green-100 text-green-800 border-green-300" : "bg-white text-special-primary border-special-primary"
-                        }`}
-                    >
-                        {isFollowingAuthor ? "Following" : "Follow"}
-                    </button>
-                </div>
-            </header>
+        <div className="flex flex-col gap-6">
+            <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-semibold text-ink-500">
+                <ArrowLeftIcon className="h-4 w-4" />
+                Back to map
+            </button>
 
-            <div className="flex-grow overflow-y-auto space-y-4">
+            <div className="surface-card overflow-hidden p-0">
                 <div className="relative">
-                    <img src={celebration.imageUrl} alt={celebration.title} className="w-full h-48 object-cover rounded-lg" />
+                    <img src={celebration.imageUrl} alt={celebration.title} className="h-64 w-full object-cover" />
                     <div className="absolute top-3 right-3 flex gap-2">
                         <button
                             onClick={() => onToggleSave(celebration.id)}
-                            className={`p-2 rounded-full bg-white/90 shadow transition ${isSaved ? "text-special-primary" : "text-neutral-500"}`}
+                            className={`pill-button h-10 w-10 justify-center rounded-full bg-white/90 shadow ${isSaved ? "text-primary" : "text-ink-400"}`}
                             aria-label={isSaved ? "Remove from saved" : "Save celebration"}
                         >
-                            <BookmarkIcon className="w-5 h-5" />
+                            <BookmarkIcon className="h-4 w-4" />
                         </button>
                         <button
                             onClick={handleShare}
-                            className="p-2 rounded-full bg-white/90 text-neutral-600 shadow transition hover:text-special-primary"
+                            className="pill-button h-10 w-10 justify-center rounded-full bg-white/90 text-ink-500 shadow hover:text-primary"
                             aria-label="Share celebration"
                         >
-                            <ShareIcon className="w-5 h-5" />
+                            <ShareIcon className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
-                {shareStatus && (
-                    <p className="text-xs text-center text-neutral-500">{shareStatus}</p>
-                )}
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-neutral-600">by <span className="font-bold">{celebration.author}</span></p>
-                        <p className="text-xs text-neutral-400">#{celebration.authorId}</p>
-                    </div>
-                    <button
-                        onClick={() => onToggleLike(celebration.id)}
-                        className="flex items-center gap-2 p-2 rounded-full transition-colors group"
-                    >
-                        <HeartIcon className={`w-6 h-6 transition-all ${isLiked ? "text-red-500 scale-110" : "text-neutral-400 group-hover:text-red-400"}`} />
-                        <span className="text-sm font-medium text-neutral-600">{celebration.likes}</span>
-                    </button>
-                </div>
-
-                <p className="text-neutral-700">{celebration.description}</p>
-
-                <div className="border-t border-neutral-200 pt-4 space-y-4">
+                <div className="space-y-4 px-6 py-6">
                     <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-neutral-800">Comments ({celebration.commentCount + Math.max(0, comments.length - celebration.commentCount)})</h3>
-                        {mentionSuggestions.length > 0 && (
-                            <div className="flex items-center gap-2 text-xs text-neutral-500">
-                                <span>Tag friends:</span>
-                                <div className="flex gap-1">
-                                    {mentionSuggestions.slice(0, 3).map(friend => (
-                                        <button
-                                            key={friend.id}
-                                            onClick={() => insertMention(friend.name)}
-                                            className="px-2 py-1 bg-neutral-200 rounded-full hover:bg-neutral-300 transition"
-                                        >
-                                            @{friend.name.split(" ")[0]}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        <div>
+                            <p className="text-heading text-xl">{celebration.title}</p>
+                            <p className="text-sm text-ink-500">by <span className="font-semibold text-ink-700">{celebration.author}</span></p>
+                            <p className="text-xs text-ink-400">#{celebration.authorId}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button type="button" onClick={() => onToggleFollow(celebration.authorId)} className="pill-button pill-muted">
+                                {isFollowingAuthor ? "Following" : "Follow"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onToggleLike(celebration.id)}
+                                className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-sm font-semibold text-ink-500 transition hover:text-primary"
+                            >
+                                <HeartIcon className={`h-5 w-5 transition ${isLiked ? "text-red-500" : ""}`} />
+                                {celebration.likes}
+                            </button>
+                        </div>
                     </div>
-                    {isLoadingComments ? (
-                        <div className="flex justify-center py-4"><LoadingSpinner className="w-6 h-6 text-special-primary" /></div>
-                    ) : (
-                        comments.length > 0 ? (
-                            comments.map(comment => <CommentItem key={comment.id} comment={comment} />)
-                        ) : (
-                            <p className="text-sm text-neutral-500 text-center py-4">Be the first to comment!</p>
-                        )
-                    )}
+
+                    <p className="text-sm leading-relaxed text-ink-600">{celebration.description}</p>
+
+                    {shareStatus && <p className="text-xs text-ink-400">{shareStatus}</p>}
                 </div>
             </div>
 
+            <section className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-heading text-lg">Comments ({comments.length || celebration.commentCount})</h3>
+                    {mentionSuggestions.length > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-ink-500">
+                            <span>Tag friends:</span>
+                            <div className="flex gap-1">
+                                {mentionSuggestions.slice(0, 3).map(friend => (
+                                    <button
+                                        key={friend.id}
+                                        type="button"
+                                        onClick={() => insertMention(friend.name)}
+                                        className="tag-chip bg-white/80"
+                                    >
+                                        @{friend.name.split(" ")[0]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {isLoadingComments ? (
+                    <div className="flex justify-center py-6">
+                        <LoadingSpinner className="h-6 w-6 text-primary" />
+                    </div>
+                ) : comments.length ? (
+                    <div className="space-y-3">
+                        {comments.map(comment => (
+                            <CommentItem key={comment.id} comment={comment} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="surface-card surface-card--tight px-5 py-6 text-center text-sm text-ink-500">
+                        Be the first to comment!
+                    </div>
+                )}
+            </section>
+
             {currentUser && (
-                <form onSubmit={handlePostComment} className="flex-shrink-0 mt-4 flex gap-2">
+                <form onSubmit={handlePostComment} className="flex items-center gap-3">
                     <input
                         type="text"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment... use @ to mention"
                         disabled={isPostingComment}
-                        className="w-full p-3 bg-white border border-neutral-300 rounded-full placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        className="flex-1 rounded-full border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-700 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                     />
-                    <button type="submit" disabled={isPostingComment || !newComment.trim()} className="px-4 py-2 bg-special-primary text-white font-bold rounded-full hover:opacity-90 transition disabled:opacity-50">
-                        {isPostingComment ? <LoadingSpinner className="w-5 h-5"/> : "Post"}
+                    <button type="submit" disabled={isPostingComment || !newComment.trim()} className="pill-button pill-accent">
+                        {isPostingComment ? <LoadingSpinner className="h-5 w-5" /> : "Post"}
                     </button>
                 </form>
             )}

@@ -4,11 +4,11 @@ import { generateDecorationIdeasStream, generateCelebrationDetailsFromImage } fr
 import { celebrationService } from "../services/celebrationService";
 import { SparklesIcon, LoadingSpinner, CheckCircleIcon, CameraIcon, XIcon } from "./icons";
 
-const SectionShell: React.FC<{ title?: string; subtitle?: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
-    <section className="rounded-3xl bg-surface-light px-6 py-6 shadow-brand ring-1 ring-white/50">
+const SectionCard: React.FC<{ title?: string; subtitle?: string; children: React.ReactNode; tone?: "default" | "muted" }> = ({ title, subtitle, children, tone = "default" }) => (
+    <section className={`surface-card ${tone === "muted" ? "surface-card--tight" : ""} px-6 py-6 space-y-5`}>
         {(title || subtitle) && (
-            <header className="mb-4 space-y-1">
-                {title && <h2 className="text-lg font-semibold text-ink-900">{title}</h2>}
+            <header className="space-y-1">
+                {title && <h2 className="text-heading text-xl">{title}</h2>}
                 {subtitle && <p className="text-sm text-ink-500">{subtitle}</p>}
             </header>
         )}
@@ -44,27 +44,23 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
     }, [theme, items, skill, time]);
 
     return (
-        <SectionShell
-            title="Need a little inspiration?"
-            subtitle={`Describe what you have on hand and we'll dream up ${theme.toLowerCase()} ideas.`}
-        >
-            <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-2 text-sm font-semibold text-primary">
-                    <SparklesIcon className="h-4 w-4" />
-                    Creative mode
-                </div>
+        <SectionCard title="Need a little inspiration?" subtitle={`Tell us what you have and we'll shape ${theme.toLowerCase()} ideas.`}>
+            <div className="flex flex-col gap-4">
+                <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-2 text-sm font-semibold text-primary">
+                    <SparklesIcon className="h-4 w-4" /> Creative mode
+                </span>
                 <textarea
                     value={items}
                     onChange={(e) => setItems(e.target.value)}
-                    placeholder="Color paper, string lights, mason jars..."
-                    className="w-full rounded-2xl border border-transparent bg-white/70 p-4 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    placeholder="Cardboard, string lights, chalk, mason jars..."
+                    className="rounded-2xl border border-transparent bg-white/80 p-4 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     rows={3}
                 />
                 <div className="grid gap-3 sm:grid-cols-2">
                     <select
                         value={skill}
                         onChange={(e) => setSkill(e.target.value)}
-                        className="w-full rounded-xl border border-transparent bg-white/70 px-4 py-3 text-sm font-medium text-ink-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="rounded-xl border border-transparent bg-white/80 px-4 py-3 text-sm font-medium text-ink-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     >
                         <option>Beginner</option>
                         <option>Intermediate</option>
@@ -73,7 +69,7 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
                     <select
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
-                        className="w-full rounded-xl border border-transparent bg-white/70 px-4 py-3 text-sm font-medium text-ink-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="rounded-xl border border-transparent bg-white/80 px-4 py-3 text-sm font-medium text-ink-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     >
                         <option>Under 30 minutes</option>
                         <option>1-2 hours</option>
@@ -81,27 +77,26 @@ const AIGenerator: React.FC<{ theme: string }> = ({ theme }) => {
                     </select>
                 </div>
                 <button
+                    type="button"
                     onClick={handleGenerate}
                     disabled={isLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:opacity-60"
+                    className="pill-button pill-accent w-full justify-center"
                 >
                     {isLoading ? "Thinking..." : "Generate decoration ideas"}
                 </button>
                 {(suggestion || isLoading) && (
-                    <div className="min-h-[5rem] rounded-2xl bg-white/70 p-4 font-mono text-sm text-ink-700">
+                    <div className="min-h-[5rem] rounded-2xl bg-white/80 p-4 font-mono text-sm leading-relaxed text-ink-700">
                         {suggestion}
-                        {isLoading && !suggestion && (
-                            <span className="ml-1 inline-block h-4 w-2 animate-blink bg-primary" />
-                        )}
+                        {isLoading && !suggestion && <span className="ml-1 inline-block h-4 w-2 animate-blink bg-primary" />}
                     </div>
                 )}
                 {error && <p className="text-sm font-medium text-red-500">{error}</p>}
             </div>
-        </SectionShell>
+        </SectionCard>
     );
 };
 
-const CameraView: React.FC<{ onCapture: (dataUrl: string) => void; onClose: () => void }> = ({ onCapture, onClose }) => {
+const CameraOverlay: React.FC<{ onCapture: (dataUrl: string) => void; onClose: () => void }> = ({ onCapture, onClose }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -145,13 +140,13 @@ const CameraView: React.FC<{ onCapture: (dataUrl: string) => void; onClose: () =
     };
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-ink-900/80 backdrop-blur">
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-ink-900/85 backdrop-blur">
             <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
-            {error && <p className="absolute top-4 rounded-full bg-red-500/80 px-4 py-2 text-sm text-white">{error}</p>}
-            <button onClick={onClose} className="absolute right-6 top-6 text-white">
+            {error && <p className="absolute top-6 rounded-full bg-red-500/80 px-4 py-2 text-sm text-white">{error}</p>}
+            <button onClick={onClose} className="absolute right-8 top-8 text-white">
                 <XIcon className="h-8 w-8" />
             </button>
-            <button onClick={handleCapture} className="absolute bottom-10 h-20 w-20 rounded-full border-4 border-white bg-white/70 shadow-brand" />
+            <button onClick={handleCapture} className="absolute bottom-12 h-20 w-20 rounded-full border-4 border-white bg-white/80 shadow-brand" />
             <canvas ref={canvasRef} className="hidden" />
         </div>
     );
@@ -201,7 +196,6 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
     };
 
     const handleSubmit = async () => {
-        e.preventDefault();
         if (!title || !description || !imagePreview) {
             setError("Please add a photo, title, and description.");
             return;
@@ -227,126 +221,115 @@ export const CreateView: React.FC<CreateViewProps> = ({ user, specialDay, onCele
 
     if (isSuccess) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-background-light px-6 text-center text-ink-900">
-                <CheckCircleIcon className="mb-6 h-16 w-16 text-primary" />
-                <h2 className="text-3xl font-semibold">Celebration posted!</h2>
-                <p className="mt-2 text-sm text-ink-500">Jumping back to the neighborhood map so you can see it live.</p>
+            <div className="flex w-full justify-center">
+                <div className="glass-panel flex max-w-md flex-col items-center gap-4 px-10 py-12 text-center text-ink-900">
+                    <CheckCircleIcon className="h-14 w-14 text-primary" />
+                    <h2 className="text-heading text-2xl">Celebration posted!</h2>
+                    <p className="text-sm text-ink-500">Jumping back to the neighborhood map so you can see it live.</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="relative flex min-h-screen flex-col bg-background-light text-ink-900">
-            {isCameraOpen && <CameraView onCapture={setImagePreview} onClose={() => setIsCameraOpen(false)} />}
+        <div className="flex w-full flex-col gap-8 text-ink-900">
+            {isCameraOpen && <CameraOverlay onCapture={setImagePreview} onClose={() => setIsCameraOpen(false)} />}
 
-            <header className="sticky top-0 z-20 border-b border-white/60 bg-background-light/90 px-5 py-4 backdrop-blur">
-                <div className="flex items-center justify-center">
-                    <h1 className="text-base font-semibold uppercase tracking-[0.3em] text-ink-500">Create</h1>
+            <SectionCard tone="muted">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <span className="inline-flex items-center gap-3 rounded-full bg-white px-5 py-2 text-sm font-semibold text-ink-700 shadow-brand">
+                        <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-white">{specialDay.title.charAt(0)}</span>
+                        Today: {specialDay.title}
+                    </span>
+                    <h1 className="text-heading text-3xl">Share your celebration</h1>
+                    <p className="max-w-md text-sm text-ink-500">
+                        Post a moment from today and inspire neighbors to join in.
+                    </p>
                 </div>
-            </header>
+            </SectionCard>
 
-            <main className="flex-1 space-y-8 overflow-y-auto px-5 pb-32 pt-6">
-                <SectionShell>
-                    <div className="space-y-5 text-center">
-                        <div className="inline-flex items-center gap-3 rounded-full bg-primary/15 px-5 py-2 text-sm font-semibold text-primary">
-                            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-white">{specialDay.title.charAt(0)}</span>
-                            <span>Today: {specialDay.title}</span>
-                        </div>
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-semibold text-ink-900">Share your celebration</h2>
-                            <p className="text-sm text-ink-500">Snap a photo, add a few details, and inspire neighbors to join in.</p>
-                        </div>
-                    </div>
-                </SectionShell>
-
-                <AIGenerator theme={specialDay.title} />
-
-                <SectionShell title="Tell the neighborhood" subtitle="A photo helps your celebration pop to the top of the map.">
-                    <div className="space-y-4">
-                        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-ink-200 bg-white/70 px-6 py-10 text-center">
-                            {imagePreview ? (
-                                <div className="relative w-full max-w-sm">
-                                    <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover shadow-brand" />
-                                    <button
-                                        type="button"
-                                        onClick={() => setImagePreview(null)}
-                                        className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-ink-900/80 text-white shadow-lg"
-                                    >
-                                        <XIcon className="h-4 w-4" />
+            <SectionCard title="What are you sharing?" subtitle="A photo helps your celebration pop to the top of the map.">
+                <div className="flex flex-col gap-5">
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-ink-200 bg-white/80 px-6 py-10 text-center">
+                        {imagePreview ? (
+                            <div className="relative w-full max-w-sm">
+                                <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover shadow-brand" />
+                                <button
+                                    type="button"
+                                    onClick={() => setImagePreview(null)}
+                                    className="absolute -right-3 -top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-900/85 text-white shadow-lg"
+                                >
+                                    <XIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-4">
+                                <p className="text-sm font-medium text-ink-500">Add a highlight from today</p>
+                                <div className="flex flex-col items-center gap-3 sm:flex-row">
+                                    <label className="pill-button pill-muted cursor-pointer">
+                                        Upload from device
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={isLoading} />
+                                    </label>
+                                    <button type="button" onClick={() => setIsCameraOpen(true)} className="pill-button pill-muted">
+                                        <CameraIcon className="h-5 w-5" /> Use camera
                                     </button>
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <p className="text-sm font-medium text-ink-500">Feature a photo from today's celebration</p>
-                                    <div className="flex flex-col items-center gap-3 sm:flex-row">
-                                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink-700 shadow-brand transition hover:-translate-y-0.5">
-                                            Upload from device
-                                            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={isLoading} />
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsCameraOpen(true)}
-                                            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink-700 shadow-brand transition hover:-translate-y-0.5"
-                                        >
-                                            <CameraIcon className="h-5 w-5" />
-                                            Use camera
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {imagePreview && (
-                            <button
-                                type="button"
-                                onClick={handleGenerateDetails}
-                                disabled={isGeneratingDetails}
-                                className="flex w-full items-center justify-center gap-2 rounded-full bg-primary/15 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-60"
-                            >
-                                {isGeneratingDetails ? <LoadingSpinner className="h-4 w-4" /> : <SparklesIcon className="h-5 w-5" />}
-                                {isGeneratingDetails ? "Generating..." : "Let AI suggest a title & description"}
-                            </button>
+                            </div>
                         )}
+                    </div>
 
-                        <div className="space-y-3">
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="What should we call it?"
-                                className="w-full rounded-2xl border border-transparent bg-white/70 px-4 py-3 text-sm font-medium text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                disabled={isLoading}
-                            />
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Share a quick story, tip, or invitation..."
-                                rows={4}
-                                className="w-full rounded-2xl border border-transparent bg-white/70 px-4 py-3 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                disabled={isLoading}
-                            />
-                        </div>
-
-                        {error && <p className="text-center text-sm font-semibold text-red-500">{error}</p>}
-
+                    {imagePreview && (
                         <button
                             type="button"
-                            onClick={handleSubmit}
-                            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:opacity-60"
-                            disabled={isLoading || !imagePreview}
+                            onClick={handleGenerateDetails}
+                            disabled={isGeneratingDetails}
+                            className="pill-button pill-muted w-full justify-center bg-accent-soft text-primary"
                         >
-                            {isLoading ? (
-                                <>
-                                    <LoadingSpinner className="h-5 w-5" />
-                                    Posting...
-                                </>
-                            ) : (
-                                "Post celebration"
-                            )}
+                            {isGeneratingDetails ? <LoadingSpinner className="h-4 w-4" /> : <SparklesIcon className="h-5 w-5" />}
+                            {isGeneratingDetails ? "Generating..." : "Let AI suggest a title & description"}
                         </button>
+                    )}
+
+                    <div className="space-y-3">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Give it a name"
+                            className="w-full rounded-2xl border border-transparent bg-white/80 px-4 py-3 text-sm font-medium text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            disabled={isLoading}
+                        />
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Share the story, details, or invite..."
+                            rows={4}
+                            className="w-full rounded-2xl border border-transparent bg-white/80 px-4 py-3 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            disabled={isLoading}
+                        />
                     </div>
-                </SectionShell>
-            </main>
+
+                    {error && <p className="text-center text-sm font-semibold text-red-500">{error}</p>}
+
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="pill-button pill-accent w-full justify-center"
+                        disabled={isLoading || !imagePreview}
+                    >
+                        {isLoading ? (
+                            <>
+                                <LoadingSpinner className="h-5 w-5" />
+                                Posting...
+                            </>
+                        ) : (
+                            "Post celebration"
+                        )}
+                    </button>
+                </div>
+            </SectionCard>
+
+            <AIGenerator theme={specialDay.title} />
         </div>
     );
 };

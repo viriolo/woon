@@ -33,11 +33,11 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeTab, setActive
 
     return (
         <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-30 pb-6">
-            <div className="pointer-events-auto relative mx-auto flex max-w-md items-end justify-between rounded-t-[1.75rem] bg-background-light/95 px-6 pb-4 pt-8 shadow-brand backdrop-blur">
+            <div className="pointer-events-auto relative mx-auto flex max-w-md items-end justify-between rounded-t-[2rem] bg-white/90 px-6 pb-4 pt-8 shadow-brand ring-1 ring-white/60 backdrop-blur">
                 <button
                     type="button"
                     onClick={() => setActiveTab("share")}
-                    className="absolute left-1/2 top-0 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-brand transition-transform hover:scale-105"
+                    className="absolute left-1/2 top-0 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-brand transition-transform hover:scale-105 ring-4 ring-white"
                 >
                     <AddCircleIcon className="h-8 w-8" />
                 </button>

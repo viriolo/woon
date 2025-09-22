@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import type { User, Event } from '../types';
-import { eventService } from '../services/eventService';
-import { XCircleIcon, LoadingSpinner, CheckCircleIcon } from './icons';
-import { AddToCalendarButton } from 'add-to-calendar-button-react';
+import React, { useState } from "react";
+import type { User, Event } from "../types";
+import { eventService } from "../services/eventService";
+import { XCircleIcon, LoadingSpinner, CheckCircleIcon } from "./icons";
+import { AddToCalendarButton } from "add-to-calendar-button-react";
 
 interface EventCreationViewProps {
     user: User;
@@ -11,38 +11,35 @@ interface EventCreationViewProps {
 }
 
 export const EventCreationView: React.FC<EventCreationViewProps> = ({ user, onClose, onEventCreated }) => {
-    const [title, setTitle] = useState('');
-    const [date, setDate] = useState('');
-    const [time, setTime] = useState('');
-    const [location, setLocation] = useState('');
-    const [description, setDescription] = useState('');
-    const [error, setError] = useState('');
+    const [title, setTitle] = useState("");
+    const [date, setDate] = useState("");
+    const [time, setTime] = useState("");
+    const [location, setLocation] = useState("");
+    const [description, setDescription] = useState("");
+    const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (eventObj: React.FormEvent) => {
+        eventObj.preventDefault();
         if (!title || !date || !time || !location || !description) {
             setError("All fields are required.");
             return;
         }
 
-        setError('');
+        setError("");
         setIsLoading(true);
 
         try {
-            const newEvent = await eventService.createEvent(
-                { title, date, time, location, description },
-                user
-            );
+            const newEvent = await eventService.createEvent({ title, date, time, location, description }, user);
             setCreatedEvent(newEvent);
         } catch (err: any) {
-            setError(err.message || 'An error occurred while creating the event.');
+            setError(err.message || "An error occurred while creating the event.");
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     const handleCloseSuccess = () => {
         if (createdEvent) {
             onEventCreated(createdEvent);
@@ -51,44 +48,34 @@ export const EventCreationView: React.FC<EventCreationViewProps> = ({ user, onCl
     };
 
     if (createdEvent) {
-        const [hours, minutes] = createdEvent.time.split(':').map(Number);
         const endDate = new Date(`${createdEvent.date}T${createdEvent.time}`);
-        endDate.setHours(endDate.getHours() + 1); // Assume 1 hour duration
-        const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
-        
-        return (
-             <div className="fixed inset-0 z-50 bg-neutral-50 flex flex-col items-center justify-center p-4">
-                <div className="w-full max-w-lg text-center animate-fade-in">
-                    <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h2 className="text-3xl font-display font-bold text-special-primary">
-                        Event Published!
-                    </h2>
-                     <p className="text-neutral-500 mt-2 mb-6">
-                        Your event, "{createdEvent.title}", is now live for the community.
-                    </p>
-                    
-                    <div className="inline-block my-4">
-                       <AddToCalendarButton
-                            name={createdEvent.title}
-                            description={createdEvent.description}
-                            location={createdEvent.location}
-                            startDate={createdEvent.date}
-                            endDate={createdEvent.date}
-                            startTime={createdEvent.time}
-                            endTime={endTime}
-                            timeZone="currentBrowser"
-                            buttonStyle="default"
-                            lightMode="light"
-                            label="Add to Calendar"
-                            options={['Apple','Google','iCal','Outlook.com','Yahoo']}
-                        />
-                    </div>
+        endDate.setHours(endDate.getHours() + 1);
+        const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
 
-                     <button
-                        onClick={handleCloseSuccess}
-                        className="w-full max-w-xs mx-auto py-3 px-4 flex justify-center items-center gap-2 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition"
-                    >
-                       Done
+        return (
+            <div className="modal-backdrop" onClick={handleCloseSuccess}>
+                <div className="modal-surface max-w-md space-y-6 text-center" onClick={eventObj => eventObj.stopPropagation()}>
+                    <CheckCircleIcon className="mx-auto h-14 w-14 text-emerald-500" />
+                    <div className="space-y-2">
+                        <h2 className="text-heading text-2xl text-ink-900">Event published!</h2>
+                        <p className="text-sm text-ink-500">Your event "{createdEvent.title}" is now live for the community.</p>
+                    </div>
+                    <AddToCalendarButton
+                        name={createdEvent.title}
+                        description={createdEvent.description}
+                        location={createdEvent.location}
+                        startDate={createdEvent.date}
+                        endDate={createdEvent.date}
+                        startTime={createdEvent.time}
+                        endTime={endTime}
+                        timeZone="currentBrowser"
+                        buttonStyle="rounded"
+                        lightMode="light"
+                        label="Add to calendar"
+                        options={["Apple", "Google", "iCal", "Outlook.com", "Yahoo"]}
+                    />
+                    <button type="button" onClick={handleCloseSuccess} className="pill-button pill-accent w-full justify-center">
+                        Done
                     </button>
                 </div>
             </div>
@@ -96,63 +83,76 @@ export const EventCreationView: React.FC<EventCreationViewProps> = ({ user, onCl
     }
 
     return (
-        <div className="fixed inset-0 z-50 bg-neutral-50 flex flex-col">
-            <div className="relative w-full h-full max-w-lg mx-auto bg-neutral-50 p-4 animate-slide-up overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <header className="flex items-center justify-between py-4">
-                    <h2 className="text-3xl font-display font-bold text-special-primary">
-                        Create Event
-                    </h2>
-                     <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900 transition-colors" aria-label="Close event creation">
-                        <XCircleIcon className="w-8 h-8" />
-                    </button>
-                </header>
-                
-                <p className="text-neutral-500 mb-6">
-                    Organize a gathering for your community to celebrate together.
-                </p>
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-surface max-w-lg space-y-6" onClick={eventObj => eventObj.stopPropagation()}>
+                <button onClick={onClose} className="absolute right-6 top-6 text-ink-400 transition hover:text-ink-600" aria-label="Close event creation">
+                    <XCircleIcon className="h-7 w-7" />
+                </button>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <header className="space-y-2 pr-8">
+                    <span className="section-heading text-ink-400">Host a gathering</span>
+                    <h2 className="text-heading text-2xl">Create an event</h2>
+                    <p className="text-sm text-ink-500">Invite neighbors to celebrate together with clear details and timing.</p>
+                </header>
+
+                <form onSubmit={handleSubmit} className="space-y-3">
                     <input
-                        type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Event Title" required disabled={isLoading}
-                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Event title"
+                        required
+                        disabled={isLoading}
+                        className="w-full rounded-xl border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                         <input
-                            type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                            required disabled={isLoading}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            required
+                            disabled={isLoading}
+                            className="w-full rounded-xl border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                         />
-                         <input
-                            type="time" value={time} onChange={(e) => setTime(e.target.value)}
-                            required disabled={isLoading}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
+                        <input
+                            type="time"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
+                            required
+                            disabled={isLoading}
+                            className="w-full rounded-xl border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
                         />
                     </div>
                     <input
-                        type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                        placeholder="Location (e.g., Central Park)" required disabled={isLoading}
-                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
-                    />
-                     <textarea
-                        value={description} onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Describe your event..." rows={5} required disabled={isLoading}
-                        className="w-full p-3 bg-white border border-neutral-300 rounded-lg placeholder-neutral-500 focus:ring-2 focus:ring-special-primary focus:outline-none transition disabled:opacity-50"
-                    />
-                    
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                    
-                    <button
-                        type="submit"
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Location (e.g., Community Garden)"
+                        required
                         disabled={isLoading}
-                        className="w-full py-3 px-4 flex justify-center items-center gap-2 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50"
-                    >
+                        className="w-full rounded-xl border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                    />
+                    <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe your event..."
+                        rows={5}
+                        required
+                        disabled={isLoading}
+                        className="w-full rounded-xl border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-800 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
+                    />
+
+                    {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
+                    <button type="submit" disabled={isLoading} className="pill-button pill-accent w-full justify-center">
                         {isLoading ? (
                             <>
                                 <LoadingSpinner className="h-5 w-5" />
-                                <span>Creating Event...</span>
+                                Creating event...
                             </>
-                        ) : 'Publish Event'}
+                        ) : (
+                            "Publish event"
+                        )}
                     </button>
                 </form>
             </div>

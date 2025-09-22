@@ -19,11 +19,11 @@ interface ProfileViewProps {
     onShowMission: () => void;
 }
 
-const Shell: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }> = ({ title, subtitle, action, children }) => (
-    <section className="space-y-5 rounded-3xl bg-surface-light px-6 py-6 shadow-brand ring-1 ring-white/60">
+const SectionCard: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }> = ({ title, subtitle, action, children }) => (
+    <section className="surface-card surface-card--tight px-6 py-6 space-y-5">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
+                <h2 className="text-heading text-lg">{title}</h2>
                 {subtitle && <p className="text-sm text-ink-500">{subtitle}</p>}
             </div>
             {action}
@@ -32,13 +32,8 @@ const Shell: React.FC<{ title: string; subtitle?: string; action?: React.ReactNo
     </section>
 );
 
-const ToggleRow: React.FC<{
-    label: string;
-    description: string;
-    enabled: boolean;
-    onToggle: (value: boolean) => void;
-}> = ({ label, description, enabled, onToggle }) => (
-    <div className="flex items-start justify-between gap-4 rounded-2xl bg-white/70 px-5 py-4">
+const ToggleRow: React.FC<{ label: string; description: string; enabled: boolean; onToggle: (value: boolean) => void }> = ({ label, description, enabled, onToggle }) => (
+    <div className="flex items-start justify-between gap-4 rounded-2xl bg-white/80 px-5 py-4">
         <div>
             <p className="text-sm font-semibold text-ink-900">{label}</p>
             <p className="text-xs text-ink-500">{description}</p>
@@ -50,10 +45,7 @@ const ToggleRow: React.FC<{
             onClick={() => onToggle(!enabled)}
             className={`relative h-6 w-11 rounded-full transition ${enabled ? "bg-primary" : "bg-ink-200"}`}
         >
-            <span
-                aria-hidden
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${enabled ? "left-5" : "left-0.5"}`}
-            />
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${enabled ? "left-5" : "left-0.5"}`} />
         </button>
     </div>
 );
@@ -62,7 +54,7 @@ const AchievementsList: React.FC<{ achievements: Achievement[] }> = ({ achieveme
     <div className="grid gap-4 sm:grid-cols-2">
         {achievements.length ? (
             achievements.map(achievement => (
-                <div key={achievement.id} className="flex items-start gap-3 rounded-2xl bg-white/70 px-5 py-4">
+                <div key={achievement.id} className="flex items-start gap-3 rounded-2xl bg-white/80 px-5 py-4">
                     <StarIcon className="h-6 w-6 text-primary" />
                     <div>
                         <p className="text-sm font-semibold text-ink-900">{achievement.name}</p>
@@ -72,17 +64,17 @@ const AchievementsList: React.FC<{ achievements: Achievement[] }> = ({ achieveme
                 </div>
             ))
         ) : (
-            <div className="rounded-2xl bg-white/70 px-5 py-4 text-sm text-ink-500">Earn achievements by sharing celebrations.</div>
+            <div className="rounded-2xl bg-white/80 px-5 py-5 text-sm text-ink-500">Earn achievements by sharing celebrations.</div>
         )}
     </div>
 );
 
 const MediaRail: React.FC<{ celebrations: Celebration[]; emptyCopy: string }> = ({ celebrations, emptyCopy }) => (
     celebrations.length ? (
-        <div className="flex gap-4 overflow-x-auto pb-2">
+        <div className="scroll-snap-x flex gap-4 overflow-x-auto pb-2">
             {celebrations.map(item => (
                 <div key={item.id} className="min-w-[9.5rem] space-y-3">
-                    <div className="overflow-hidden rounded-2xl bg-white/70 shadow-brand">
+                    <div className="surface-card surface-card--tight overflow-hidden p-0">
                         <img src={item.imageUrl} alt={item.title} className="h-36 w-full object-cover" />
                     </div>
                     <div className="space-y-1 text-sm">
@@ -93,21 +85,19 @@ const MediaRail: React.FC<{ celebrations: Celebration[]; emptyCopy: string }> = 
             ))}
         </div>
     ) : (
-        <div className="rounded-2xl bg-white/70 px-5 py-4 text-sm text-ink-500">{emptyCopy}</div>
+        <div className="rounded-2xl bg-white/80 px-5 py-5 text-sm text-ink-500">{emptyCopy}</div>
     )
 );
 
 const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background-light px-6 text-center text-ink-900">
-        <h2 className="text-3xl font-semibold">Your profile</h2>
-        <p className="max-w-sm text-sm text-ink-500">Sign in to save celebrations, share creations, and follow neighbors.</p>
-        <button
-            type="button"
-            onClick={onShowAuth}
-            className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-brand transition hover:scale-[1.01]"
-        >
-            Log in or sign up
-        </button>
+    <div className="flex w-full flex-col items-center gap-4 text-center text-ink-900">
+        <div className="glass-panel max-w-md px-10 py-12 space-y-4">
+            <h2 className="text-heading text-3xl">Your profile</h2>
+            <p className="text-sm text-ink-500">Sign in to save celebrations, share creations, and follow neighbors.</p>
+            <button type="button" onClick={onShowAuth} className="pill-button pill-accent w-full justify-center">
+                Log in or sign up
+            </button>
+        </div>
     </div>
 );
 
@@ -142,114 +132,101 @@ const LoggedInView: React.FC<{
     };
 
     return (
-        <div className="relative flex min-h-screen flex-col bg-background-light text-ink-900">
-            <header className="relative h-48 overflow-hidden rounded-b-[2.5rem] bg-gradient-to-br from-primary to-primary-dark">
+        <div className="flex w-full flex-col gap-8 text-ink-900">
+            <section className="glass-panel relative overflow-hidden px-6 py-8">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-dark to-transparent opacity-80" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent)]" />
-                <div className="absolute bottom-6 left-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">Profile</p>
-                    <h1 className="mt-2 text-2xl font-semibold text-white">Hello, {user.name.split(" ")[0]}</h1>
-                    <p className="text-sm text-white/80">Track your celebrations & community impact.</p>
-                </div>
-            </header>
-
-            <main className="-mt-12 flex-1 space-y-8 overflow-y-auto px-5 pb-32">
-                <section className="flex flex-col items-center gap-4 rounded-3xl bg-surface-light px-6 py-6 text-center shadow-brand ring-1 ring-white/60">
-                    <div className="relative">
-                        <img src={user.avatarUrl ?? "https://i.pravatar.cc/150?img=5"} alt={user.name} className="h-28 w-28 rounded-3xl object-cover shadow-brand" />
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute -right-3 -bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg"
-                        >
-                            <CameraIcon className="h-5 w-5" />
-                        </button>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-xl font-semibold text-ink-900">{user.name}</p>
-                        <p className="text-sm text-ink-500">@{user.handle ?? user.email.split("@")[0]}</p>
-                    </div>
-                    <div className="flex gap-3">
-                        <button
-                            type="button"
-                            className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink-900 shadow-brand"
-                        >
-                            Edit profile
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onLogout}
-                            className="rounded-full bg-ink-900 px-5 py-3 text-sm font-semibold text-white shadow-brand"
-                        >
-                            Log out
-                        </button>
-                    </div>
-                </section>
-
-                <section className="grid gap-3 sm:grid-cols-3">
-                    {stats.map(stat => (
-                        <div key={stat.label} className="rounded-3xl bg-surface-light px-5 py-5 text-center shadow-brand ring-1 ring-white/60">
-                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-ink-400">{stat.label}</p>
-                            <p className="mt-2 text-2xl font-semibold text-ink-900">{stat.value}</p>
+                <div className="relative flex flex-col gap-6 text-white">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <img src={user.avatarUrl ?? "https://i.pravatar.cc/150?img=5"} alt={user.name} className="h-28 w-28 rounded-3xl object-cover shadow-brand" />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute -right-3 -bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-900 shadow-lg"
+                                >
+                                    <CameraIcon className="h-5 w-5" />
+                                </button>
+                                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                            </div>
+                            <div className="space-y-1">
+                                <h1 className="text-heading text-3xl text-white">{user.name}</h1>
+                                <p className="text-sm text-white/80">@{user.handle ?? user.email.split("@")[0]}</p>
+                            </div>
                         </div>
-                    ))}
-                </section>
-
-                <Shell title="Shared celebrations" subtitle="Stories you've posted to the map.">
-                    <MediaRail celebrations={userCelebrations} emptyCopy="You haven't posted any celebrations yet. Share one today!" />
-                </Shell>
-
-                <Shell title="Saved for later" subtitle="Quick access to the celebrations you bookmarked.">
-                    <MediaRail celebrations={savedCelebrations} emptyCopy="Tap the bookmark icon on a celebration to save it here." />
-                </Shell>
-
-                <Shell title="Notifications & preferences">
-                    <div className="space-y-3">
-                        <ToggleRow
-                            label="Daily special day alerts"
-                            description="Stay in the loop about today's spotlight celebration."
-                            enabled={user.notificationPreferences.dailySpecialDay}
-                            onToggle={(value) => onPreferencesChange({ dailySpecialDay: value })}
-                        />
-                        <ToggleRow
-                            label="Community activity updates"
-                            description="Highlights from neighbors you follow and events you join."
-                            enabled={user.notificationPreferences.communityActivity}
-                            onToggle={(value) => onPreferencesChange({ communityActivity: value })}
-                        />
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button type="button" className="pill-button pill-muted bg-white/20 text-white">
+                                Edit profile
+                            </button>
+                            <button type="button" onClick={onLogout} className="pill-button pill-accent bg-white text-ink-900">
+                                Log out
+                            </button>
+                        </div>
                     </div>
-                </Shell>
+                    <div className="flex flex-wrap gap-3">
+                        {stats.map(stat => (
+                            <span key={stat.label} className="tag-chip bg-white/20 text-white">
+                                {stat.label}: {stat.value}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
-                <Shell title="Achievements" subtitle="Collect badges as you host, join, and celebrate.">
-                    <AchievementsList achievements={user.achievements} />
-                </Shell>
+            <SectionCard title="Shared celebrations" subtitle="Stories you've posted to the map.">
+                <MediaRail celebrations={userCelebrations} emptyCopy="You haven't posted any celebrations yet. Share one today!" />
+            </SectionCard>
 
-                <Shell title="About Woon" subtitle="Learn more about how we celebrate together." action={(
-                    <button
-                        type="button"
-                        onClick={onShowMission}
-                        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01]"
-                    >
-                        <SparklesIcon className="h-5 w-5" />
-                        View mission
+            <SectionCard title="Saved for later" subtitle="Quick access to the celebrations you bookmarked.">
+                <MediaRail celebrations={savedCelebrations} emptyCopy="Tap the bookmark icon on a celebration to save it here." />
+            </SectionCard>
+
+            <SectionCard title="Notifications & preferences">
+                <div className="flex flex-col gap-3">
+                    <ToggleRow
+                        label="Daily special day alerts"
+                        description="Stay in the loop about today's spotlight celebration."
+                        enabled={user.notificationPreferences.dailySpecialDay}
+                        onToggle={(value) => onPreferencesChange({ dailySpecialDay: value })}
+                    />
+                    <ToggleRow
+                        label="Community activity updates"
+                        description="Highlights from neighbors you follow and events you join."
+                        enabled={user.notificationPreferences.communityActivity}
+                        onToggle={(value) => onPreferencesChange({ communityActivity: value })}
+                    />
+                </div>
+            </SectionCard>
+
+            <SectionCard title="Achievements" subtitle="Collect badges as you host, join, and celebrate.">
+                <AchievementsList achievements={user.achievements} />
+            </SectionCard>
+
+            <SectionCard
+                title="About Woon"
+                subtitle="Learn more about how we celebrate together."
+                action={(
+                    <button type="button" onClick={onShowMission} className="pill-button pill-accent">
+                        <SparklesIcon className="h-5 w-5" /> View mission
                     </button>
-                )}>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <button type="button" className="flex items-center justify-between rounded-2xl bg-white/70 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                            Celebration interests
-                            <ChevronRightIcon className="h-5 w-5 text-ink-400" />
-                        </button>
-                        <button type="button" className="flex items-center justify-between rounded-2xl bg-white/70 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                            Privacy & community settings
-                            <ShieldCheckIcon className="h-5 w-5 text-ink-400" />
-                        </button>
-                        <button type="button" className="flex items-center justify-between rounded-2xl bg-white/70 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                            Manage subscription
-                            <CogIcon className="h-5 w-5 text-ink-400" />
-                        </button>
-                    </div>
-                </Shell>
-            </main>
+                )}
+            >
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                        Celebration interests
+                        <ChevronRightIcon className="h-5 w-5 text-ink-400" />
+                    </button>
+                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                        Privacy & community settings
+                        <ShieldCheckIcon className="h-5 w-5 text-ink-400" />
+                    </button>
+                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                        Manage subscription
+                        <CogIcon className="h-5 w-5 text-ink-400" />
+                    </button>
+                </div>
+            </SectionCard>
         </div>
     );
 };
@@ -270,4 +247,3 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout,
         />
     );
 };
-
