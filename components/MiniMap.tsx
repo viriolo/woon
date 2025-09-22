@@ -1,7 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
-import mapboxgl from 'mapbox-gl';
-import { MAPBOX_ACCESS_TOKEN } from '../constants';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface MiniMapProps {
     center: { lng: number; lat: number };
@@ -9,34 +7,73 @@ interface MiniMapProps {
 
 export const MiniMap: React.FC<MiniMapProps> = ({ center }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
-    const map = useRef<mapboxgl.Map | null>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        if (map.current || !mapContainer.current) return;
+        if (!mapContainer.current || isLoaded) return;
 
-        map.current = new mapboxgl.Map({
-            accessToken: MAPBOX_ACCESS_TOKEN,
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/light-v11',
-            center: [center.lng, center.lat],
-            zoom: 14,
-            interactive: false,
-            antialias: true,
-        });
+        const initMap = async () => {
+            try {
+                // Dynamically import Leaflet
+                const L = (await import('leaflet')).default;
 
-        const currentMap = map.current;
+                // Set up Leaflet CSS if not already present
+                if (!document.querySelector('#leaflet-css')) {
+                    const link = document.createElement('link');
+                    link.id = 'leaflet-css';
+                    link.rel = 'stylesheet';
+                    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                    document.head.appendChild(link);
+                }
 
-        currentMap.on('load', () => {
-            new mapboxgl.Marker({ color: '#8b5cf6' }) // A purple marker consistent with special-primary
-                .setLngLat([center.lng, center.lat])
-                .addTo(currentMap);
-        });
+                // Create mini map
+                const map = L.map(mapContainer.current!, {
+                    zoomControl: false,
+                    scrollWheelZoom: false,
+                    doubleClickZoom: false,
+                    boxZoom: false,
+                    keyboard: false,
+                    dragging: false,
+                    touchZoom: false
+                }).setView([center.lat, center.lng], 15);
 
-        return () => {
-            map.current?.remove();
-            map.current = null;
+                // Add CartoDB tiles
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+
+                // Add location marker
+                const markerIcon = L.divIcon({
+                    className: 'mini-map-marker',
+                    html: '<div class="w-4 h-4 bg-orange-500 border-2 border-white rounded-full shadow-md"></div>',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
+
+                L.marker([center.lat, center.lng], { icon: markerIcon }).addTo(map);
+
+                setIsLoaded(true);
+            } catch (error) {
+                console.error('Failed to load mini map:', error);
+            }
         };
-    }, [center]);
 
-    return <div ref={mapContainer} className="w-full h-full rounded-lg" />;
+        initMap();
+    }, [center, isLoaded]);
+
+    return (
+        <div className="w-full h-full relative">
+            <div ref={mapContainer} className="w-full h-full rounded-lg" />
+            {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <div className="text-center">
+                        <div className="loading-spinner w-4 h-4 border-2 border-orange-200 border-t-orange-500 rounded-full mx-auto mb-1"></div>
+                        <p className="text-xs text-gray-500">Loading...</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };

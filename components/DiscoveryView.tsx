@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import type mapboxgl from "mapbox-gl";
 import type { SpecialDay, Celebration, User, FriendConnection } from "../types";
 import { friendService } from "../services/friendService";
-import { InteractiveMap } from "./InteractiveMap";
+import { SimpleMap } from "./SimpleMap";
 import { CelebrationDetailView } from "./CelebrationDetailView";
 import { SearchIcon, HeartIcon, ChatBubbleLeftIcon, UsersIcon } from "./icons";
 import { BottomSheet } from "./BottomSheet";
@@ -264,7 +264,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
     return (
         <div className="relative h-full w-full">
-            <InteractiveMap
+            <SimpleMap
                 celebrations={filteredCelebrations}
                 selectedCelebrationId={selectedCelebration?.id ?? null}
                 onSelectCelebration={(id) => handleSelectCelebration(id ? filteredCelebrations.find(c => c.id === id) ?? null : null)}
