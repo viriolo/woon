@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import type { User, NotificationPreferences, Celebration, Achievement } from "../types";
 import {
     SparklesIcon,
@@ -7,6 +7,7 @@ import {
     StarIcon,
     ShieldCheckIcon,
     CogIcon,
+    ArrowLeftIcon,
 } from "./icons";
 
 interface ProfileViewProps {
@@ -79,7 +80,7 @@ const MediaRail: React.FC<{ celebrations: Celebration[]; emptyCopy: string }> = 
                     </div>
                     <div className="space-y-1 text-sm">
                         <p className="font-semibold text-ink-900 overflow-hidden text-ellipsis">{item.title}</p>
-                        <p className="text-xs text-ink-500">{item.likes} likes • {item.commentCount} comments</p>
+                        <p className="text-xs text-ink-500">{item.likes} likes ï¿½ {item.commentCount} comments</p>
                     </div>
                 </div>
             ))}
@@ -90,12 +91,14 @@ const MediaRail: React.FC<{ celebrations: Celebration[]; emptyCopy: string }> = 
 );
 
 const LoggedOutView: React.FC<{ onShowAuth: () => void }> = ({ onShowAuth }) => (
-    <div className="flex w-full flex-col items-center gap-4 text-center text-ink-900">
-        <div className="glass-panel max-w-md px-10 py-12 space-y-4">
-            <h2 className="text-heading text-3xl">Your profile</h2>
-            <p className="text-sm text-ink-500">Sign in to save celebrations, share creations, and follow neighbors.</p>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center px-6">
+        <div className="surface-card max-w-md w-full px-8 py-12 space-y-6 text-center">
+            <div className="space-y-2">
+                <h2 className="text-heading text-3xl text-ink-900">Your Profile</h2>
+                <p className="text-body text-ink-500">Sign in to save celebrations, share creations, and connect with neighbors.</p>
+            </div>
             <button type="button" onClick={onShowAuth} className="pill-button pill-accent w-full justify-center">
-                Log in or sign up
+                Sign In or Create Account
             </button>
         </div>
     </div>
@@ -110,6 +113,7 @@ const LoggedInView: React.FC<{
     onShowMission: () => void;
 }> = ({ user, celebrations, onLogout, onPreferencesChange, onAvatarChange, onShowMission }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [activeTab, setActiveTab] = useState<'shared' | 'saved' | 'achievements'>('shared');
 
     const userCelebrations = celebrations.filter(c => c.authorId === user.id);
     const savedCelebrations = celebrations.filter(c => user.savedCelebrationIds.includes(c.id));
@@ -132,101 +136,137 @@ const LoggedInView: React.FC<{
     };
 
     return (
-        <div className="flex w-full flex-col gap-8 text-ink-900">
-            <section className="glass-panel relative overflow-hidden px-6 py-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-dark to-transparent opacity-80" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent)]" />
-                <div className="relative flex flex-col gap-6 text-white">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="relative">
-                                <img src={user.avatarUrl ?? "https://i.pravatar.cc/150?img=5"} alt={user.name} className="h-28 w-28 rounded-3xl object-cover shadow-brand" />
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="absolute -right-3 -bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-900 shadow-lg"
-                                >
-                                    <CameraIcon className="h-5 w-5" />
-                                </button>
-                                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                            </div>
-                            <div className="space-y-1">
-                                <h1 className="text-heading text-3xl text-white">{user.name}</h1>
-                                <p className="text-sm text-white/80">@{user.handle ?? user.email.split("@")[0]}</p>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <button type="button" className="pill-button pill-muted bg-white/20 text-white">
-                                Edit profile
-                            </button>
-                            <button type="button" onClick={onLogout} className="pill-button pill-accent bg-white text-ink-900">
-                                Log out
-                            </button>
-                        </div>
+        <div className="min-h-screen bg-surface">
+            {/* Clean Header */}
+            <header className="surface-elevated px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-heading text-xl text-ink-900">Profile</h1>
+                    <button type="button" onClick={onLogout} className="pill-button pill-secondary text-sm">
+                        Sign Out
+                    </button>
+                </div>
+            </header>
+
+            <div className="px-6 py-8">
+                {/* Centered Profile Info */}
+                <div className="text-center mb-8">
+                    <div className="relative inline-block mb-4">
+                        <img
+                            src={user.avatarUrl ?? "https://i.pravatar.cc/150?img=5"}
+                            alt={user.name}
+                            className="h-32 w-32 rounded-full object-cover shadow-brand mx-auto"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-primary text-white shadow-lg flex items-center justify-center"
+                        >
+                            <CameraIcon className="h-5 w-5" />
+                        </button>
+                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <h2 className="text-heading text-2xl text-ink-900 mb-2">{user.name}</h2>
+                    <p className="text-body text-ink-500 mb-6">@{user.handle ?? user.email.split("@")[0]}</p>
+
+                    {/* Three Column Stats */}
+                    <div className="grid grid-cols-3 gap-6 max-w-sm mx-auto mb-8">
                         {stats.map(stat => (
-                            <span key={stat.label} className="tag-chip bg-white/20 text-white">
-                                {stat.label}: {stat.value}
-                            </span>
+                            <div key={stat.label} className="text-center">
+                                <div className="text-heading text-2xl text-ink-900 mb-1">{stat.value}</div>
+                                <div className="text-caption text-ink-500">{stat.label}</div>
+                            </div>
                         ))}
                     </div>
                 </div>
-            </section>
 
-            <SectionCard title="Shared celebrations" subtitle="Stories you've posted to the map.">
-                <MediaRail celebrations={userCelebrations} emptyCopy="You haven't posted any celebrations yet. Share one today!" />
-            </SectionCard>
-
-            <SectionCard title="Saved for later" subtitle="Quick access to the celebrations you bookmarked.">
-                <MediaRail celebrations={savedCelebrations} emptyCopy="Tap the bookmark icon on a celebration to save it here." />
-            </SectionCard>
-
-            <SectionCard title="Notifications & preferences">
-                <div className="flex flex-col gap-3">
-                    <ToggleRow
-                        label="Daily special day alerts"
-                        description="Stay in the loop about today's spotlight celebration."
-                        enabled={user.notificationPreferences.dailySpecialDay}
-                        onToggle={(value) => onPreferencesChange({ dailySpecialDay: value })}
-                    />
-                    <ToggleRow
-                        label="Community activity updates"
-                        description="Highlights from neighbors you follow and events you join."
-                        enabled={user.notificationPreferences.communityActivity}
-                        onToggle={(value) => onPreferencesChange({ communityActivity: value })}
-                    />
+                {/* Tab Navigation */}
+                <div className="border-b border-ink-100 mb-6">
+                    <nav className="flex gap-6 justify-center">
+                        {[
+                            { id: 'shared', label: 'Shared', count: userCelebrations.length },
+                            { id: 'saved', label: 'Saved', count: savedCelebrations.length },
+                            { id: 'achievements', label: 'Achievements', count: user.achievements.length },
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`pb-3 px-1 border-b-2 transition-colors ${
+                                    activeTab === tab.id
+                                        ? 'border-primary text-primary font-medium'
+                                        : 'border-transparent text-ink-500 hover:text-ink-700'
+                                }`}
+                            >
+                                {tab.label} ({tab.count})
+                            </button>
+                        ))}
+                    </nav>
                 </div>
-            </SectionCard>
 
-            <SectionCard title="Achievements" subtitle="Collect badges as you host, join, and celebrate.">
-                <AchievementsList achievements={user.achievements} />
-            </SectionCard>
-
-            <SectionCard
-                title="About Woon"
-                subtitle="Learn more about how we celebrate together."
-                action={(
-                    <button type="button" onClick={onShowMission} className="pill-button pill-accent">
-                        <SparklesIcon className="h-5 w-5" /> View mission
-                    </button>
+                {/* Tab Content */}
+                {activeTab === 'shared' && (
+                    <div>
+                        <MediaRail celebrations={userCelebrations} emptyCopy="You haven't posted any celebrations yet. Share one today!" />
+                    </div>
                 )}
-            >
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                        Celebration interests
-                        <ChevronRightIcon className="h-5 w-5 text-ink-400" />
-                    </button>
-                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                        Privacy & community settings
-                        <ShieldCheckIcon className="h-5 w-5 text-ink-400" />
-                    </button>
-                    <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                        Manage subscription
-                        <CogIcon className="h-5 w-5 text-ink-400" />
-                    </button>
+
+                {activeTab === 'saved' && (
+                    <div>
+                        <MediaRail celebrations={savedCelebrations} emptyCopy="Tap the bookmark icon on a celebration to save it here." />
+                    </div>
+                )}
+
+                {activeTab === 'achievements' && (
+                    <div>
+                        <AchievementsList achievements={user.achievements} />
+                    </div>
+                )}
+
+                {/* Settings Section */}
+                <div className="mt-12 space-y-6">
+                    <SectionCard title="Notifications & Preferences">
+                        <div className="flex flex-col gap-3">
+                            <ToggleRow
+                                label="Daily special day alerts"
+                                description="Stay in the loop about today's spotlight celebration."
+                                enabled={user.notificationPreferences.dailySpecialDay}
+                                onToggle={(value) => onPreferencesChange({ dailySpecialDay: value })}
+                            />
+                            <ToggleRow
+                                label="Community activity updates"
+                                description="Highlights from neighbors you follow and events you join."
+                                enabled={user.notificationPreferences.communityActivity}
+                                onToggle={(value) => onPreferencesChange({ communityActivity: value })}
+                            />
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard
+                        title="About Woon"
+                        subtitle="Learn more about how we celebrate together."
+                        action={(
+                            <button type="button" onClick={onShowMission} className="pill-button pill-accent">
+                                <SparklesIcon className="h-5 w-5" /> View Mission
+                            </button>
+                        )}
+                    >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                                Celebration Interests
+                                <ChevronRightIcon className="h-5 w-5 text-ink-400" />
+                            </button>
+                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                                Privacy & Community Settings
+                                <ShieldCheckIcon className="h-5 w-5 text-ink-400" />
+                            </button>
+                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
+                                Manage Subscription
+                                <CogIcon className="h-5 w-5 text-ink-400" />
+                            </button>
+                        </div>
+                    </SectionCard>
                 </div>
-            </SectionCard>
+            </div>
         </div>
     );
 };
