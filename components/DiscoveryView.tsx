@@ -19,10 +19,10 @@ interface DiscoveryViewProps {
 }
 
 const TodaySpotlightCard: React.FC<{ specialDay: SpecialDay }> = ({ specialDay }) => (
-    <div className="w-full max-w-[17rem] rounded-2xl bg-surface-light/95 px-5 py-4 text-ink-700 shadow-brand ring-1 ring-white/40 backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Today’s special</p>
-        <h2 className="mt-2 text-xl font-bold text-ink-900">{specialDay.title}</h2>
-        <p className="mt-1 text-sm text-ink-500 overflow-hidden text-ellipsis">{specialDay.description}</p>
+    <div className="surface-elevated p-4 max-w-xs animate-slide-down">
+        <div className="text-label">Today's special</div>
+        <h2 className="text-heading mt-1">{specialDay.title}</h2>
+        <p className="text-caption mt-2 line-clamp-2">{specialDay.description}</p>
     </div>
 );
 
@@ -66,27 +66,25 @@ const FloatingHeader: React.FC<{
     onToggleFriendsLayer: () => void;
     showFriendsLayer: boolean;
 }> = ({ searchQuery, onSearchChange, onToggleFriendsLayer, showFriendsLayer }) => (
-    <div className="pointer-events-none absolute inset-x-0 top-4 z-10 px-4 sm:px-6">
-        <div className="pointer-events-auto flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex flex-1 items-center rounded-full bg-surface-light/95 px-4 py-2.5 text-ink-700 shadow-brand ring-1 ring-white/40 backdrop-blur">
-                <SearchIcon className="mr-2 h-5 w-5 text-ink-500" />
+    <div className="absolute inset-x-0 top-20 z-10 px-6">
+        <div className="flex gap-3 items-center animate-slide-down">
+            <div className="surface-elevated flex-1 flex items-center gap-3 px-4 py-3">
+                <SearchIcon className="w-5 h-5 text-gray-400" />
                 <input
                     type="text"
-                    placeholder="Search celebrations"
+                    placeholder="Search celebrations..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full bg-transparent text-sm font-medium text-ink-800 placeholder:text-ink-400 focus:outline-none"
+                    className="input flex-1 border-0 bg-transparent p-0 focus:ring-0"
                 />
             </div>
             <button
                 type="button"
                 onClick={onToggleFriendsLayer}
-                className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none ${
-                    showFriendsLayer ? "bg-primary text-white shadow-brand" : "bg-surface-light/95 text-ink-700 shadow-brand ring-1 ring-white/40"
-                }`}
+                className={`btn btn-sm ${showFriendsLayer ? 'btn-primary' : 'btn-secondary'}`}
             >
-                <UsersIcon className="h-5 w-5" />
-                Nearby creators
+                <UsersIcon className="w-4 h-4" />
+                Friends
             </button>
         </div>
     </div>
@@ -100,26 +98,42 @@ const CelebrationCard: React.FC<{
     <button
         onClick={onClick}
         type="button"
-        className="flex w-full items-center gap-4 rounded-2xl bg-white/90 p-4 text-left shadow-brand ring-1 ring-white/60 transition hover:-translate-y-1 hover:bg-white"
+        className="card w-full p-0 text-left transition-all hover:scale-[1.02] hover:shadow-lg"
     >
-        <img src={celebration.imageUrl} alt={celebration.title} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
-        <div className="flex flex-1 flex-col overflow-hidden">
-            <h3 className="truncate text-base font-semibold text-ink-900">{celebration.title}</h3>
-            <p className="text-sm text-ink-500">by {celebration.author}</p>
-            <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-ink-500">
-                <span className="inline-flex items-center gap-1"><HeartIcon className="h-4 w-4" />{celebration.likes}</span>
-                <span className="inline-flex items-center gap-1"><ChatBubbleLeftIcon className="h-4 w-4" />{celebration.commentCount}</span>
-                {isSaved && <span className="text-primary">Saved</span>}
+        <div className="flex items-center gap-4 p-4">
+            <img
+                src={celebration.imageUrl}
+                alt={celebration.title}
+                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+                <h3 className="text-title truncate">{celebration.title}</h3>
+                <p className="text-caption">by {celebration.author}</p>
+                <div className="flex items-center gap-3 mt-2">
+                    <div className="chip">
+                        <HeartIcon className="w-4 h-4" />
+                        {celebration.likes}
+                    </div>
+                    <div className="chip">
+                        <ChatBubbleLeftIcon className="w-4 h-4" />
+                        {celebration.commentCount}
+                    </div>
+                    {isSaved && (
+                        <div className="px-2 py-1 bg-orange-100 text-orange-600 rounded text-xs font-medium">
+                            Saved
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     </button>
 );
 
 const TomorrowCard: React.FC<{ tomorrowSpecialDay: SpecialDay }> = ({ tomorrowSpecialDay }) => (
-    <div className="rounded-2xl bg-primary text-white px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Tomorrow</p>
-        <p className="mt-2 text-lg font-bold">{tomorrowSpecialDay.title}</p>
-        <p className="mt-1 text-sm text-white/80 overflow-hidden text-ellipsis">{tomorrowSpecialDay.description}</p>
+    <div className="p-6 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-xl">
+        <div className="text-label text-white/80">Tomorrow</div>
+        <h3 className="text-heading text-white mt-1">{tomorrowSpecialDay.title}</h3>
+        <p className="text-body text-white/90 mt-2 line-clamp-2">{tomorrowSpecialDay.description}</p>
     </div>
 );
 

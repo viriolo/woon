@@ -19,24 +19,26 @@ export const Header: React.FC<HeaderProps> = ({ isAuthLoading, currentUser, setA
     };
 
     return (
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-4 pt-4 sm:px-6 sm:pt-6">
-            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface-light/90 px-4 py-2 text-sm font-semibold text-ink-700 shadow-brand ring-1 ring-white/40">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-white font-bold">W</span>
+        <header className="absolute inset-x-0 top-0 z-20 flex items-start justify-between p-6">
+            <div className="surface-elevated px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">W</span>
+                </div>
                 <div className="hidden sm:block">
-                    <p className="text-xs uppercase tracking-[0.2em] text-ink-500">Neighborly</p>
-                    <p className="text-sm font-semibold text-ink-900">Celebrations</p>
+                    <div className="text-label text-muted">Today's celebration</div>
+                    <div className="text-title">Woon</div>
                 </div>
             </div>
             <button
                 type="button"
                 onClick={handleClick}
                 disabled={isAuthLoading}
-                className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface-light/90 px-4 py-2 text-sm font-semibold text-ink-700 shadow-brand ring-1 ring-white/40 transition hover:translate-y-0.5 hover:bg-primary/10 disabled:opacity-60"
+                className={`btn ${currentUser ? 'btn-secondary' : 'btn-primary'} btn-sm`}
             >
                 {isAuthLoading ? (
-                    <LoadingSpinner className="h-4 w-4" />
+                    <LoadingSpinner className="w-4 h-4" />
                 ) : (
-                    <span>{currentUser ? "View profile" : "Sign in"}</span>
+                    <span>{currentUser ? "Profile" : "Sign in"}</span>
                 )}
             </button>
         </header>

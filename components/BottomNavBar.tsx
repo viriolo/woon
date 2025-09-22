@@ -26,35 +26,40 @@ const getLabel = (id: string) => {
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({ activeTab, setActiveTab, isMapView }) => {
     const navItems = [
-        { id: "today", icon: <HomeIcon className="h-6 w-6" /> },
-        { id: "connect", icon: <ConnectIcon className="h-6 w-6" /> },
-        { id: "profile", icon: <ProfileIcon className="h-6 w-6" /> },
+        { id: "today", icon: <HomeIcon className="w-6 h-6" />, label: "Discover" },
+        { id: "connect", icon: <ConnectIcon className="w-6 h-6" />, label: "Events" },
+        { id: "profile", icon: <ProfileIcon className="w-6 h-6" />, label: "Profile" },
     ];
 
     return (
-        <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-30 pb-6">
-            <div className="pointer-events-auto relative mx-auto flex max-w-md items-end justify-between rounded-t-[2rem] bg-white/90 px-6 pb-4 pt-8 shadow-brand ring-1 ring-white/60 backdrop-blur">
+        <nav className="fixed inset-x-0 bottom-0 z-30 p-4">
+            <div className="surface-elevated mx-auto max-w-sm rounded-full px-2 py-2 relative">
+                {/* Floating Create Button */}
                 <button
                     type="button"
                     onClick={() => setActiveTab("share")}
-                    className="absolute left-1/2 top-0 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-brand transition-transform hover:scale-105 ring-4 ring-white"
+                    className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-105 transition-transform ring-4 ring-white"
                 >
-                    <AddCircleIcon className="h-8 w-8" />
+                    <AddCircleIcon className="w-7 h-7" />
                 </button>
-                <div className="flex w-full items-end justify-around pt-1">
-                    {navItems.map(({ id, icon }) => {
+
+                {/* Navigation Items */}
+                <div className="flex items-center justify-around pt-4">
+                    {navItems.map(({ id, icon, label }) => {
                         const isActive = activeTab === id;
                         return (
                             <button
-                                type="button"
                                 key={id}
+                                type="button"
                                 onClick={() => setActiveTab(id)}
-                                className={`${baseItemClasses} ${
-                                    isActive ? "text-primary" : "text-ink-500 hover:text-primary"
-                                } ${id === "today" && isMapView ? "text-primary" : ""}`}
+                                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-full transition-all ${
+                                    isActive
+                                        ? "text-orange-500 bg-orange-50"
+                                        : "text-gray-500 hover:text-orange-500 hover:bg-orange-50"
+                                }`}
                             >
-                                <span className="flex h-8 w-8 items-center justify-center">{icon}</span>
-                                <span>{getLabel(id)}</span>
+                                {icon}
+                                <span className="text-xs font-medium">{label}</span>
                             </button>
                         );
                     })}
