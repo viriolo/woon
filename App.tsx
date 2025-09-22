@@ -274,7 +274,9 @@ const App: React.FC = () => {
         localStorage.setItem(ACTIVE_TAB_KEY, tab);
     }, [currentUser]);
 
-    const isMapView = activeTab === "today";\r\n\r\n    const renderContent = () => {
+    const isMapView = activeTab === "today";
+
+    const renderContent = () => {
         switch (activeTab) {
             case "today":
                 return (
