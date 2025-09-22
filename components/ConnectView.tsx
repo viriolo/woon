@@ -1,9 +1,6 @@
-
-import React, { useState } from 'react';
-import type { User, Event } from '../types';
-import { ConnectIcon, MapIcon, FlagIcon, GlobeAltIcon, BuildingOfficeIcon, CalendarPlusIcon, UsersIcon, ClockIcon } from './icons';
-
-type Scope = 'local' | 'regional' | 'national' | 'global' | 'business';
+import React, { useMemo } from "react";
+import type { User, Event } from "../types";
+import { CalendarPlusIcon, UsersIcon, GlobeAltIcon, MapIcon } from "./icons";
 
 interface ConnectViewProps {
     currentUser: User | null;
@@ -12,206 +9,164 @@ interface ConnectViewProps {
     onViewEvent: (event: Event) => void;
 }
 
-interface ScopePillProps {
-    label: string;
-    icon: React.ReactNode;
-    isActive: boolean;
-    isPremium?: boolean;
-    onClick: () => void;
-}
-
-const ScopePill: React.FC<ScopePillProps> = ({ label, icon, isActive, isPremium, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`relative flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            isActive
-                ? 'bg-special-primary text-white'
-                : 'bg-neutral-200 text-neutral-700 hover:bg-neutral-300'
-        }`}
-    >
-        {icon}
-        <span>{label}</span>
-        {isPremium && (
-            <span className="absolute -top-1 -right-1 text-[9px] bg-yellow-400 text-neutral-900 font-bold px-1.5 rounded-full">PRO</span>
-        )}
-    </button>
-);
-
-const ScopeContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="p-4 animate-fade-in space-y-4">{children}</div>
-);
-
-const EventCard: React.FC<{ event: Event; onClick: () => void; }> = ({ event, onClick }) => (
-    <button onClick={onClick} className="w-full text-left p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm hover:bg-neutral-100/50 transition-colors">
-        <h4 className="font-bold text-neutral-900">{event.title}</h4>
-        <div className="flex justify-between items-center">
-            <p className="text-sm text-neutral-500">{event.date} at {event.time} - {event.location}</p>
-            {event.attendeeCount > 0 && (
-                <div className="flex items-center gap-1 text-sm text-special-secondary font-medium">
-                    <UsersIcon className="w-4 h-4"/>
-                    <span>{event.attendeeCount}</span>
-                </div>
-            )}
-        </div>
-        <p className="text-sm text-neutral-400 mt-1">Organized by {event.authorName}</p>
-    </button>
-);
+const heroImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuCv4OVG-ePHcSmTNELsFXzHwaJa_lbuJEFPj9fXdtrcdmeIvCS7ChAkPifMxUnGvNsPmU2S7l-np9YNq2D_qz-Ll5icK-CWr3qjM2Z7r4q8pgRULKd1Aa_qP4dYgdjw60uOag0JJymI5kER_8YA6fSRhvNZxQDwXtoQUGynyWdMyw32bLonbVZVFK3f6hVp06SoX3p3u1ne4UwieQi_x7w2uSddidNiVx8nqDl_Kp3Y9HrUAKAHT619UJLQqEcEuL8x1kvhthgWtSx8";
 
 const globalCelebrations = [
-  {
-    title: 'World Environment Day',
-    status: 'Live Now',
-    statusColor: 'green',
-    participants: 45623,
-    scope: 'Global',
-    peakTime: '14:00 UTC',
-    activities: ['Tree Planting (Asia)', 'Beach Cleanup (Americas)', 'Green Markets (Europe)'],
-  },
-  {
-    title: 'International Yoga Day',
-    status: 'Ending Soon',
-    statusColor: 'yellow',
-    participants: 23891,
-    scope: 'India + 89 countries',
-    peakTime: '06:00 IST',
-    activities: ['Mass Yoga (India)', 'Park Sessions (US)', 'Corporate Wellness (Europe)'],
-  },
+    {
+        title: "World Environment Day",
+        status: "Live now",
+        participants: 45623,
+        region: "Global",
+        focus: "Tree planting, cleanups, maker sessions",
+        accent: "bg-emerald-100 text-emerald-700",
+    },
+    {
+        title: "International Yoga Day",
+        status: "Starting soon",
+        participants: 23891,
+        region: "India + 89 countries",
+        focus: "Mass sunrise flows & park sessions",
+        accent: "bg-amber-100 text-amber-700",
+    },
 ];
 
-const GlobalCelebrationCard: React.FC<{ celebration: typeof globalCelebrations[0] }> = ({ celebration }) => {
-    const statusClasses = {
-        green: 'bg-green-100 text-green-800',
-        yellow: 'bg-yellow-100 text-yellow-800',
-    };
-    
-    return (
-        <div className="bg-white rounded-lg border border-neutral-200/50 shadow-sm p-6 space-y-4">
-            <div className="flex justify-between items-start">
-                <div className="flex-grow">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-neutral-900">{celebration.title}</h3>
-                        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusClasses[celebration.statusColor as keyof typeof statusClasses]}`}>
-                            {celebration.status}
-                        </span>
-                    </div>
-                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500 mt-1">
-                        <div className="flex items-center gap-1.5">
-                            <UsersIcon className="w-4 h-4" />
-                            <span>{celebration.participants.toLocaleString()} participants</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <GlobeAltIcon className="w-4 h-4" />
-                            <span>{celebration.scope}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <ClockIcon className="w-4 h-4" />
-                            <span>Peak: {celebration.peakTime}</span>
-                        </div>
-                    </div>
-                </div>
-                <button className="flex-shrink-0 ml-4 px-4 py-2 bg-special-primary text-white font-bold rounded-lg hover:opacity-90 transition-opacity">
-                    Join Celebration
-                </button>
-            </div>
-            <div>
-                <h4 className="font-medium text-neutral-800">How the world is celebrating:</h4>
-                <div className="flex flex-wrap gap-2 mt-2">
-                    {celebration.activities.map(activity => (
-                        <span key={activity} className="px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
-                            {activity}
-                        </span>
-                    ))}
-                </div>
-            </div>
+const HappeningCard: React.FC<{ celebration: typeof globalCelebrations[number] }> = ({ celebration }) => (
+    <article className="min-w-[16rem] rounded-3xl bg-surface-light px-5 py-5 shadow-brand ring-1 ring-white/60">
+        <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-ink-900">{celebration.title}</h3>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${celebration.accent}`}>{celebration.status}</span>
         </div>
-    );
-};
+        <div className="mt-3 space-y-2 text-sm text-ink-500">
+            <div className="flex items-center gap-2 text-ink-600">
+                <UsersIcon className="h-4 w-4" />
+                <span>{celebration.participants.toLocaleString()} joining</span>
+            </div>
+            <div className="flex items-center gap-2 text-ink-600">
+                <GlobeAltIcon className="h-4 w-4" />
+                <span>{celebration.region}</span>
+            </div>
+            <p>{celebration.focus}</p>
+        </div>
+    </article>
+);
 
+const LocalEventCard: React.FC<{ event: Event; onView: () => void }> = ({ event, onView }) => (
+    <button
+        type="button"
+        onClick={onView}
+        className="w-full rounded-3xl bg-white px-5 py-5 text-left shadow-brand ring-1 ring-white/60 transition hover:-translate-y-1"
+    >
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            <span>{event.date}</span>
+            <span>{event.time}</span>
+        </div>
+        <h3 className="mt-3 text-xl font-semibold text-ink-900">{event.title}</h3>
+        <p className="mt-2 text-sm text-ink-500">{event.description}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ink-600">
+            <span className="inline-flex items-center gap-2 rounded-full bg-surface-light px-3 py-1">
+                <MapIcon className="h-4 w-4" />
+                {event.location}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-surface-light px-3 py-1">
+                <UsersIcon className="h-4 w-4" />
+                {event.attendeeCount} attending
+            </span>
+        </div>
+    </button>
+);
 
 export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEventCreation, events, onViewEvent }) => {
-    const [activeScope, setActiveScope] = useState<Scope>('local');
+    const totalAttendees = useMemo(() => events.reduce((acc, event) => acc + event.attendeeCount, 0), [events]);
 
-    const scopes: { id: Scope; label: string; icon: React.ReactNode; isPremium?: boolean }[] = [
-        { id: 'local', label: 'Local', icon: <ConnectIcon className="w-4 h-4" /> },
-        { id: 'regional', label: 'Regional', icon: <MapIcon className="w-4 h-4" /> },
-        { id: 'national', label: 'National', icon: <FlagIcon className="w-4 h-4" /> },
-        { id: 'global', label: 'Global', icon: <GlobeAltIcon className="w-4 h-4" /> },
-        { id: 'business', label: 'Business', icon: <BuildingOfficeIcon className="w-4 h-4" />, isPremium: true },
+    const stats = [
+        { label: "Celebrating neighbors", value: Math.max(events.length * 6, 12) },
+        { label: "RSVPs this week", value: Math.max(totalAttendees, 48) },
+        { label: "New share ideas", value: 8 },
     ];
 
-    const renderContent = () => {
-        switch(activeScope) {
-            case 'local':
-                return (
-                    <ScopeContent>
+    return (
+        <div className="relative flex min-h-screen flex-col bg-background-light text-ink-900">
+            <header className="relative h-60 overflow-hidden rounded-b-[2.5rem] shadow-brand">
+                <img src={heroImage} alt="Neighborhood" className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink-900/80 via-ink-900/20 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">Your neighborhood today</p>
+                    <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+                        <div className="space-y-1 text-white">
+                            <h1 className="text-2xl font-semibold">Connect & celebrate together</h1>
+                            <p className="text-sm text-white/80">Track what\'s happening nearby and around the world.</p>
+                        </div>
                         {currentUser && (
-                             <button
+                            <button
+                                type="button"
                                 onClick={onShowEventCreation}
-                                className="w-full flex items-center justify-center gap-2 p-4 text-left bg-special-primary/10 text-special-secondary hover:bg-special-primary/20 transition-colors rounded-lg border border-special-primary/20"
+                                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink-900 shadow-lg transition hover:-translate-y-0.5"
                             >
-                                <CalendarPlusIcon className="w-6 h-6" />
-                                <span className="font-bold">Create Community Event</span>
+                                <CalendarPlusIcon className="h-5 w-5" />
+                                Host a neighborhood event
                             </button>
                         )}
-                       {events.length > 0 ? (
-                           events.map(event => <EventCard key={event.id} event={event} onClick={() => onViewEvent(event)} />)
-                       ) : (
-                           <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
-                                <h4 className="font-bold text-neutral-900">No local events yet</h4>
-                                <p className="text-sm text-neutral-500">Be the first to create one!</p>
-                           </div>
-                       )}
-                    </ScopeContent>
-                );
-            case 'regional':
-            case 'national':
-            case 'global':
-                 return (
-                    <ScopeContent>
-                        {globalCelebrations.map(c => <GlobalCelebrationCard key={c.title} celebration={c} />)}
-                    </ScopeContent>
-                );
-            case 'business':
-                 return (
-                    <ScopeContent>
-                        <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
-                            <h4 className="font-bold text-neutral-900">Create a Campaign</h4>
-                            <p className="text-sm text-neutral-500">Engage customers with special day offers.</p>
-                        </div>
-                         <div className="p-4 bg-white rounded-lg border border-neutral-200/50 shadow-sm">
-                            <h4 className="font-bold text-neutral-900">Analytics Dashboard</h4>
-                            <p className="text-sm text-neutral-500">Track your promotion's impact.</p>
-                        </div>
-                    </ScopeContent>
-                );
-            default:
-                return null;
-        }
-    }
-
-    return (
-        <div className="h-full flex flex-col animate-fade-in">
-            <div className="pt-20 px-4 text-center">
-                <h2 className="text-3xl font-display font-bold text-special-primary">Connect</h2>
-                <p className="text-neutral-700">Discover celebrations near and far.</p>
-            </div>
-            <div className="p-4">
-                <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                    {scopes.map(scope => (
-                        <ScopePill 
-                            key={scope.id}
-                            label={scope.label}
-                            icon={scope.icon}
-                            isActive={activeScope === scope.id}
-                            isPremium={scope.isPremium}
-                            onClick={() => setActiveScope(scope.id)}
-                        />
-                    ))}
+                    </div>
                 </div>
-            </div>
-            <div className="flex-grow overflow-y-auto pb-24">
-                {renderContent()}
-            </div>
+            </header>
+
+            <main className="flex-1 space-y-8 overflow-y-auto px-5 pb-32 pt-6">
+                <section className="grid gap-3 sm:grid-cols-3">
+                    {stats.map(stat => (
+                        <div key={stat.label} className="rounded-3xl bg-surface-light px-5 py-5 shadow-brand ring-1 ring-white/60">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-ink-400">{stat.label}</p>
+                            <p className="mt-2 text-2xl font-semibold text-ink-900">{stat.value}</p>
+                        </div>
+                    ))}
+                </section>
+
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-ink-900">Happening now</h2>
+                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-ink-400">Global spotlight</span>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                        {globalCelebrations.map(celebration => (
+                            <HappeningCard key={celebration.title} celebration={celebration} />
+                        ))}
+                    </div>
+                </section>
+
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-ink-900">Local gatherings</h2>
+                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-ink-400">{events.length || "No"} events</span>
+                    </div>
+                    <div className="space-y-4">
+                        {events.length ? (
+                            events.map(event => (
+                                <LocalEventCard key={event.id} event={event} onView={() => onViewEvent(event)} />
+                            ))
+                        ) : (
+                            <div className="rounded-3xl bg-surface-light px-5 py-6 text-center text-sm text-ink-500 shadow-brand ring-1 ring-white/60">
+                                No events yet. Be the first to create one today!
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                <section className="rounded-3xl bg-surface-light px-6 py-6 shadow-brand ring-1 ring-white/60">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-ink-900">Boost your business celebrations</h3>
+                            <p className="mt-1 text-sm text-ink-500">Spin up limited offers and see live engagement in the business dashboard.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01]"
+                        >
+                            <CalendarPlusIcon className="h-5 w-5" />
+                            Explore partnerships
+                        </button>
+                    </div>
+                </section>
+            </main>
         </div>
     );
 };
+
