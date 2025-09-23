@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import type mapboxgl from "mapbox-gl";
+// Remove mapbox import since we're using Google Maps now
 import type { SpecialDay, Celebration, User, FriendConnection } from "../types";
 import { friendService } from "../services/friendService";
-import { SimpleMap } from "./SimpleMap";
+import { GoogleMap } from "./GoogleMap";
 import { CelebrationDetailView } from "./CelebrationDetailView";
 import { SearchIcon, HeartIcon, ChatBubbleLeftIcon, UsersIcon } from "./icons";
 import { BottomSheet } from "./BottomSheet";
@@ -177,7 +177,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
     const [searchInput, setSearchInput] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [showFriendsLayer, setShowFriendsLayer] = useState(true);
-    const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
     const bookmarkedIds = currentUser?.savedCelebrationIds ?? [];
     const followingIds = currentUser?.followingUserIds ?? [];
@@ -245,26 +245,23 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 
     const handleZoom = useCallback((direction: "in" | "out") => {
         if (!mapInstance) return;
+        const currentZoom = mapInstance.getZoom() || 13;
         if (direction === "in") {
-            mapInstance.zoomIn({ duration: 350 });
+            mapInstance.setZoom(currentZoom + 1);
         } else {
-            mapInstance.zoomOut({ duration: 350 });
+            mapInstance.setZoom(currentZoom - 1);
         }
     }, [mapInstance]);
 
     const handleRecenter = useCallback(() => {
         if (!mapInstance) return;
-        mapInstance.flyTo({
-            center: [USER_LOCATION.lng, USER_LOCATION.lat],
-            zoom: 12,
-            pitch: 45,
-            duration: 1200,
-        });
+        mapInstance.panTo({ lat: USER_LOCATION.lat, lng: USER_LOCATION.lng });
+        mapInstance.setZoom(13);
     }, [mapInstance]);
 
     return (
         <div className="relative h-full w-full">
-            <SimpleMap
+            <GoogleMap
                 celebrations={filteredCelebrations}
                 selectedCelebrationId={selectedCelebration?.id ?? null}
                 onSelectCelebration={(id) => handleSelectCelebration(id ? filteredCelebrations.find(c => c.id === id) ?? null : null)}

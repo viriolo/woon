@@ -4,6 +4,7 @@ const env = import.meta.env;
 
 export const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN ?? "";
 export const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY ?? "";
+export const GOOGLE_MAPS_API_KEY = env.VITE_GOOGLE_MAPS_API_KEY ?? "";
 
 if (!MAPBOX_ACCESS_TOKEN) {
     console.warn("Mapbox access token is not configured. Set VITE_MAPBOX_ACCESS_TOKEN in your environment.");
@@ -11,6 +12,10 @@ if (!MAPBOX_ACCESS_TOKEN) {
 
 if (!GEMINI_API_KEY) {
     console.warn("Gemini API key is not configured. Set VITE_GEMINI_API_KEY in your environment.");
+}
+
+if (!GOOGLE_MAPS_API_KEY) {
+    console.warn("Google Maps API key is not configured. Set VITE_GOOGLE_MAPS_API_KEY in your environment.");
 }
 
 export const TODAY_SPECIAL_DAY: SpecialDay = {
