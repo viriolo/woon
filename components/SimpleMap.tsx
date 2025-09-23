@@ -27,6 +27,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
     const [userLocation, setUserLocation] = useState<UserLocation>(USER_LOCATION);
     const [mapInstance, setMapInstance] = useState<any>(null);
     const [isMapLoaded, setIsMapLoaded] = useState(false);
+    const leafletRef = useRef<any>(null);
 
     useEffect(() => {
         const getUserLocation = async () => {
@@ -57,38 +58,62 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
     }, []);
 
     useEffect(() => {
-        if (!mapContainer.current || isMapLoaded) return;
+        if (!mapContainer.current || mapInstance) return;
 
         // Initialize Leaflet map
         const initMap = async () => {
             try {
+                console.log('Starting map initialization...');
+
                 // Dynamically import Leaflet
                 const L = (await import('leaflet')).default;
+                leafletRef.current = L;
 
-                // Set up Leaflet CSS (inline styles for now)
+                // Set up Leaflet CSS
                 if (!document.querySelector('#leaflet-css')) {
                     const link = document.createElement('link');
                     link.id = 'leaflet-css';
                     link.rel = 'stylesheet';
                     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
                     document.head.appendChild(link);
+
+                    // Wait for CSS to load
+                    await new Promise(resolve => {
+                        link.onload = resolve;
+                        setTimeout(resolve, 1000); // Fallback timeout
+                    });
                 }
 
+                console.log('Creating map with location:', userLocation);
+
                 // Create map
-                const map = L.map(mapContainer.current!).setView([userLocation.lat, userLocation.lng], 13);
+                const map = L.map(mapContainer.current!, {
+                    center: [userLocation.lat, userLocation.lng],
+                    zoom: 13,
+                    zoomControl: true,
+                    scrollWheelZoom: true
+                });
 
                 // Add CartoDB tiles
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                     subdomains: 'abcd',
                     maxZoom: 20
-                }).addTo(map);
+                });
+
+                await new Promise((resolve, reject) => {
+                    tileLayer.on('load', resolve);
+                    tileLayer.on('error', reject);
+                    tileLayer.addTo(map);
+                    // Fallback timeout
+                    setTimeout(resolve, 3000);
+                });
 
                 // Add user location marker
                 const userIcon = L.divIcon({
                     className: 'user-location-marker',
-                    html: `<div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-md relative">
-                        <div class="absolute -inset-2 bg-blue-500/30 rounded-full animate-ping"></div>
+                    html: `<div style="width: 16px; height: 16px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); position: relative;">
+                        <div style="position: absolute; inset: -8px; background: rgba(59, 130, 246, 0.3); border-radius: 50%; animation: ping 1s infinite;"></div>
                     </div>`,
                     iconSize: [16, 16],
                     iconAnchor: [8, 8]
@@ -108,25 +133,30 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
                 console.log('Map initialized successfully with CartoDB tiles');
             } catch (error) {
                 console.error('Failed to initialize map:', error);
+                setIsMapLoaded(false);
             }
         };
 
         initMap();
+    }, [userLocation, onMapReady, mapInstance]);
 
+    // Cleanup effect
+    useEffect(() => {
         return () => {
             if (mapInstance) {
+                console.log('Cleaning up map instance');
                 mapInstance.remove();
+                setMapInstance(null);
                 setIsMapLoaded(false);
             }
         };
-    }, [userLocation, onMapReady]);
+    }, [mapInstance]);
 
     // Add celebration markers
     useEffect(() => {
-        if (!mapInstance || !isMapLoaded) return;
+        if (!mapInstance || !isMapLoaded || !leafletRef.current) return;
 
-        const L = (window as any).L;
-        if (!L) return;
+        const L = leafletRef.current;
 
         // Clear existing celebration markers
         mapInstance.eachLayer((layer: any) => {
@@ -141,9 +171,9 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
 
             const celebrationIcon = L.divIcon({
                 className: 'celebration-marker',
-                html: `<div class="${isSelected ? 'w-6 h-6 bg-orange-500' : 'w-5 h-5 bg-white'} border-2 border-orange-500 rounded-full shadow-md cursor-pointer transition-all hover:scale-110"></div>`,
-                iconSize: isSelected ? [24, 24] : [20, 20],
-                iconAnchor: isSelected ? [12, 12] : [10, 10]
+                html: `<div style="width: ${isSelected ? '24px' : '20px'}; height: ${isSelected ? '24px' : '20px'}; background: ${isSelected ? '#f97316' : 'white'}; border: 2px solid #f97316; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.2s;"></div>`,
+                iconSize: [isSelected ? 24 : 20, isSelected ? 24 : 20],
+                iconAnchor: [isSelected ? 12 : 10, isSelected ? 12 : 10]
             });
 
             const marker = L.marker([celebration.position.lat, celebration.position.lng], {
@@ -163,10 +193,9 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
 
     // Add friend markers
     useEffect(() => {
-        if (!mapInstance || !isMapLoaded || !showFriendsLayer) return;
+        if (!mapInstance || !isMapLoaded || !showFriendsLayer || !leafletRef.current) return;
 
-        const L = (window as any).L;
-        if (!L) return;
+        const L = leafletRef.current;
 
         // Clear existing friend markers
         mapInstance.eachLayer((layer: any) => {
@@ -181,9 +210,9 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
 
             const friendIcon = L.divIcon({
                 className: 'friend-marker',
-                html: `<div class="${isHighlighted ? 'w-8 h-8' : 'w-6 h-6'} bg-gradient-to-br from-purple-400 to-blue-500 border-2 border-white rounded-full shadow-lg cursor-pointer transition-all hover:scale-110"></div>`,
-                iconSize: isHighlighted ? [32, 32] : [24, 24],
-                iconAnchor: isHighlighted ? [16, 16] : [12, 12]
+                html: `<div style="width: ${isHighlighted ? '32px' : '24px'}; height: ${isHighlighted ? '32px' : '24px'}; background: linear-gradient(135deg, #a855f7, #3b82f6); border: 2px solid white; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.3); cursor: pointer; transition: all 0.2s;"></div>`,
+                iconSize: [isHighlighted ? 32 : 24, isHighlighted ? 32 : 24],
+                iconAnchor: [isHighlighted ? 16 : 12, isHighlighted ? 16 : 12]
             });
 
             const marker = L.marker([friend.location.lat, friend.location.lng], {
