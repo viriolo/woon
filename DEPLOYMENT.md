@@ -24,7 +24,6 @@ In your Netlify dashboard, go to **Site settings** → **Environment variables**
 VITE_SUPABASE_URL=https://lkeznjzvrikphdqwdlwo.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrZXpuanp2cmlrcGhkcXdkbHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODU2NTksImV4cCI6MjA3NDQ2MTY1OX0.lEt16OMq4Y-uVR36O9yC11CqVxLbyfDIYeCvB75Ed_k
 VITE_GEMINI_API_KEY=AIzaSyDSbhUJltgDi9qzaDhJaFz2ies3yWM9iJ4
-VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoidmlpbm5vIiwiYSI6ImNtZnA5bmh6ZDBkcDMybXBzbmZqMWs1cXAifQ.1LFslO7Ge-PEuiNEYT5DYw
 VITE_GOOGLE_MAPS_API_KEY=AIzaSyC-Lw0q4c_zbPNX8tyt3CVGfHxbtPAzFxY
 ```
 

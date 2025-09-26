@@ -2,13 +2,8 @@ import type { SpecialDay, Celebration, UserLocation, FriendConnection } from "./
 
 const env = import.meta.env;
 
-export const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN ?? "";
 export const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY ?? "";
 export const GOOGLE_MAPS_API_KEY = env.VITE_GOOGLE_MAPS_API_KEY ?? "";
-
-if (!MAPBOX_ACCESS_TOKEN) {
-    console.warn("Mapbox access token is not configured. Set VITE_MAPBOX_ACCESS_TOKEN in your environment.");
-}
 
 if (!GEMINI_API_KEY) {
     console.warn("Gemini API key is not configured. Set VITE_GEMINI_API_KEY in your environment.");
