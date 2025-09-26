@@ -1,6 +1,6 @@
 import React from "react";
 import type { Event, User } from "../types";
-import { GoogleMap } from "./GoogleMap";
+import { MiniMap } from "./MiniMap";
 import { XCircleIcon, MapPinIcon, CalendarDaysIcon, UsersIcon } from "./icons";
 import { AddToCalendarButton } from "add-to-calendar-button-react";
 
@@ -50,15 +50,9 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, current
                 </div>
 
                 <div className="surface-card surface-card--tight overflow-hidden p-0">
-                    <GoogleMap
-                        celebrations={[]}
-                        selectedCelebrationId={null}
-                        onSelectCelebration={() => {}}
-                        friends={[]}
-                        showFriendsLayer={false}
-                        onSelectFriend={() => {}}
-                        highlightedFriendId={null}
-                    />
+                    <div className="h-64 w-full">
+                        <MiniMap center={event.locationCoords} />
+                    </div>
                 </div>
 
                 <p className="text-sm leading-relaxed text-ink-600 whitespace-pre-wrap">

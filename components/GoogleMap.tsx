@@ -33,6 +33,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [userLocation, setUserLocation] = useState<UserLocation>(USER_LOCATION);
     const markersRef = useRef<{ [key: string]: google.maps.Marker }>({});
+    const userMarkerRef = useRef<google.maps.Marker | null>(null);
+    const previousUserLocationRef = useRef<UserLocation>(USER_LOCATION);
 
     // Get user location
     useEffect(() => {
@@ -107,6 +109,9 @@ const MapComponent: React.FC<MapComponentProps> = ({
             title: "Your location",
         });
 
+        userMarkerRef.current = userMarker;
+        previousUserLocationRef.current = { ...userLocation };
+
         setMap(mapInstance);
 
         if (onMapReady) {
@@ -114,7 +119,30 @@ const MapComponent: React.FC<MapComponentProps> = ({
         }
 
         console.log('Google Map initialized successfully');
-    }, [userLocation, onMapReady, map]);
+    }, [map, onMapReady, userLocation]);
+
+    useEffect(() => {
+        if (!map || !userMarkerRef.current) return;
+
+        const currentLocation = new google.maps.LatLng(userLocation.lat, userLocation.lng);
+        const prevLocation = previousUserLocationRef.current;
+        const locationChanged = prevLocation.lat !== userLocation.lat || prevLocation.lng !== userLocation.lng;
+
+        userMarkerRef.current.setPosition(currentLocation);
+
+        if (locationChanged) {
+            map.panTo(currentLocation);
+        }
+
+        previousUserLocationRef.current = { ...userLocation };
+    }, [map, userLocation]);
+
+    useEffect(() => {
+        return () => {
+            userMarkerRef.current?.setMap(null);
+            userMarkerRef.current = null;
+        };
+    }, []);
 
     // Clear all markers
     const clearMarkers = useCallback(() => {
