@@ -18,6 +18,7 @@ interface ProfileViewProps {
     onAvatarChange: (base64Image: string) => void;
     celebrations: Celebration[];
     onShowMission: () => void;
+    onNavigate?: (tab: string) => void;
 }
 
 const SectionCard: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }> = ({ title, subtitle, action, children }) => (
@@ -80,7 +81,7 @@ const MediaRail: React.FC<{ celebrations: Celebration[]; emptyCopy: string }> = 
                     </div>
                     <div className="space-y-1 text-sm">
                         <p className="font-semibold text-ink-900 overflow-hidden text-ellipsis">{item.title}</p>
-                        <p className="text-xs text-ink-500">{item.likes} likes � {item.commentCount} comments</p>
+                        <p className="text-xs text-ink-500">{item.likes} likes • {item.commentCount} comments</p>
                     </div>
                 </div>
             ))}
@@ -111,7 +112,8 @@ const LoggedInView: React.FC<{
     onPreferencesChange: (prefs: Partial<NotificationPreferences>) => void;
     onAvatarChange: (base64Image: string) => void;
     onShowMission: () => void;
-}> = ({ user, celebrations, onLogout, onPreferencesChange, onAvatarChange, onShowMission }) => {
+    onNavigate?: (tab: string) => void;
+}> = ({ user, celebrations, onLogout, onPreferencesChange, onAvatarChange, onShowMission, onNavigate }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'shared' | 'saved' | 'achievements'>('shared');
 
@@ -265,13 +267,40 @@ const LoggedInView: React.FC<{
                             </button>
                         </div>
                     </SectionCard>
+
+                    {/* CMS Management Section - Only show if onNavigate is provided */}
+                    {onNavigate && (
+                        <SectionCard
+                            title="Content Management"
+                            subtitle="Manage your headless CMS"
+                        >
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    onClick={() => onNavigate('cms-test')}
+                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900"
+                                >
+                                    🧪 Test CMS Connection
+                                    <ChevronRightIcon className="h-5 w-5 text-ink-400" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onNavigate('cms-admin')}
+                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900"
+                                >
+                                    ⚙️ Admin Dashboard
+                                    <ChevronRightIcon className="h-5 w-5 text-ink-400" />
+                                </button>
+                            </div>
+                        </SectionCard>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, onAvatarChange, celebrations, onShowMission }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout, onShowAuth, onPreferencesChange, onAvatarChange, celebrations, onShowMission, onNavigate }) => {
     if (!currentUser) {
         return <LoggedOutView onShowAuth={onShowAuth} />;
     }
@@ -284,6 +313,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentUser, onLogout,
             onPreferencesChange={onPreferencesChange}
             onAvatarChange={onAvatarChange}
             onShowMission={onShowMission}
+            onNavigate={onNavigate}
         />
     );
 };

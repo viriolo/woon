@@ -5,9 +5,25 @@
       "Bash(npm install:*)",
       "Read(//c/Users/mulav/Downloads/stitch_interactive_neighborhood_map (3)/stitch_interactive_neighborhood_map/community_&_enthusiast_profile/**)",
       "Bash(npx tsc:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm run build:*)",
+      "Bash(git rm:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(cat:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__apply_migration"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

@@ -9,6 +9,8 @@ import { AuthView } from "./components/AuthView";
 import { EventCreationView } from "./components/EventCreationView";
 import { EventDetailView } from "./components/EventDetailView";
 import { MissionView } from "./components/MissionView";
+import CMSTest from "./src/components/CMSTest";
+import AdminDashboard from "./src/components/admin/AdminDashboard";
 import type { User, NotificationPreferences, Event, Celebration } from "./types";
 import {
     TODAY_SPECIAL_DAY as MOCK_TODAY_SPECIAL_DAY,
@@ -317,8 +319,25 @@ const App: React.FC = () => {
                         onAvatarChange={handleAvatarChange}
                         celebrations={celebrations}
                         onShowMission={() => setIsMissionViewVisible(true)}
+                        onNavigate={handleSetTab}
                     />
                 );
+            case "cms-test":
+                return (
+                    <div>
+                        <div className="p-4 bg-surface">
+                            <button
+                                onClick={() => handleSetTab('profile')}
+                                className="pill-button pill-muted mb-4"
+                            >
+                                ← Back to Profile
+                            </button>
+                        </div>
+                        <CMSTest />
+                    </div>
+                );
+            case "cms-admin":
+                return <AdminDashboard />;
             default:
                 return (
                     <DiscoveryView
