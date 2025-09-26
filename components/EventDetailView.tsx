@@ -1,6 +1,6 @@
 import React from "react";
 import type { Event, User } from "../types";
-import { MiniMap } from "./MiniMap";
+import { GoogleMap } from "./GoogleMap";
 import { XCircleIcon, MapPinIcon, CalendarDaysIcon, UsersIcon } from "./icons";
 import { AddToCalendarButton } from "add-to-calendar-button-react";
 
@@ -34,7 +34,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, current
                 <div className="flex flex-wrap items-center gap-3 text-sm text-ink-600">
                     <span className="tag-chip">
                         <CalendarDaysIcon className="h-4 w-4" />
-                        {event.date} · {event.time}
+                        {event.date} ï¿½ {event.time}
                     </span>
                     {event.attendeeCount > 0 && (
                         <span className="tag-chip">
@@ -50,7 +50,15 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, current
                 </div>
 
                 <div className="surface-card surface-card--tight overflow-hidden p-0">
-                    <MiniMap center={event.locationCoords} />
+                    <GoogleMap
+                        center={event.locationCoords}
+                        zoom={15}
+                        markers={[{
+                            position: event.locationCoords,
+                            title: event.title
+                        }]}
+                        style={{ height: "200px" }}
+                    />
                 </div>
 
                 <p className="text-sm leading-relaxed text-ink-600 whitespace-pre-wrap">

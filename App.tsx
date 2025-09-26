@@ -66,7 +66,7 @@ const App: React.FC = () => {
         initializeApp();
     }, []);
 
-    const requireAuth = useCallback((): currentUser is User => {
+    const requireAuth = useCallback((): boolean => {
         if (!currentUser) {
             setIsAuthViewVisible(true);
             return false;

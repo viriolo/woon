@@ -48,8 +48,12 @@ const saveStoredUsers = (users: StoredUser[]) => {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
 };
 
-const hashPassword = (password: string): string => {
-    return `hashed_${password.split("").reverse().join("")}`;
+const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + "woon_salt_2024");
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
 const recalculateLevel = (user: StoredUser) => {
@@ -84,13 +88,13 @@ const getUserFromStored = (email: string | null): User | null => {
     return user;
 };
 
-const writeUser = (users: StoredUser[], index: number, updater: (user: StoredUser) => void): StoredUser => {
+const writeUser = (users: StoredUser[], index: number, updater: (user: StoredUser) => void): User => {
     const user = ensureUserDefaults(users[index]);
     updater(user);
     ensureUserDefaults(user);
     saveStoredUsers(users);
     const { passwordHash, ...publicUser } = user;
-    return publicUser;
+    return publicUser as User;
 };
 
 export const authService = {
@@ -102,11 +106,12 @@ export const authService = {
         }
 
         const now = new Date().toISOString();
+        const hashedPassword = await hashPassword(password);
         const newUser: StoredUser = ensureUserDefaults({
             id: now,
             name,
             email,
-            passwordHash: hashPassword(password),
+            passwordHash: hashedPassword,
             avatarUrl: undefined,
             handle: generateHandle(name),
             notificationPreferences: {
@@ -141,7 +146,8 @@ export const authService = {
         const users = getStoredUsers();
         const storedUser = users.find(u => u.email === email);
 
-        if (!storedUser || storedUser.passwordHash !== hashPassword(password)) {
+        const hashedPassword = await hashPassword(password);
+        if (!storedUser || storedUser.passwordHash !== hashedPassword) {
             throw new Error("Invalid email or password.");
         }
 
@@ -165,7 +171,7 @@ export const authService = {
                 id: now,
                 name: mockName,
                 email: mockEmail,
-                passwordHash: hashPassword("social_login_dummy_password"),
+                passwordHash: await hashPassword("social_login_dummy_password"),
                 avatarUrl: undefined,
                 handle: generateHandle(mockName),
                 notificationPreferences: {
