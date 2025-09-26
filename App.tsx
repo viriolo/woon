@@ -4,33 +4,31 @@ import { BottomNavBar } from "./components/BottomNavBar";
 import { DiscoveryView } from "./components/DiscoveryView";
 import { CreateView } from "./components/CreateView";
 import { ConnectView } from "./components/ConnectView";
-import { ProfileView } from "./components/ProfileView";
-import { AuthView } from "./components/AuthView";
+import UserProfileView from "./src/components/UserProfileView";
+import AuthView from "./src/components/AuthView";
 import { EventCreationView } from "./components/EventCreationView";
 import { EventDetailView } from "./components/EventDetailView";
 import { MissionView } from "./components/MissionView";
 import CMSTest from "./src/components/CMSTest";
 import AdminDashboard from "./src/components/admin/AdminDashboard";
-import type { User, NotificationPreferences, Event, Celebration } from "./types";
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import type { Event, Celebration } from "./types";
 import {
     TODAY_SPECIAL_DAY as MOCK_TODAY_SPECIAL_DAY,
     TOMORROW_SPECIAL_DAY,
     CELEBRATIONS as MOCK_CELEBRATIONS,
 } from "./constants";
-import { authService } from "./services/authService";
 import { LoadingSpinner } from "./components/icons";
 import { eventService } from "./services/eventService";
 import { celebrationService } from "./services/celebrationService";
 
 const ACTIVE_TAB_KEY = "woon-active-tab";
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
     console.log('App component is loading...');
+    const { user, loading } = useAuth();
     const [activeTab, setActiveTab] = useState(() => localStorage.getItem(ACTIVE_TAB_KEY) || "today");
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [isAuthLoading, setIsAuthLoading] = useState(false);
     const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
-    const [isInitializing, setIsInitializing] = useState(true);
     const [isEventCreationVisible, setIsEventCreationVisible] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
     const [celebrations, setCelebrations] = useState<Celebration[]>([]);
@@ -49,10 +47,6 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                const user = authService.checkSession();
-                if (user) {
-                    setCurrentUser(user);
-                }
                 const storedEvents = await eventService.getEvents();
                 setEvents(storedEvents);
 
@@ -60,8 +54,6 @@ const App: React.FC = () => {
                 setCelebrations([...MOCK_CELEBRATIONS, ...storedCelebrations]);
             } catch (error) {
                 console.error("Initialization failed:", error);
-            } finally {
-                setIsInitializing(false);
             }
         };
 
@@ -69,97 +61,58 @@ const App: React.FC = () => {
     }, []);
 
     const requireAuth = useCallback((): boolean => {
-        if (!currentUser) {
+        if (!user) {
             setIsAuthViewVisible(true);
             return false;
         }
         return true;
-    }, [currentUser]);
+    }, [user]);
 
-    const handleLoginSuccess = useCallback((user: User) => {
-        setCurrentUser(user);
+    const {
+        recordEventContribution,
+        recordCelebrationContribution,
+        toggleLikeStatus,
+        toggleSaveStatus,
+        toggleFollowStatus,
+        toggleRsvpStatus
+    } = useAuth();
+
+    const handleAuthClose = useCallback(() => {
         setIsAuthViewVisible(false);
     }, []);
-
-    const handleLogout = useCallback(async () => {
-        setIsAuthLoading(true);
-        try {
-            await authService.logOut();
-            setCurrentUser(null);
-            setActiveTab("today");
-            localStorage.setItem(ACTIVE_TAB_KEY, "today");
-        } catch (error) {
-            console.error("Logout failed:", error);
-        } finally {
-            setIsAuthLoading(false);
-        }
-    }, []);
-
-    const handlePreferencesChange = useCallback(async (newPrefs: Partial<NotificationPreferences>) => {
-        if (!currentUser) return;
-        try {
-            const updatedUser = await authService.updateNotificationPreferences(newPrefs);
-            setCurrentUser(updatedUser);
-        } catch (error) {
-            console.error("Failed to update preferences:", error);
-        }
-    }, [currentUser]);
-
-    const handleAvatarChange = useCallback(async (base64Image: string) => {
-        if (!requireAuth()) return;
-        try {
-            const updatedUser = await authService.updateAvatar(base64Image);
-            setCurrentUser(updatedUser);
-        } catch (error) {
-            console.error("Failed to update avatar:", error);
-        }
-    }, [requireAuth]);
 
     const handleEventCreated = useCallback(async (newEvent: Event) => {
         setEvents(prevEvents => [...prevEvents, newEvent]);
         setIsEventCreationVisible(false);
 
-        if (!currentUser) {
-            return;
+        if (user) {
+            try {
+                await recordEventContribution();
+            } catch (error) {
+                console.error("Failed to record event contribution:", error);
+            }
         }
-        try {
-            const updatedUser = await authService.recordEventContribution();
-            setCurrentUser(updatedUser);
-        } catch (error) {
-            console.error("Failed to record event contribution:", error);
-        }
-    }, [currentUser]);
+    }, [user, recordEventContribution]);
 
     const handleCelebrationCreated = useCallback(async (newCelebration: Celebration) => {
         setCelebrations(prev => [...prev, newCelebration]);
         setActiveTab("today");
         localStorage.setItem(ACTIVE_TAB_KEY, "today");
 
-        if (!currentUser) {
-            return;
+        if (user) {
+            try {
+                await recordCelebrationContribution();
+            } catch (error) {
+                console.error("Failed to record celebration contribution:", error);
+            }
         }
-
-        try {
-            const updatedUser = await authService.recordCelebrationContribution();
-            setCurrentUser(updatedUser);
-        } catch (error) {
-            console.error("Failed to record celebration contribution:", error);
-        }
-    }, [currentUser]);
+    }, [user, recordCelebrationContribution]);
 
     const handleToggleLike = useCallback(async (celebrationId: number) => {
         if (!requireAuth()) return;
 
-        const isLiked = currentUser!.likedCelebrationIds.includes(celebrationId);
-        const originalUser = currentUser!;
+        const isLiked = user!.likedCelebrationIds.includes(celebrationId);
         const originalCelebrations = celebrations.map(c => ({ ...c }));
-
-        setCurrentUser(prevUser => prevUser ? {
-            ...prevUser,
-            likedCelebrationIds: isLiked
-                ? prevUser.likedCelebrationIds.filter(id => id !== celebrationId)
-                : [...prevUser.likedCelebrationIds, celebrationId],
-        } : prevUser);
 
         setCelebrations(prevCelebrations =>
             prevCelebrations.map(c =>
@@ -167,81 +120,48 @@ const App: React.FC = () => {
             ));
 
         try {
-            const updatedUser = await authService.toggleLikeStatus(celebrationId);
-            setCurrentUser(updatedUser);
+            await toggleLikeStatus(celebrationId.toString());
             await celebrationService.updateLikeCount(celebrationId, !isLiked);
         } catch (error) {
             console.error("Failed to toggle like:", error);
             setCelebrations(originalCelebrations);
-            setCurrentUser(originalUser);
         }
-    }, [celebrations, currentUser, requireAuth]);
+    }, [celebrations, user, requireAuth, toggleLikeStatus]);
 
     const handleToggleSave = useCallback(async (celebrationId: number) => {
         if (!requireAuth()) return;
-        const isSaved = currentUser!.savedCelebrationIds.includes(celebrationId);
-        const originalUser = currentUser!;
-
-        setCurrentUser(prevUser => prevUser ? {
-            ...prevUser,
-            savedCelebrationIds: isSaved
-                ? prevUser.savedCelebrationIds.filter(id => id !== celebrationId)
-                : [...prevUser.savedCelebrationIds, celebrationId],
-        } : prevUser);
 
         try {
-            const updatedUser = await authService.toggleSaveStatus(celebrationId);
-            setCurrentUser(updatedUser);
+            await toggleSaveStatus(celebrationId.toString());
         } catch (error) {
             console.error("Failed to toggle save:", error);
-            setCurrentUser(originalUser);
         }
-    }, [currentUser, requireAuth]);
+    }, [requireAuth, toggleSaveStatus]);
 
     const handleToggleFollow = useCallback(async (targetUserId: string) => {
         if (!requireAuth()) return;
-        if (currentUser!.id === targetUserId) {
+        if (user!.id === targetUserId) {
             return;
         }
 
-        const isFollowing = currentUser!.followingUserIds.includes(targetUserId);
-        const originalUser = currentUser!;
-
-        setCurrentUser(prevUser => prevUser ? {
-            ...prevUser,
-            followingUserIds: isFollowing
-                ? prevUser.followingUserIds.filter(id => id !== targetUserId)
-                : [...prevUser.followingUserIds, targetUserId],
-        } : prevUser);
-
         try {
-            const updatedUser = await authService.toggleFollowStatus(targetUserId);
-            setCurrentUser(updatedUser);
+            await toggleFollowStatus(targetUserId);
         } catch (error) {
             console.error("Failed to toggle follow status:", error);
-            setCurrentUser(originalUser);
         }
-    }, [currentUser, requireAuth]);
+    }, [user, requireAuth, toggleFollowStatus]);
 
     const handleRsvpToggle = useCallback(async (eventId: string) => {
         if (!requireAuth()) return;
-        const isRsvped = currentUser!.rsvpedEventIds.includes(eventId);
 
-        const originalUser = currentUser!;
+        const isRsvped = user!.rsvpedEventIds.includes(eventId);
         const originalEvents = events.map(event => ({ ...event, attendees: [...event.attendees] }));
-
-        setCurrentUser(prevUser => prevUser ? {
-            ...prevUser,
-            rsvpedEventIds: isRsvped
-                ? prevUser.rsvpedEventIds.filter(id => id !== eventId)
-                : [...prevUser.rsvpedEventIds, eventId],
-        } : prevUser);
 
         setEvents(prevEvents => prevEvents.map(e => {
             if (e.id !== eventId) return e;
             const attendees = isRsvped
-                ? e.attendees.filter(a => a.userId !== currentUser!.id)
-                : [...e.attendees, { userId: currentUser!.id, userName: currentUser!.name, avatarUrl: currentUser!.avatarUrl }];
+                ? e.attendees.filter(a => a.userId !== user!.id)
+                : [...e.attendees, { userId: user!.id, userName: user!.name, avatarUrl: user!.avatarUrl }];
             return { ...e, attendees, attendeeCount: attendees.length };
         }));
 
@@ -250,31 +170,29 @@ const App: React.FC = () => {
                 return prevEvent;
             }
             const attendees = isRsvped
-                ? prevEvent.attendees.filter(a => a.userId !== currentUser!.id)
-                : [...prevEvent.attendees, { userId: currentUser!.id, userName: currentUser!.name, avatarUrl: currentUser!.avatarUrl }];
+                ? prevEvent.attendees.filter(a => a.userId !== user!.id)
+                : [...prevEvent.attendees, { userId: user!.id, userName: user!.name, avatarUrl: user!.avatarUrl }];
             return { ...prevEvent, attendees, attendeeCount: attendees.length };
         });
 
         try {
-            const updatedUser = await authService.toggleRsvpStatus(eventId);
-            setCurrentUser(updatedUser);
-            await eventService.toggleRsvp(eventId, currentUser!);
+            await toggleRsvpStatus(eventId);
+            await eventService.toggleRsvp(eventId, user!);
         } catch (error) {
             console.error("Failed to toggle RSVP", error);
-            setCurrentUser(originalUser);
             setEvents(originalEvents);
             setViewingEvent(originalEvents.find(e => e.id === eventId) || null);
         }
-    }, [currentUser, events, requireAuth]);
+    }, [user, events, requireAuth, toggleRsvpStatus]);
 
     const handleSetTab = useCallback((tab: string) => {
-        if (tab === "share" && !currentUser) {
+        if (tab === "share" && !user) {
             setIsAuthViewVisible(true);
             return;
         }
         setActiveTab(tab);
         localStorage.setItem(ACTIVE_TAB_KEY, tab);
-    }, [currentUser]);
+    }, [user]);
 
     const isMapView = activeTab === "today";
 
@@ -286,16 +204,16 @@ const App: React.FC = () => {
                         specialDay={todaySpecialDay}
                         tomorrowSpecialDay={TOMORROW_SPECIAL_DAY}
                         celebrations={celebrations}
-                        currentUser={currentUser}
+                        currentUser={user}
                         onToggleLike={handleToggleLike}
                         onToggleSave={handleToggleSave}
                         onToggleFollow={handleToggleFollow}
                     />
                 );
             case "share":
-                return currentUser ? (
+                return user ? (
                     <CreateView
-                        user={currentUser}
+                        user={user}
                         specialDay={todaySpecialDay}
                         onCelebrationCreated={handleCelebrationCreated}
                     />
@@ -303,7 +221,7 @@ const App: React.FC = () => {
             case "connect":
                 return (
                     <ConnectView
-                        currentUser={currentUser}
+                        currentUser={user}
                         onShowEventCreation={() => setIsEventCreationVisible(true)}
                         events={events}
                         onViewEvent={setViewingEvent}
@@ -311,15 +229,9 @@ const App: React.FC = () => {
                 );
             case "profile":
                 return (
-                    <ProfileView
-                        currentUser={currentUser}
-                        onLogout={handleLogout}
-                        onShowAuth={() => setIsAuthViewVisible(true)}
-                        onPreferencesChange={handlePreferencesChange}
-                        onAvatarChange={handleAvatarChange}
-                        celebrations={celebrations}
-                        onShowMission={() => setIsMissionViewVisible(true)}
+                    <UserProfileView
                         onNavigate={handleSetTab}
+                        onShowMission={() => setIsMissionViewVisible(true)}
                     />
                 );
             case "cms-test":
@@ -353,7 +265,7 @@ const App: React.FC = () => {
         }
     };
 
-    if (isInitializing) {
+    if (loading) {
         return (
             <div className="app-shell flex min-h-screen items-center justify-center">
                 <div className="glass-panel px-10 py-12 text-center space-y-4">
@@ -369,8 +281,8 @@ const App: React.FC = () => {
         <div className="app-shell flex min-h-screen flex-col">
             {isMapView && (
                 <Header
-                    isAuthLoading={isAuthLoading}
-                    currentUser={currentUser}
+                    isAuthLoading={loading}
+                    currentUser={user}
                     setActiveTab={handleSetTab}
                     onShowAuth={() => setIsAuthViewVisible(true)}
                 />
@@ -386,15 +298,11 @@ const App: React.FC = () => {
             </main>
             <BottomNavBar activeTab={activeTab} setActiveTab={handleSetTab} isMapView={isMapView} />
             {isAuthViewVisible && (
-                <AuthView
-                    onClose={() => setIsAuthViewVisible(false)}
-                    onLoginSuccess={handleLoginSuccess}
-                    onSetAuthLoading={setIsAuthLoading}
-                />
+                <AuthView onClose={handleAuthClose} />
             )}
-            {isEventCreationVisible && currentUser && (
+            {isEventCreationVisible && user && (
                 <EventCreationView
-                    user={currentUser}
+                    user={user}
                     onClose={() => setIsEventCreationVisible(false)}
                     onEventCreated={handleEventCreated}
                 />
@@ -402,7 +310,7 @@ const App: React.FC = () => {
             {viewingEvent && (
                 <EventDetailView
                     event={viewingEvent}
-                    currentUser={currentUser}
+                    currentUser={user}
                     onClose={() => setViewingEvent(null)}
                     onRsvpToggle={handleRsvpToggle}
                 />
@@ -411,6 +319,14 @@ const App: React.FC = () => {
                 <MissionView onClose={() => setIsMissionViewVisible(false)} />
             )}
         </div>
+    );
+};
+
+const App: React.FC = () => {
+    return (
+        <AuthProvider>
+            <AppContent />
+        </AuthProvider>
     );
 };
 
