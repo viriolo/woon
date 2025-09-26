@@ -290,6 +290,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                         onToggleLike={onToggleLike}
                         onToggleSave={onToggleSave}
                         onToggleFollow={onToggleFollow}
+                        mentionSuggestions={friends}
                     />
                 ) : selectedFriend ? (
                     <FriendCard

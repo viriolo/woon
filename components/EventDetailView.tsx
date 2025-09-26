@@ -51,13 +51,13 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, current
 
                 <div className="surface-card surface-card--tight overflow-hidden p-0">
                     <GoogleMap
-                        center={event.locationCoords}
-                        zoom={15}
-                        markers={[{
-                            position: event.locationCoords,
-                            title: event.title
-                        }]}
-                        style={{ height: "200px" }}
+                        celebrations={[]}
+                        selectedCelebrationId={null}
+                        onSelectCelebration={() => {}}
+                        friends={[]}
+                        showFriendsLayer={false}
+                        onSelectFriend={() => {}}
+                        highlightedFriendId={null}
                     />
                 </div>
 
