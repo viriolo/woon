@@ -27,13 +27,21 @@ const ACTIVE_TAB_KEY = "woon-active-tab";
 const AppContent: React.FC = () => {
     console.log('App component is loading...');
     const { user, loading } = useAuth();
-    const [activeTab, setActiveTab] = useState(() => localStorage.getItem(ACTIVE_TAB_KEY) || "today");
+    const [activeTab, setActiveTab] = useState(() => {
+        const stored = localStorage.getItem(ACTIVE_TAB_KEY);
+        return stored === "share" ? "today" : stored || "today";
+    });
     const [isAuthViewVisible, setIsAuthViewVisible] = useState(false);
     const [isEventCreationVisible, setIsEventCreationVisible] = useState(false);
     const [events, setEvents] = useState<Event[]>([]);
     const [celebrations, setCelebrations] = useState<Celebration[]>([]);
     const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
     const [isMissionViewVisible, setIsMissionViewVisible] = useState(false);
+
+    const updateActiveTab = useCallback((tab: string) => {
+        setActiveTab(tab);
+        localStorage.setItem(ACTIVE_TAB_KEY, tab);
+    }, [setActiveTab]);
 
     const todaySpecialDay = useMemo(() => {
         const today = new Date();
@@ -88,6 +96,12 @@ const AppContent: React.FC = () => {
         }
     }, [user, isAuthViewVisible]);
 
+    useEffect(() => {
+        if (!user && activeTab === "share") {
+            updateActiveTab("today");
+        }
+    }, [user, activeTab, updateActiveTab]);
+
     const handleEventCreated = useCallback(async (newEvent: Event) => {
         setEvents(prevEvents => [...prevEvents, newEvent]);
         setIsEventCreationVisible(false);
@@ -103,8 +117,7 @@ const AppContent: React.FC = () => {
 
     const handleCelebrationCreated = useCallback(async (newCelebration: Celebration) => {
         setCelebrations(prev => [...prev, newCelebration]);
-        setActiveTab("today");
-        localStorage.setItem(ACTIVE_TAB_KEY, "today");
+        updateActiveTab("today");
 
         if (user) {
             try {
@@ -113,7 +126,7 @@ const AppContent: React.FC = () => {
                 console.error("Failed to record celebration contribution:", error);
             }
         }
-    }, [user, recordCelebrationContribution]);
+    }, [user, recordCelebrationContribution, updateActiveTab]);
 
     const handleToggleLike = useCallback(async (celebrationId: number) => {
         if (!requireAuth()) return;
@@ -197,8 +210,7 @@ const AppContent: React.FC = () => {
             setIsAuthViewVisible(true);
             return;
         }
-        setActiveTab(tab);
-        localStorage.setItem(ACTIVE_TAB_KEY, tab);
+        updateActiveTab(tab);
     }, [user]);
 
     const isMapView = activeTab === "today";
@@ -249,7 +261,7 @@ const AppContent: React.FC = () => {
                                 onClick={() => handleSetTab('profile')}
                                 className="pill-button pill-muted mb-4"
                             >
-                                ← Back to Profile
+                                Back to Profile
                             </button>
                         </div>
                         <CMSTest />
@@ -263,7 +275,7 @@ const AppContent: React.FC = () => {
                         specialDay={todaySpecialDay}
                         tomorrowSpecialDay={TOMORROW_SPECIAL_DAY}
                         celebrations={celebrations}
-                        currentUser={currentUser}
+                        currentUser={user}
                         onToggleLike={handleToggleLike}
                         onToggleSave={handleToggleSave}
                         onToggleFollow={handleToggleFollow}
@@ -338,8 +350,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
-
-
-

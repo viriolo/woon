@@ -11,7 +11,9 @@ import {
     CogIcon,
     HeartIcon,
     BookmarkIcon,
+    ChatBubbleLeftIcon,
 } from "../../components/icons"
+import CMSNavigation from "./CMSNavigation"
 
 interface UserProfileViewProps {
     onNavigate?: (tab: string) => void
@@ -225,7 +227,7 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                             <h2 className="text-heading text-2xl text-ink-900 mb-2">{user.name}</h2>
                             <p className="text-body text-ink-500 mb-2">@{user.handle || 'user'}</p>
                             {user.bio && <p className="text-sm text-ink-600 mb-2">{user.bio}</p>}
-                            {user.location && <p className="text-xs text-ink-400 mb-4">📍 {user.location}</p>}
+                            {user.location && <p className="text-xs text-ink-400 mb-4">Location: {user.location}</p>}
                             <button
                                 onClick={() => {
                                     setEditForm({
@@ -305,7 +307,8 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                                                     {celebration.likes}
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    💬 {celebration.commentCount || 0}
+                                                    <ChatBubbleLeftIcon className="h-3 w-3" />
+                                                    {celebration.commentCount || 0}
                                                 </div>
                                             </div>
                                         </div>
@@ -409,6 +412,10 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                             </button>
                         </div>
                     </SectionCard>
+
+                    {onNavigate && (
+                        <CMSNavigation onNavigate={onNavigate} />
+                    )}
 
                 </div>
             </div>
