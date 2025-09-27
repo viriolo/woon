@@ -200,7 +200,9 @@ export const ConnectView: React.FC<ConnectViewProps> = ({ currentUser, onShowEve
                                 key={scope}
                                 type="button"
                                 onClick={() => setActiveScope(scope)}
-                                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${activeScope === scope ? "bg-primary text-white shadow-brand" : "bg-surface-light/80 text-ink-600 hover:bg-primary/10"}`}
+                                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                    activeScope === scope ? "bg-primary text-white shadow-brand" : "bg-surface-light/80 text-ink-600 hover:bg-primary/10"
+                                }`}
                             >
                                 {scope}
                             </button>

@@ -104,8 +104,8 @@ export const authService = {
     return await this.getCurrentUser() as AuthUser
   },
 
-  // Social login (Google, GitHub, etc.)
-  async socialLogIn(provider: 'google' | 'github'): Promise<void> {
+  // Social login (Google, Facebook, etc.)
+  async socialLogIn(provider: 'google' | 'facebook'): Promise<void> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {

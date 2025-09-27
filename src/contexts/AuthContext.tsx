@@ -7,7 +7,7 @@ interface AuthContextType {
   signUp: (name: string, email: string, password: string) => Promise<AuthUser>
   logIn: (email: string, password: string) => Promise<AuthUser>
   logOut: () => Promise<void>
-  socialLogIn: (provider: 'google' | 'github') => Promise<void>
+  socialLogIn: (provider: 'google' | 'facebook') => Promise<void>
   updateProfile: (updates: any) => Promise<AuthUser>
   updateAvatar: (base64Image: string) => Promise<AuthUser>
   updateNotificationPreferences: (prefs: any) => Promise<AuthUser>
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null)
   }
 
-  const socialLogIn = async (provider: 'google' | 'github'): Promise<void> => {
+  const socialLogIn = async (provider: 'google' | 'facebook'): Promise<void> => {
     await authService.socialLogIn(provider)
     // User will be updated via onAuthStateChange
   }

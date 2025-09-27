@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react"
 import { useAuth } from "../contexts/AuthContext"
-import { celebrationService } from "../services/celebrationService"
+import { celebrationService } from "../../services/celebrationService"
 import type { Celebration } from "../types"
 import {
     SparklesIcon,

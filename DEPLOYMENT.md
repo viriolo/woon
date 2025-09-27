@@ -27,10 +27,18 @@ VITE_GEMINI_API_KEY=AIzaSyDSbhUJltgDi9qzaDhJaFz2ies3yWM9iJ4
 VITE_GOOGLE_MAPS_API_KEY=AIzaSyC-Lw0q4c_zbPNX8tyt3CVGfHxbtPAzFxY
 ```
 
-### 4. **Deploy**
+### 4. **Configure OAuth in Supabase**
+⚠️ **Important**: Update OAuth redirect URLs in Supabase Dashboard:
+1. Go to Authentication → Providers in your Supabase dashboard
+2. For each OAuth provider (Google, Facebook):
+   - Add your Netlify URL: `https://your-app-name.netlify.app/auth/callback`
+   - Keep development URL: `http://localhost:5173/auth/callback`
+
+### 5. **Deploy**
 1. Click "Deploy site"
-2. Wait for build to complete
+2. Wait for build to complete (~2-3 minutes)
 3. Your site will be available at your Netlify URL
+4. **Test authentication flows** to ensure OAuth works properly
 
 ## 🎯 Features Available After Deployment
 
@@ -81,3 +89,35 @@ Once connected to GitHub, Netlify will automatically deploy:
 - Branch deployments (optional)
 
 Your headless CMS is production-ready! 🎉
+
+## 🔧 Troubleshooting
+
+### Build Issues
+- **Environment variables not found**: Ensure all `VITE_*` variables are set in Netlify
+- **TypeScript errors**: Run `npm run build` locally to identify issues
+- **Missing dependencies**: Clear Netlify build cache and redeploy
+
+### Authentication Issues
+- **OAuth redirect fails**:
+  1. Check redirect URLs in Supabase match your Netlify domain exactly
+  2. Ensure `auth/callback` is included in the URL
+  3. Verify environment variables are set correctly
+- **Social login buttons disabled**: Check that OAuth providers are enabled in Supabase
+- **"Not authenticated" errors**: Verify Supabase anon key and URL are correct
+
+### API Integration Issues
+- **Google Maps not loading**: Check `VITE_GOOGLE_MAPS_API_KEY` is valid
+- **Gemini AI not working**: Verify `VITE_GEMINI_API_KEY` has proper quotas
+- **Database connection errors**: Ensure Supabase URL and anon key are correct
+
+### Performance Issues
+- **Large bundle size**: The app uses code splitting, but bundles >500kB are normal for React apps
+- **Slow initial load**: Consider implementing lazy loading for heavy components
+
+## 🚨 Security Checklist
+
+- ✅ OAuth redirect URLs restricted to your domain
+- ✅ CSP headers configured for external resources
+- ✅ Environment variables properly scoped with `VITE_` prefix
+- ✅ Supabase RLS policies enabled for data protection
+- ✅ API keys have minimal required permissions

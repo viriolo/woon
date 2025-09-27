@@ -7,14 +7,14 @@ interface AuthViewProps {
 }
 
 const SocialButton: React.FC<{
-    provider: "google" | "github"
+    provider: "google" | "facebook"
     onClick: () => void
     disabled: boolean
 }> = ({ provider, onClick, disabled }) => {
     const isGoogle = provider === "google"
     const styles = isGoogle
         ? "bg-white text-ink-700 border border-ink-200 hover:bg-white/80"
-        : "bg-gray-800 text-white border border-transparent hover:bg-gray-700"
+        : "bg-blue-600 text-white border border-transparent hover:bg-blue-700"
 
     return (
         <button
@@ -23,8 +23,8 @@ const SocialButton: React.FC<{
             disabled={disabled}
             className={`pill-button w-full justify-center ${styles} disabled:opacity-60`}
         >
-            {isGoogle ? <GoogleIcon className="h-5 w-5" /> : <span className="h-5 w-5 text-lg">🐙</span>}
-            Continue with {isGoogle ? "Google" : "GitHub"}
+            {isGoogle ? <GoogleIcon className="h-5 w-5" /> : <FacebookIcon className="h-5 w-5" />}
+            Continue with {isGoogle ? "Google" : "Facebook"}
         </button>
     )
 }
@@ -38,7 +38,7 @@ export default function AuthView({ onClose }: AuthViewProps) {
     const [error, setError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleSocialLogin = async (provider: "google" | "github") => {
+    const handleSocialLogin = async (provider: "google" | "facebook") => {
         setError("")
         setIsLoading(true)
         try {
@@ -111,8 +111,8 @@ export default function AuthView({ onClose }: AuthViewProps) {
                                     disabled={isLoading}
                                 />
                                 <SocialButton
-                                    provider="github"
-                                    onClick={() => handleSocialLogin("github")}
+                                    provider="facebook"
+                                    onClick={() => handleSocialLogin("facebook")}
                                     disabled={isLoading}
                                 />
                             </div>
