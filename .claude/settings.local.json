@@ -21,7 +21,8 @@
       "mcp__supabase__execute_sql",
       "Bash(npx -y @supabase/mcp-server-supabase@latest --project-ref=lkeznjzvrikphdqwdlwo --access-token=sbp_v0_19a245df5b78e3e9c79262a02451139356b60ac7 list-tables)",
       "Bash(cd:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(supabase:*)"
     ],
     "deny": [],
     "ask": []

@@ -43,25 +43,52 @@ export default function AuthView({ onClose }: AuthViewProps) {
         setIsLoading(true)
         try {
             await socialLogIn(provider)
-            // For OAuth, user will be redirected and auth state will update automatically
-            onClose()
+            // For OAuth, user will be redirected - don't close modal here
+            // The auth state change will handle the modal closure
         } catch (err: any) {
             setError(err.message || "An error occurred during social login.")
-        } finally {
             setIsLoading(false)
         }
+        // Don't set loading to false here - user is being redirected
     }
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault()
         setError("")
+
+        // Client-side validation
+        if (mode === "signup" && !name.trim()) {
+            setError("Please enter your name.")
+            return
+        }
+
+        if (!email.trim()) {
+            setError("Please enter your email address.")
+            return
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setError("Please enter a valid email address.")
+            return
+        }
+
+        if (!password) {
+            setError("Please enter your password.")
+            return
+        }
+
+        if (mode === "signup" && password.length < 6) {
+            setError("Password must be at least 6 characters long.")
+            return
+        }
+
         setIsLoading(true)
 
         try {
             if (mode === "signup") {
-                await signUp(name, email, password)
+                await signUp(name.trim(), email.trim(), password)
             } else {
-                await logIn(email, password)
+                await logIn(email.trim(), password)
             }
             onClose()
         } catch (err: any) {

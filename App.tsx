@@ -81,6 +81,13 @@ const AppContent: React.FC = () => {
         setIsAuthViewVisible(false);
     }, []);
 
+    // Auto-close auth modal when user successfully logs in
+    useEffect(() => {
+        if (user && isAuthViewVisible) {
+            setIsAuthViewVisible(false);
+        }
+    }, [user, isAuthViewVisible]);
+
     const handleEventCreated = useCallback(async (newEvent: Event) => {
         setEvents(prevEvents => [...prevEvents, newEvent]);
         setIsEventCreationVisible(false);

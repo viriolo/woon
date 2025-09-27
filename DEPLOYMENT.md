@@ -27,12 +27,25 @@ VITE_GEMINI_API_KEY=AIzaSyDSbhUJltgDi9qzaDhJaFz2ies3yWM9iJ4
 VITE_GOOGLE_MAPS_API_KEY=AIzaSyC-Lw0q4c_zbPNX8tyt3CVGfHxbtPAzFxY
 ```
 
-### 4. **Configure OAuth in Supabase**
-⚠️ **Important**: Update OAuth redirect URLs in Supabase Dashboard:
-1. Go to Authentication → Providers in your Supabase dashboard
-2. For each OAuth provider (Google, Facebook):
-   - Add your Netlify URL: `https://your-app-name.netlify.app/auth/callback`
-   - Keep development URL: `http://localhost:5173/auth/callback`
+### 4. **Configure OAuth in Supabase Dashboard**
+⚠️ **Critical**: Update OAuth redirect URLs before deploying:
+
+1. **Go to Supabase Dashboard** → Authentication → Providers
+2. **For Google OAuth**:
+   - Enable Google provider
+   - Add redirect URLs:
+     - `https://your-app-name.netlify.app/auth/callback`
+     - `http://localhost:5173/auth/callback` (for dev)
+   - Copy your Google Client ID and Secret
+
+3. **For Facebook OAuth**:
+   - Enable Facebook provider
+   - Add redirect URLs:
+     - `https://your-app-name.netlify.app/auth/callback`
+     - `http://localhost:5173/auth/callback` (for dev)
+   - Copy your Facebook App ID and Secret
+
+4. **Update Site URL**: Set to `https://your-app-name.netlify.app`
 
 ### 5. **Deploy**
 1. Click "Deploy site"

@@ -38,10 +38,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Handle OAuth callback URL cleanup
+    const handleOAuthCallback = () => {
+      const url = new URL(window.location.href)
+      const hasAuthParams = url.searchParams.has('access_token') ||
+                           url.searchParams.has('error') ||
+                           url.hash.includes('access_token') ||
+                           url.hash.includes('error')
+
+      if (hasAuthParams) {
+        // Clean up the URL after OAuth redirect
+        const cleanUrl = `${window.location.origin}${window.location.pathname}`
+        window.history.replaceState({}, document.title, cleanUrl)
+      }
+    }
+
     // Listen for auth changes
     const { data: { subscription } } = authService.onAuthStateChange(async (user) => {
       setUser(user)
       setLoading(false)
+
+      // Clean up OAuth callback URL if present
+      handleOAuthCallback()
     })
 
     // Initial user load
@@ -51,6 +69,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }).catch(() => {
       setLoading(false)
     })
+
+    // Handle OAuth callback on initial load
+    handleOAuthCallback()
 
     return () => subscription.unsubscribe()
   }, [])

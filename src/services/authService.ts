@@ -81,14 +81,63 @@ export const authService = {
       }
     })
 
-    if (error) throw error
-    if (!data.user) throw new Error('User creation failed')
+    if (error) {
+      // Provide user-friendly error messages
+      if (error.message.includes('already registered')) {
+        throw new Error('An account with this email already exists. Please try logging in instead.')
+      }
+      if (error.message.includes('Password')) {
+        throw new Error('Password must be at least 6 characters long.')
+      }
+      if (error.message.includes('email')) {
+        throw new Error('Please enter a valid email address.')
+      }
+      throw new Error(error.message || 'Failed to create account. Please try again.')
+    }
+
+    if (!data.user) throw new Error('Account creation failed. Please try again.')
+
+    // Handle email confirmation case
+    if (!data.session) {
+      throw new Error('Please check your email and click the confirmation link to complete your account setup.')
+    }
 
     // The user profile is automatically created via trigger
-    // Wait a moment for the trigger to complete
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Wait for trigger to complete with retry logic
+    let retries = 3
+    while (retries > 0) {
+      try {
+        const user = await this.getCurrentUser()
+        if (user) return user
+      } catch (e) {
+        // Profile not ready yet, wait and retry
+      }
+      await new Promise(resolve => setTimeout(resolve, 500))
+      retries--
+    }
 
-    return await this.getCurrentUser() as AuthUser
+    // Fallback: return basic user info if profile isn't ready
+    return {
+      id: data.user.id,
+      email: data.user.email!,
+      name,
+      streakDays: 1,
+      experiencePoints: 0,
+      level: 1,
+      notificationPreferences: {
+        dailySpecialDay: true,
+        communityActivity: true,
+        eventReminders: true,
+        followNotifications: true
+      },
+      achievements: [],
+      likedCelebrationIds: [],
+      savedCelebrationIds: [],
+      rsvpedEventIds: [],
+      followingUserIds: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
   },
 
   // Sign in with email and password
@@ -98,10 +147,28 @@ export const authService = {
       password
     })
 
-    if (error) throw error
-    if (!data.user) throw new Error('Login failed')
+    if (error) {
+      // Provide user-friendly error messages
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Invalid email or password. Please check your credentials and try again.')
+      }
+      if (error.message.includes('Email not confirmed')) {
+        throw new Error('Please check your email and confirm your account before logging in.')
+      }
+      if (error.message.includes('too many requests')) {
+        throw new Error('Too many login attempts. Please wait a few minutes and try again.')
+      }
+      throw new Error(error.message || 'Login failed. Please try again.')
+    }
 
-    return await this.getCurrentUser() as AuthUser
+    if (!data.user) throw new Error('Login failed. Please try again.')
+
+    const user = await this.getCurrentUser()
+    if (!user) {
+      throw new Error('Unable to load user profile. Please try refreshing the page.')
+    }
+
+    return user
   },
 
   // Social login (Google, Facebook, etc.)
@@ -113,7 +180,19 @@ export const authService = {
       }
     })
 
-    if (error) throw error
+    if (error) {
+      // Provide specific error messages for OAuth issues
+      if (error.message.includes('redirect_uri')) {
+        throw new Error(`OAuth redirect URL not configured properly. Please contact support.`)
+      }
+      if (error.message.includes('client_id')) {
+        throw new Error(`${provider} OAuth is not properly configured. Please contact support.`)
+      }
+      if (error.message.includes('network')) {
+        throw new Error('Network error. Please check your connection and try again.')
+      }
+      throw new Error(error.message || `Failed to authenticate with ${provider}. Please try again.`)
+    }
     // For OAuth, the user will be redirected and we handle the response elsewhere
   },
 
