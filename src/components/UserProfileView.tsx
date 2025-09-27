@@ -1,5 +1,7 @@
-import React, { useRef, useState } from "react"
+import React, { useRef, useState, useEffect } from "react"
 import { useAuth } from "../contexts/AuthContext"
+import { celebrationService } from "../services/celebrationService"
+import type { Celebration } from "../types"
 import {
     SparklesIcon,
     ChevronRightIcon,
@@ -7,6 +9,8 @@ import {
     StarIcon,
     ShieldCheckIcon,
     CogIcon,
+    HeartIcon,
+    BookmarkIcon,
 } from "../../components/icons"
 
 interface UserProfileViewProps {
@@ -55,45 +59,47 @@ const ToggleRow: React.FC<{
     </div>
 )
 
-const AchievementsList: React.FC = () => {
-    const { user } = useAuth()
-    const achievements = user?.achievements || []
-
-    return (
-        <div className="grid gap-4 sm:grid-cols-2">
-            {achievements.length ? (
-                achievements.map(achievement => (
-                    <div key={achievement.id} className="flex items-start gap-3 rounded-2xl bg-white/80 px-5 py-4">
-                        <StarIcon className="h-6 w-6 text-primary" />
-                        <div>
-                            <p className="text-sm font-semibold text-ink-900">{achievement.name}</p>
-                            <p className="text-xs text-ink-500">{achievement.description}</p>
-                            <p className="mt-1 text-xs text-ink-400">
-                                Earned {new Date(achievement.earnedAt).toLocaleDateString()}
-                            </p>
-                        </div>
-                    </div>
-                ))
-            ) : (
-                <div className="rounded-2xl bg-white/80 px-5 py-5 text-sm text-ink-500">
-                    Earn achievements by participating in the community.
-                </div>
-            )}
-        </div>
-    )
-}
 
 export default function UserProfileView({ onNavigate, onShowMission }: UserProfileViewProps) {
     const { user, logOut, updateAvatar, updateNotificationPreferences, updateProfile } = useAuth()
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const [activeTab, setActiveTab] = useState<'achievements' | 'stats'>('achievements')
+    const [activeTab, setActiveTab] = useState<'my-celebrations' | 'saved-celebrations'>('my-celebrations')
     const [isEditing, setIsEditing] = useState(false)
+    const [myCelebrations, setMyCelebrations] = useState<Celebration[]>([])
+    const [savedCelebrations, setSavedCelebrations] = useState<Celebration[]>([])
+    const [isLoadingCelebrations, setIsLoadingCelebrations] = useState(true)
     const [editForm, setEditForm] = useState({
         name: user?.name || '',
         handle: user?.handle || '',
         bio: user?.bio || '',
         location: user?.location || ''
     })
+
+    // Load user's celebrations
+    useEffect(() => {
+        const loadCelebrations = async () => {
+            if (!user) return
+
+            setIsLoadingCelebrations(true)
+            try {
+                const allCelebrations = await celebrationService.getCelebrations()
+
+                // Filter user's own celebrations
+                const userCelebrations = allCelebrations.filter(c => c.author === user.name)
+                setMyCelebrations(userCelebrations)
+
+                // Filter saved celebrations
+                const saved = allCelebrations.filter(c => user.savedCelebrationIds.includes(c.id))
+                setSavedCelebrations(saved)
+            } catch (error) {
+                console.error('Failed to load celebrations:', error)
+            } finally {
+                setIsLoadingCelebrations(false)
+            }
+        }
+
+        loadCelebrations()
+    }, [user])
 
     if (!user) {
         return (
@@ -134,26 +140,13 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
         }
     }
 
-    const stats = [
-        { label: "Experience", value: user.experiencePoints },
-        { label: "Level", value: user.level },
-        { label: "Streak", value: `${user.streakDays} days` },
-        { label: "Achievements", value: user.achievements.length },
-    ]
 
     return (
         <div className="min-h-screen bg-surface">
             {/* Clean Header */}
             <header className="surface-elevated px-6 py-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-center">
                     <h1 className="text-heading text-xl text-ink-900">Profile</h1>
-                    <button
-                        type="button"
-                        onClick={logOut}
-                        className="pill-button pill-secondary text-sm"
-                    >
-                        Sign Out
-                    </button>
                 </div>
             </header>
 
@@ -250,14 +243,15 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                         </>
                     )}
 
-                    {/* Four Column Stats */}
-                    <div className="grid grid-cols-4 gap-4 max-w-lg mx-auto mt-8">
-                        {stats.map(stat => (
-                            <div key={stat.label} className="text-center">
-                                <div className="text-heading text-xl text-ink-900 mb-1">{stat.value}</div>
-                                <div className="text-caption text-ink-500 text-xs">{stat.label}</div>
+                    {/* Celebration Streak Highlight */}
+                    <div className="max-w-xs mx-auto mt-8">
+                        <div className="surface-card px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <StarIcon className="h-5 w-5 text-primary" />
+                                <span className="text-heading text-lg text-ink-900">{user.streakDays} days</span>
                             </div>
-                        ))}
+                            <p className="text-caption text-ink-500">Celebration Streak</p>
+                        </div>
                     </div>
                 </div>
 
@@ -265,8 +259,8 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                 <div className="border-b border-ink-100 mb-6">
                     <nav className="flex gap-6 justify-center">
                         {[
-                            { id: 'achievements', label: 'Achievements', count: user.achievements.length },
-                            { id: 'stats', label: 'Activity Stats', count: user.experiencePoints },
+                            { id: 'my-celebrations', label: 'My Celebrations', count: myCelebrations.length },
+                            { id: 'saved-celebrations', label: 'Saved', count: savedCelebrations.length },
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -278,121 +272,144 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                                         : 'border-transparent text-ink-500 hover:text-ink-700'
                                 }`}
                             >
-                                {tab.label}
+                                {tab.label} ({tab.count})
                             </button>
                         ))}
                     </nav>
                 </div>
 
                 {/* Tab Content */}
-                {activeTab === 'achievements' && (
+                {activeTab === 'my-celebrations' && (
                     <div>
-                        <AchievementsList />
+                        {isLoadingCelebrations ? (
+                            <div className="text-center py-8">
+                                <div className="text-ink-500">Loading celebrations...</div>
+                            </div>
+                        ) : myCelebrations.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+                                    {myCelebrations.map(celebration => (
+                                        <div key={celebration.id} className="w-64 surface-card p-4 space-y-3">
+                                            <img
+                                                src={celebration.imageUrl}
+                                                alt={celebration.title}
+                                                className="w-full h-40 object-cover rounded-xl"
+                                            />
+                                            <div>
+                                                <h3 className="text-heading text-sm font-semibold text-ink-900 truncate">{celebration.title}</h3>
+                                                <p className="text-xs text-ink-500 line-clamp-2 mt-1">{celebration.description}</p>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-ink-400">
+                                                <div className="flex items-center gap-1">
+                                                    <HeartIcon className="h-3 w-3" />
+                                                    {celebration.likes}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    💬 {celebration.commentCount || 0}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-ink-500 mb-2">No celebrations yet</div>
+                                <p className="text-sm text-ink-400">Share your first celebration to get started!</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {activeTab === 'stats' && (
-                    <div className="space-y-4">
-                        <div className="surface-card p-6">
-                            <h3 className="text-heading mb-4">Activity Overview</h3>
-                            <div className="grid grid-cols-2 gap-4 text-center">
-                                <div>
-                                    <div className="text-2xl font-bold text-accent">{user.likedCelebrationIds.length}</div>
-                                    <div className="text-sm text-ink-500">Celebrations Liked</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold text-accent">{user.savedCelebrationIds.length}</div>
-                                    <div className="text-sm text-ink-500">Items Saved</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold text-accent">{user.followingUserIds.length}</div>
-                                    <div className="text-sm text-ink-500">Following</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold text-accent">{user.rsvpedEventIds.length}</div>
-                                    <div className="text-sm text-ink-500">Events RSVP'd</div>
+                {activeTab === 'saved-celebrations' && (
+                    <div>
+                        {isLoadingCelebrations ? (
+                            <div className="text-center py-8">
+                                <div className="text-ink-500">Loading saved celebrations...</div>
+                            </div>
+                        ) : savedCelebrations.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+                                    {savedCelebrations.map(celebration => (
+                                        <div key={celebration.id} className="w-64 surface-card p-4 space-y-3">
+                                            <img
+                                                src={celebration.imageUrl}
+                                                alt={celebration.title}
+                                                className="w-full h-40 object-cover rounded-xl"
+                                            />
+                                            <div>
+                                                <h3 className="text-heading text-sm font-semibold text-ink-900 truncate">{celebration.title}</h3>
+                                                <p className="text-caption text-xs text-ink-500">by {celebration.author}</p>
+                                                <p className="text-xs text-ink-500 line-clamp-2 mt-1">{celebration.description}</p>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-xs text-ink-400">
+                                                <div className="flex items-center gap-1">
+                                                    <HeartIcon className="h-3 w-3" />
+                                                    {celebration.likes}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <BookmarkIcon className="h-3 w-3 text-primary" />
+                                                    Saved
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-ink-500 mb-2">No saved celebrations</div>
+                                <p className="text-sm text-ink-400">Save celebrations you love to find them here!</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Settings Section */}
                 <div className="mt-12 space-y-6">
-                    <SectionCard title="Notifications & Preferences">
+                    <SectionCard title="Preferences">
                         <div className="flex flex-col gap-3">
                             <ToggleRow
-                                label="Daily special day alerts"
-                                description="Stay in the loop about today's spotlight celebration."
+                                label="Daily alerts"
+                                description="Get notified about today's special day."
                                 enabled={user.notificationPreferences.dailySpecialDay}
                                 onToggle={(value) => updateNotificationPreferences({ ...user.notificationPreferences, dailySpecialDay: value })}
                             />
                             <ToggleRow
-                                label="Community activity updates"
-                                description="Highlights from neighbors you follow and events you join."
+                                label="Community activity"
+                                description="Updates from neighbors and events."
                                 enabled={user.notificationPreferences.communityActivity}
                                 onToggle={(value) => updateNotificationPreferences({ ...user.notificationPreferences, communityActivity: value })}
                             />
-                            <ToggleRow
-                                label="Event reminders"
-                                description="Get notified about upcoming events you've RSVP'd to."
-                                enabled={user.notificationPreferences.eventReminders || false}
-                                onToggle={(value) => updateNotificationPreferences({ ...user.notificationPreferences, eventReminders: value })}
-                            />
                         </div>
                     </SectionCard>
 
-                    <SectionCard
-                        title="About Woon"
-                        subtitle="Learn more about how we celebrate together."
-                        action={onShowMission && (
-                            <button type="button" onClick={onShowMission} className="pill-button pill-accent">
-                                <SparklesIcon className="h-5 w-5" /> View Mission
-                            </button>
-                        )}
-                    >
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                                Celebration Interests
-                                <ChevronRightIcon className="h-5 w-5 text-ink-400" />
-                            </button>
-                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                                Privacy & Community Settings
-                                <ShieldCheckIcon className="h-5 w-5 text-ink-400" />
-                            </button>
-                            <button type="button" className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900">
-                                Manage Subscription
-                                <CogIcon className="h-5 w-5 text-ink-400" />
+                    <SectionCard title="About & Account">
+                        <div className="space-y-3">
+                            {onShowMission && (
+                                <button
+                                    type="button"
+                                    onClick={onShowMission}
+                                    className="flex items-center justify-between w-full rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <SparklesIcon className="h-5 w-5 text-primary" />
+                                        View Mission
+                                    </div>
+                                    <ChevronRightIcon className="h-5 w-5 text-ink-400" />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={logOut}
+                                className="flex items-center justify-between w-full rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-red-600"
+                            >
+                                Log Out
+                                <ChevronRightIcon className="h-5 w-5 text-red-400" />
                             </button>
                         </div>
                     </SectionCard>
 
-                    {/* CMS Management Section - Only show if onNavigate is provided */}
-                    {onNavigate && (
-                        <SectionCard
-                            title="Content Management"
-                            subtitle="Manage your headless CMS"
-                        >
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <button
-                                    type="button"
-                                    onClick={() => onNavigate('cms-test')}
-                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900"
-                                >
-                                    🧪 Test CMS Connection
-                                    <ChevronRightIcon className="h-5 w-5 text-ink-400" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onNavigate('cms-admin')}
-                                    className="flex items-center justify-between rounded-2xl bg-white/80 px-5 py-4 text-left text-sm font-semibold text-ink-900"
-                                >
-                                    ⚙️ Admin Dashboard
-                                    <ChevronRightIcon className="h-5 w-5 text-ink-400" />
-                                </button>
-                            </div>
-                        </SectionCard>
-                    )}
                 </div>
             </div>
         </div>
