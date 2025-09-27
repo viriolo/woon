@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
-import type { User, Event } from "../types";
+import type { Event } from "../types";
+import type { AuthUser } from "../src/services/authService";
 import { CalendarPlusIcon, UsersIcon, GlobeAltIcon, MapIcon } from "./icons";
 
 interface ConnectViewProps {
-    currentUser: User | null;
+    currentUser: AuthUser | null;
     onShowEventCreation: () => void;
     events: Event[];
     onViewEvent: (event: Event) => void;

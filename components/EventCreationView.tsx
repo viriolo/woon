@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import type { User, Event } from "../types";
+import type { Event } from "../types";
+import type { AuthUser } from "../src/services/authService";
 import { eventService } from "../services/eventService";
 import { XCircleIcon, LoadingSpinner, CheckCircleIcon } from "./icons";
 import { AddToCalendarButton } from "add-to-calendar-button-react";
 
 interface EventCreationViewProps {
-    user: User;
+    user: AuthUser;
     onClose: () => void;
     onEventCreated: (event: Event) => void;
 }

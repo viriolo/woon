@@ -1,4 +1,5 @@
-import type { Event, User, EventAttendee } from "../types";
+import type { Event, EventAttendee } from "../types";
+import type { AuthUser } from "../src/services/authService";
 
 const EVENTS_STORAGE_KEY = "woon_events";
 
@@ -38,7 +39,7 @@ export const eventService = {
 
     createEvent: async (
         eventData: Omit<Event, "id" | "authorId" | "authorName" | "locationCoords" | "attendeeCount" | "attendees">,
-        user: User
+        user: AuthUser
     ): Promise<Event> => {
         if (!user) {
             throw new Error("Authentication required to create an event.");
