@@ -34,7 +34,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ event, current
                 <div className="flex flex-wrap items-center gap-3 text-sm text-ink-600">
                     <span className="tag-chip">
                         <CalendarDaysIcon className="h-4 w-4" />
-                        {event.date} � {event.time}
+                        {event.date} &middot; {event.time}
                     </span>
                     {event.attendeeCount > 0 && (
                         <span className="tag-chip">
