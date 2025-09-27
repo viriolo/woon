@@ -101,24 +101,29 @@ export default function AuthView({ onClose }: AuthViewProps) {
                         </p>
                     </div>
 
-                    <div className="space-y-3">
-                        <SocialButton
-                            provider="google"
-                            onClick={() => handleSocialLogin("google")}
-                            disabled={isLoading}
-                        />
-                        <SocialButton
-                            provider="github"
-                            onClick={() => handleSocialLogin("github")}
-                            disabled={isLoading}
-                        />
-                    </div>
+                    {/* Social login enabled - ensure OAuth providers are configured in Supabase */}
+                    {true && (
+                        <>
+                            <div className="space-y-3">
+                                <SocialButton
+                                    provider="google"
+                                    onClick={() => handleSocialLogin("google")}
+                                    disabled={isLoading}
+                                />
+                                <SocialButton
+                                    provider="github"
+                                    onClick={() => handleSocialLogin("github")}
+                                    disabled={isLoading}
+                                />
+                            </div>
 
-                    <div className="flex items-center gap-4 text-xs uppercase text-ink-400">
-                        <div className="h-px flex-1 bg-ink-200" />
-                        <span>or continue with email</span>
-                        <div className="h-px flex-1 bg-ink-200" />
-                    </div>
+                            <div className="flex items-center gap-4 text-xs uppercase text-ink-400">
+                                <div className="h-px flex-1 bg-ink-200" />
+                                <span>or continue with email</span>
+                                <div className="h-px flex-1 bg-ink-200" />
+                            </div>
+                        </>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         {mode === "signup" && (
