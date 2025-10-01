@@ -1,140 +1,234 @@
 import { supabase } from './supabaseClient';
-import type { Celebration, UserLocation } from '../types';
+import type { Celebration, User } from '../types';
+
+export interface SupabaseCelebration {
+  id: number;
+  user_id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  location_lng: number | null;
+  location_lat: number | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  user_profiles: {
+    name: string;
+    handle: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+const transformCelebration = (dbCelebration: SupabaseCelebration): Celebration => {
+  return {
+    id: dbCelebration.id,
+    authorId: dbCelebration.user_id,
+    author: dbCelebration.user_profiles?.name || 'Anonymous',
+    title: dbCelebration.title,
+    description: dbCelebration.description || '',
+    imageUrl: dbCelebration.image_url || '',
+    likes: dbCelebration.likes_count,
+    commentCount: dbCelebration.comments_count,
+    position: {
+      lng: dbCelebration.location_lng || 0,
+      lat: dbCelebration.location_lat || 0,
+    },
+  };
+};
 
 export const supabaseCelebrationService = {
-  // Get celebrations with location filtering
-  getCelebrations: async (userLocation?: UserLocation, radiusKm: number = 50): Promise<Celebration[]> => {
-    let query = supabase
+  getCelebrations: async (): Promise<Celebration[]> => {
+    const { data, error } = await supabase
       .from('celebrations')
       .select(`
         *,
-        users!inner(name, handle, avatar_url)
+        user_profiles!inner(name, handle, avatar_url)
       `)
       .order('created_at', { ascending: false });
 
-    // Add location filtering if provided
-    if (userLocation) {
-      // PostGIS query for nearby celebrations
-      query = query.rpc('celebrations_near_location', {
-        lat: userLocation.lat,
-        lng: userLocation.lng,
-        radius_km: radiusKm
-      });
+    if (error) {
+      console.error('Error fetching celebrations:', error);
+      throw new Error('Failed to fetch celebrations');
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-
-    return data.map(transformDatabaseCelebration);
+    return (data || []).map(transformCelebration);
   },
 
-  // Create celebration
-  createCelebration: async (celebration: {
-    title: string;
-    description: string;
-    imageUrl?: string;
-    location: UserLocation;
-    locationName?: string;
-  }): Promise<Celebration> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+  getCelebrationById: async (id: number): Promise<Celebration | null> => {
+    const { data, error } = await supabase
+      .from('celebrations')
+      .select(`
+        *,
+        user_profiles!inner(name, handle, avatar_url)
+      `)
+      .eq('id', id)
+      .maybeSingle();
 
+    if (error) {
+      console.error('Error fetching celebration:', error);
+      throw new Error('Failed to fetch celebration');
+    }
+
+    return data ? transformCelebration(data) : null;
+  },
+
+  getCelebrationsByUserId: async (userId: string): Promise<Celebration[]> => {
+    const { data, error } = await supabase
+      .from('celebrations')
+      .select(`
+        *,
+        user_profiles!inner(name, handle, avatar_url)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false});
+
+    if (error) {
+      console.error('Error fetching user celebrations:', error);
+      throw new Error('Failed to fetch user celebrations');
+    }
+
+    return (data || []).map(transformCelebration);
+  },
+
+  createCelebration: async (
+    celebrationData: Pick<Celebration, 'title' | 'description' | 'imageUrl'>,
+    user: User,
+    position?: { lng: number; lat: number }
+  ): Promise<Celebration> => {
     const { data, error } = await supabase
       .from('celebrations')
       .insert({
         user_id: user.id,
-        title: celebration.title,
-        description: celebration.description,
-        image_url: celebration.imageUrl,
-        location: `POINT(${celebration.location.lng} ${celebration.location.lat})`,
-        location_name: celebration.locationName
+        title: celebrationData.title,
+        description: celebrationData.description,
+        image_url: celebrationData.imageUrl,
+        location_lng: position?.lng,
+        location_lat: position?.lat,
       })
       .select(`
         *,
-        users!inner(name, handle, avatar_url)
+        user_profiles!inner(name, handle, avatar_url)
       `)
       .single();
 
-    if (error) throw error;
-    return transformDatabaseCelebration(data);
+    if (error) {
+      console.error('Error creating celebration:', error);
+      throw new Error('Failed to create celebration');
+    }
+
+    return transformCelebration(data);
   },
 
-  // Like/unlike celebration
-  toggleLike: async (celebrationId: number): Promise<boolean> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+  updateCelebration: async (
+    id: number,
+    updates: Partial<Pick<Celebration, 'title' | 'description' | 'imageUrl'>>
+  ): Promise<Celebration> => {
+    const { data, error } = await supabase
+      .from('celebrations')
+      .update({
+        title: updates.title,
+        description: updates.description,
+        image_url: updates.imageUrl,
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        user_profiles!inner(name, handle, avatar_url)
+      `)
+      .single();
 
-    // Check if already liked
-    const { data: existingLike } = await supabase
+    if (error) {
+      console.error('Error updating celebration:', error);
+      throw new Error('Failed to update celebration');
+    }
+
+    return transformCelebration(data);
+  },
+
+  deleteCelebration: async (id: number): Promise<void> => {
+    const { error } = await supabase
+      .from('celebrations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting celebration:', error);
+      throw new Error('Failed to delete celebration');
+    }
+  },
+
+  toggleLike: async (celebrationId: number, userId: string): Promise<boolean> => {
+    const { data: existing } = await supabase
       .from('celebration_likes')
-      .select('*')
-      .eq('user_id', user.id)
+      .select('user_id')
       .eq('celebration_id', celebrationId)
-      .single();
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (existingLike) {
-      // Unlike
-      await supabase
+    if (existing) {
+      const { error } = await supabase
         .from('celebration_likes')
         .delete()
-        .eq('user_id', user.id)
-        .eq('celebration_id', celebrationId);
+        .eq('celebration_id', celebrationId)
+        .eq('user_id', userId);
 
-      // Decrement count
-      await supabase.rpc('decrement_celebration_likes', {
-        celebration_id: celebrationId
-      });
-
+      if (error) {
+        console.error('Error removing like:', error);
+        throw new Error('Failed to remove like');
+      }
       return false;
     } else {
-      // Like
-      await supabase
+      const { error } = await supabase
         .from('celebration_likes')
         .insert({
-          user_id: user.id,
-          celebration_id: celebrationId
+          celebration_id: celebrationId,
+          user_id: userId,
         });
 
-      // Increment count
-      await supabase.rpc('increment_celebration_likes', {
-        celebration_id: celebrationId
-      });
-
+      if (error) {
+        console.error('Error adding like:', error);
+        throw new Error('Failed to add like');
+      }
       return true;
     }
   },
 
-  // Save/unsave celebration
-  toggleSave: async (celebrationId: number): Promise<boolean> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    const { data: existingSave } = await supabase
+  toggleSave: async (celebrationId: number, userId: string): Promise<boolean> => {
+    const { data: existing } = await supabase
       .from('celebration_saves')
-      .select('*')
-      .eq('user_id', user.id)
+      .select('user_id')
       .eq('celebration_id', celebrationId)
-      .single();
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (existingSave) {
-      await supabase
+    if (existing) {
+      const { error } = await supabase
         .from('celebration_saves')
         .delete()
-        .eq('user_id', user.id)
-        .eq('celebration_id', celebrationId);
+        .eq('celebration_id', celebrationId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error removing save:', error);
+        throw new Error('Failed to remove save');
+      }
       return false;
     } else {
-      await supabase
+      const { error } = await supabase
         .from('celebration_saves')
         .insert({
-          user_id: user.id,
-          celebration_id: celebrationId
+          celebration_id: celebrationId,
+          user_id: userId,
         });
+
+      if (error) {
+        console.error('Error saving celebration:', error);
+        throw new Error('Failed to save celebration');
+      }
       return true;
     }
   },
 
-  // Real-time subscription for new celebrations
   subscribeToNewCelebrations: (callback: (celebration: Celebration) => void) => {
     return supabase
       .channel('celebrations')
@@ -146,104 +240,20 @@ export const supabaseCelebrationService = {
           table: 'celebrations'
         },
         async (payload) => {
-          // Fetch full celebration data with user info
           const { data } = await supabase
             .from('celebrations')
             .select(`
               *,
-              users!inner(name, handle, avatar_url)
+              user_profiles!inner(name, handle, avatar_url)
             `)
             .eq('id', payload.new.id)
-            .single();
+            .maybeSingle();
 
           if (data) {
-            callback(transformDatabaseCelebration(data));
+            callback(transformCelebration(data));
           }
         }
       )
       .subscribe();
   }
-};
-
-// Database functions (SQL)
-const createDatabaseFunctions = `
--- Function to find celebrations near a location
-CREATE OR REPLACE FUNCTION celebrations_near_location(lat FLOAT, lng FLOAT, radius_km FLOAT)
-RETURNS TABLE(
-  id BIGINT,
-  user_id UUID,
-  title TEXT,
-  description TEXT,
-  image_url TEXT,
-  location POINT,
-  location_name TEXT,
-  likes_count INTEGER,
-  comments_count INTEGER,
-  created_at TIMESTAMPTZ,
-  distance_km FLOAT
-) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    c.id,
-    c.user_id,
-    c.title,
-    c.description,
-    c.image_url,
-    c.location,
-    c.location_name,
-    c.likes_count,
-    c.comments_count,
-    c.created_at,
-    ST_Distance(
-      ST_GeogFromText('POINT(' || lng || ' ' || lat || ')'),
-      ST_GeogFromText('POINT(' || ST_X(c.location) || ' ' || ST_Y(c.location) || ')')
-    ) / 1000 as distance_km
-  FROM celebrations c
-  WHERE ST_DWithin(
-    ST_GeogFromText('POINT(' || lng || ' ' || lat || ')'),
-    ST_GeogFromText('POINT(' || ST_X(c.location) || ' ' || ST_Y(c.location) || ')'),
-    radius_km * 1000
-  )
-  ORDER BY distance_km;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to increment likes
-CREATE OR REPLACE FUNCTION increment_celebration_likes(celebration_id BIGINT)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE celebrations
-  SET likes_count = likes_count + 1
-  WHERE id = celebration_id;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to decrement likes
-CREATE OR REPLACE FUNCTION decrement_celebration_likes(celebration_id BIGINT)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE celebrations
-  SET likes_count = GREATEST(likes_count - 1, 0)
-  WHERE id = celebration_id;
-END;
-$$ LANGUAGE plpgsql;
-`;
-
-const transformDatabaseCelebration = (dbCelebration: any): Celebration => {
-  // Parse PostGIS POINT format
-  const locationMatch = dbCelebration.location?.match(/POINT\(([^)]+)\)/);
-  const [lng, lat] = locationMatch ? locationMatch[1].split(' ').map(Number) : [0, 0];
-
-  return {
-    id: dbCelebration.id,
-    authorId: dbCelebration.user_id,
-    author: dbCelebration.users.name,
-    title: dbCelebration.title,
-    description: dbCelebration.description || '',
-    imageUrl: dbCelebration.image_url || '',
-    likes: dbCelebration.likes_count,
-    commentCount: dbCelebration.comments_count,
-    position: { lng, lat }
-  };
 };
