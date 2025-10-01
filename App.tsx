@@ -59,13 +59,36 @@ const AppContent: React.FC = () => {
                 setEvents(storedEvents);
 
                 const storedCelebrations = await celebrationService.getCelebrations();
-                setCelebrations([...MOCK_CELEBRATIONS, ...storedCelebrations]);
+                setCelebrations(storedCelebrations.length ? storedCelebrations : MOCK_CELEBRATIONS);
             } catch (error) {
                 console.error("Initialization failed:", error);
             }
         };
 
         initializeApp();
+    }, []);
+
+    useEffect(() => {
+        let subscription: { unsubscribe?: () => Promise<void> | void } | null = null;
+
+        try {
+            subscription = celebrationService.subscribeToNewCelebrations((newCelebration) => {
+                setCelebrations(prev => {
+                    if (prev.some(existing => existing.id === newCelebration.id)) {
+                        return prev;
+                    }
+                    return [newCelebration, ...prev];
+                });
+            });
+        } catch (error) {
+            console.error("Failed to subscribe to celebration updates", error);
+        }
+
+        return () => {
+            if (subscription && typeof subscription.unsubscribe === 'function') {
+                subscription.unsubscribe();
+            }
+        };
     }, []);
 
     const requireAuth = useCallback((): boolean => {
@@ -350,3 +373,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
