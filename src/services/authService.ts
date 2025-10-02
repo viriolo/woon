@@ -216,6 +216,15 @@ export const authService = {
     // For OAuth, the user will be redirected and we handle the response elsewhere
   },
 
+
+  // Exchange OAuth code for a session
+  async exchangeCodeForSession(code: string): Promise<void> {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      throw error
+    }
+  },
+
   // Sign out
   async logOut(): Promise<void> {
     const { error } = await supabase.auth.signOut()

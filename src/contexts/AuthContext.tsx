@@ -38,42 +38,70 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Handle OAuth callback URL cleanup
-    const handleOAuthCallback = () => {
-      const url = new URL(window.location.href)
-      const hasAuthParams = url.searchParams.has('access_token') ||
-                           url.searchParams.has('error') ||
-                           url.hash.includes('access_token') ||
-                           url.hash.includes('error')
+    let isMounted = true
 
-      if (hasAuthParams) {
-        // Clean up the URL after OAuth redirect
-        const cleanUrl = `${window.location.origin}${window.location.pathname}`
+    const handleOAuthCallback = async (options?: { skipExchange?: boolean }) => {
+      if (typeof window === 'undefined') {
+        return
+      }
+
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get('code')
+      const state = url.searchParams.get('state')
+      const hasOAuthQuery = ['access_token', 'refresh_token', 'expires_in', 'error'].some(param => url.searchParams.has(param))
+      const hasOAuthHash = url.hash.includes('access_token') || url.hash.includes('error')
+      const shouldExchangeCode = !options?.skipExchange && !!code
+
+      if (shouldExchangeCode && code) {
+        try {
+          await authService.exchangeCodeForSession(code)
+        } catch (error) {
+          console.error('Failed to complete OAuth code exchange:', error)
+        }
+      }
+
+      if (shouldExchangeCode || hasOAuthQuery || hasOAuthHash || !!state) {
+        ['code', 'state', 'access_token', 'refresh_token', 'expires_in', 'token_type', 'error'].forEach(param => {
+          url.searchParams.delete(param)
+        })
+        url.hash = ''
+
+        const normalizedPath = url.pathname === '/auth/callback' ? '/' : url.pathname
+        const cleanUrl = `${url.origin}${normalizedPath}${url.search || ''}`
         window.history.replaceState({}, document.title, cleanUrl)
       }
     }
 
-    // Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange(async (user) => {
-      setUser(user)
+    const { data: { subscription } } = authService.onAuthStateChange(async (authUser) => {
+      if (!isMounted) return
+      setUser(authUser)
       setLoading(false)
 
-      // Clean up OAuth callback URL if present
-      handleOAuthCallback()
+      await handleOAuthCallback({ skipExchange: true })
     })
 
-    // Initial user load
-    authService.getCurrentUser().then((user) => {
-      setUser(user)
-      setLoading(false)
-    }).catch(() => {
-      setLoading(false)
-    })
+    ;(async () => {
+      await handleOAuthCallback()
 
-    // Handle OAuth callback on initial load
-    handleOAuthCallback()
+      try {
+        const currentUser = await authService.getCurrentUser()
+        if (!isMounted) {
+          return
+        }
+        setUser(currentUser)
+      } catch {
+        // ignore initial load errors
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    })()
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (name: string, email: string, password: string): Promise<AuthUser> => {
