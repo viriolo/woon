@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js'
 import type { User, NotificationPreferences, Achievement } from '../../types'
 
 export interface AuthUser {
@@ -77,6 +78,42 @@ const generateHandle = (name: string): string => {
 
   const randomSuffix = Math.random().toString(36).substring(2, 6)
   return `${baseHandle}${randomSuffix}`
+}
+
+const createFallbackAuthUser = (sessionUser: SupabaseAuthUser): AuthUser => {
+  const metadata = sessionUser.user_metadata || {}
+  const name = metadata.name || metadata.full_name || metadata.user_name || sessionUser.email?.split('@')[0] || 'Woon user'
+  const handle = metadata.handle || metadata.user_name || generateHandle(name)
+
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email || '',
+    name,
+    handle,
+    avatarUrl: metadata.avatar_url,
+    bio: metadata.bio || '',
+    location: metadata.location || '',
+    streakDays: 1,
+    experiencePoints: 0,
+    level: 1,
+    notificationPreferences: metadata.notification_preferences || {
+      dailySpecialDay: true,
+      communityActivity: true,
+      eventReminders: true,
+      followNotifications: true
+    },
+    achievements: [],
+    likedCelebrationIds: [],
+    savedCelebrationIds: [],
+    rsvpedEventIds: [],
+    followingUserIds: [],
+    followerUserIds: [],
+    followingCount: 0,
+    followersCount: 0,
+    subscriptionTier: metadata.subscription_tier || 'free',
+    createdAt: sessionUser.created_at || new Date().toISOString(),
+    updatedAt: sessionUser.updated_at || new Date().toISOString()
+  }
 }
 
 export const authService = {
@@ -224,7 +261,8 @@ export const authService = {
       throw error
     }
 
-    if (!data.session?.user) {
+    const sessionUser = data.session?.user
+    if (!sessionUser) {
       return null
     }
 
@@ -238,7 +276,7 @@ export const authService = {
       retries -= 1
     }
 
-    return null
+    return createFallbackAuthUser(sessionUser)
   },
   // Sign out
   async logOut(): Promise<void> {
@@ -523,14 +561,18 @@ export const authService = {
 
   // Listen for auth state changes
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
+    return supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         try {
           const user = await this.getCurrentUser()
-          callback(user)
+          if (user) {
+            callback(user)
+            return
+          }
+          callback(createFallbackAuthUser(session.user))
         } catch (error) {
           console.error('Error getting user after auth change:', error)
-          callback(null)
+          callback(createFallbackAuthUser(session.user))
         }
       } else {
         callback(null)
@@ -538,3 +580,4 @@ export const authService = {
     })
   }
 }
+
