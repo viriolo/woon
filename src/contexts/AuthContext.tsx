@@ -54,7 +54,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (shouldExchangeCode && code) {
         try {
-          await authService.exchangeCodeForSession(code)
+          const exchangedUser = await authService.exchangeCodeForSession(code)
+          if (isMounted && exchangedUser) {
+            setUser(exchangedUser)
+          }
         } catch (error) {
           console.error('Failed to complete OAuth code exchange:', error)
         }
@@ -88,7 +91,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!isMounted) {
           return
         }
-        setUser(currentUser)
+        if (currentUser) {
+          setUser(currentUser)
+        }
       } catch {
         // ignore initial load errors
       } finally {

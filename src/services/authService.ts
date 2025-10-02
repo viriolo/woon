@@ -218,13 +218,28 @@ export const authService = {
 
 
   // Exchange OAuth code for a session
-  async exchangeCodeForSession(code: string): Promise<void> {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+  async exchangeCodeForSession(code: string): Promise<AuthUser | null> {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
       throw error
     }
-  },
 
+    if (!data.session?.user) {
+      return null
+    }
+
+    let retries = 3
+    while (retries > 0) {
+      const currentUser = await this.getCurrentUser()
+      if (currentUser) {
+        return currentUser
+      }
+      await new Promise(resolve => setTimeout(resolve, 250))
+      retries -= 1
+    }
+
+    return null
+  },
   // Sign out
   async logOut(): Promise<void> {
     const { error } = await supabase.auth.signOut()
