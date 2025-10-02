@@ -22,10 +22,16 @@ const generateHandle = (name: string) => {
 
 const ensureUserDefaults = (user: StoredUser): StoredUser => {
     user.handle = user.handle ?? generateHandle(user.name);
+    user.bio = user.bio ?? '';
+    user.location = user.location ?? '';
     user.likedCelebrationIds = user.likedCelebrationIds ?? [];
     user.savedCelebrationIds = user.savedCelebrationIds ?? [];
     user.rsvpedEventIds = user.rsvpedEventIds ?? [];
     user.followingUserIds = user.followingUserIds ?? [];
+    user.followerUserIds = user.followerUserIds ?? [];
+    user.followingCount = user.followingUserIds.length;
+    user.followersCount = user.followerUserIds.length;
+    user.subscriptionTier = user.subscriptionTier ?? 'free';
     user.streakDays = user.streakDays ?? 1;
     user.experiencePoints = user.experiencePoints ?? 0;
     user.level = user.level ?? 1;
@@ -122,6 +128,10 @@ export const authService = {
             savedCelebrationIds: [],
             rsvpedEventIds: [],
             followingUserIds: [],
+            followerUserIds: [],
+            followingCount: 0,
+            followersCount: 0,
+            subscriptionTier: 'free',
             streakDays: 1,
             experiencePoints: 0,
             achievements: [{

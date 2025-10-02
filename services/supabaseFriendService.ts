@@ -17,12 +17,17 @@ const buildConnectionMessage = (name: string, location?: string | null) => {
   return `${name.split(' ')[0]} is planning a neighborhood celebration.`;
 };
 
+const deriveHandle = (name: string, fallback: string) => {
+  const sanitized = name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return sanitized || fallback;
+};
+
 export const supabaseFriendService = {
   async getConnectionsForUser(userId: string | null): Promise<FriendConnection[]> {
     try {
       let profilesQuery = supabase
         .from('user_profiles')
-        .select('id, name, avatar_url, location')
+        .select('id, name, handle, avatar_url, location')
         .limit(40);
 
       if (userId) {
@@ -58,10 +63,12 @@ export const supabaseFriendService = {
       return profiles.map((profile) => {
         const coords = randomizeCoords();
         const name = profile.name ?? 'Neighbor';
+        const fallbackHandle = profile.id.slice(0, 8);
 
         return ({
           id: profile.id,
           name,
+          handle: profile.handle ?? deriveHandle(name, fallbackHandle),
           avatarUrl: profile.avatar_url ?? `https://i.pravatar.cc/150?u=${profile.id}`,
           location: coords,
           celebrationMessage: buildConnectionMessage(name, profile.location),

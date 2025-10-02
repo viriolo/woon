@@ -30,19 +30,21 @@ export const commentService = {
     async addComment(
         celebrationId: number,
         text: string,
-        user: User
+        user: User,
+        mentionedHandles?: string[]
     ): Promise<Comment> {
         if (!user) {
             throw new Error("Authentication required to add a comment.");
         }
 
-        const mentions = extractMentions(text);
+        const mentions = (mentionedHandles && mentionedHandles.length > 0)
+            ? mentionedHandles.map(handle => handle.toLowerCase())
+            : extractMentions(text);
 
         try {
             return await supabaseCommentService.addComment(celebrationId, text, mentions, user);
         } catch (error) {
             console.error("Supabase comment creation failed", error);
-            // Fall back to an optimistic comment so the UI remains responsive.
             return {
                 id: `${Date.now()}`,
                 celebrationId,
@@ -55,3 +57,4 @@ export const commentService = {
         }
     },
 };
+

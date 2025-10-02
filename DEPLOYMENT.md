@@ -1,136 +1,70 @@
 # Netlify Deployment Guide
 
-## 🚀 Deploy to Netlify
+## Prerequisites
+- GitHub repository connected to your Netlify account
+- Supabase project with the migrations in `supabase/migrations` applied
+- Local `.env.local` configured and tested
 
-### 1. **Push to GitHub**
-```bash
-git push origin main
-```
+## 1. Prepare the Repository
+1. Commit and push the latest changes to the branch you plan to deploy (typically `main`).
+2. Run `npm run build` locally to confirm the project builds without warnings you were not expecting.
+3. Ensure `supabase/migrations` have been executed against your Supabase instance. You can run:
+   ```sh
+   npx supabase db push
+   ```
+   or copy the SQL into the Supabase SQL Editor.
 
-### 2. **Connect to Netlify**
-1. Go to [netlify.com](https://netlify.com) and sign in
-2. Click "Add new site" → "Import an existing project"
-3. Choose "GitHub" and authorize Netlify
-4. Select your `woon` repository
-5. Configure build settings:
+## 2. Connect the Site to Netlify
+1. Sign in to [Netlify](https://www.netlify.com/).
+2. Click **Add new site -> Import an existing project**.
+3. Choose **GitHub**, authorize if prompted, then pick the `woon` repository.
+4. Configure the build settings:
+   - **Base directory**: leave empty (repository root)
    - **Build command**: `npm run build`
    - **Publish directory**: `dist`
-   - **Node version**: `18.x`
+   - **Node version**: `18`
+5. Click **Deploy site** to trigger the first build. The build will fail if environment variables are not yet in place�this is expected.
 
-### 3. **Set Environment Variables**
-In your Netlify dashboard, go to **Site settings** → **Environment variables** and add:
+## 3. Configure Environment Variables
+Add the following keys in **Site settings -> Environment variables**:
 
 ```
-VITE_SUPABASE_URL=https://lkeznjzvrikphdqwdlwo.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrZXpuanp2cmlrcGhkcXdkbHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODU2NTksImV4cCI6MjA3NDQ2MTY1OX0.lEt16OMq4Y-uVR36O9yC11CqVxLbyfDIYeCvB75Ed_k
-VITE_GEMINI_API_KEY=AIzaSyDSbhUJltgDi9qzaDhJaFz2ies3yWM9iJ4
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC-Lw0q4c_zbPNX8tyt3CVGfHxbtPAzFxY
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_GEMINI_API_KEY=your-gemini-api-key
+VITE_GOOGLE_MAPS_API_KEY=your-google-maps-key
 ```
 
-### 4. **Configure OAuth in Supabase Dashboard**
-⚠️ **Critical**: Update OAuth redirect URLs before deploying:
+Tips:
+- Use **Deploy settings -> Environment** to add variables before the next deploy.
+- For secrets, consider using Netlify�s [environment variable scopes](https://docs.netlify.com/environment-variables/).
 
-1. **Go to Supabase Dashboard** → Authentication → Providers
-2. **For Google OAuth**:
-   - Enable Google provider
-   - Add redirect URLs:
-     - `https://your-app-name.netlify.app/auth/callback`
-     - `http://localhost:5173/auth/callback` (for dev)
-   - Copy your Google Client ID and Secret
+## 4. Re-run the Deployment
+1. After the variables are set, trigger a redeploy from the **Deploys** tab (pick the latest deploy and click **Retry deploy**).
+2. Wait for the build to finish. A successful deploy will show a green checkmark and a preview URL.
 
-3. **For Facebook OAuth**:
-   - Enable Facebook provider
-   - Add redirect URLs:
-     - `https://your-app-name.netlify.app/auth/callback`
-     - `http://localhost:5173/auth/callback` (for dev)
-   - Copy your Facebook App ID and Secret
+## 5. Post-Deployment Checklist
+- Visit the deployed site and exercise the main flows:
+  - Sign up / sign in and profile editing
+  - Discovery map with celebrations and friend layers
+  - Celebration creation (including AI helpers when keys are present)
+  - Comments with @mentions and likes/saves
+  - Event creation and RSVP flows
+  - Admin dashboard (Profile -> Content Management)
+- Confirm Supabase Realtime events update the map and event lists.
+- Check the browser console for CSP or network violations.
 
-4. **Update Site URL**: Set to `https://your-app-name.netlify.app`
+## 6. Security & CSP Notes
+- `netlify.toml` configures a Content Security Policy; update the domains if you introduce new third-party services.
+- Do not expose the Supabase service role key or any server-side secrets in client-side variables.
+- Supabase Row Level Security (RLS) policies must remain enabled for protected tables.
 
-### 5. **Deploy**
-1. Click "Deploy site"
-2. Wait for build to complete (~2-3 minutes)
-3. Your site will be available at your Netlify URL
-4. **Test authentication flows** to ensure OAuth works properly
+## 7. Ongoing Maintenance
+- Every push to the connected branch triggers a new deploy. Use Netlify Deploy Previews for pull requests.
+- Re-run `npm run build` locally before pushing significant changes.
+- Keep Supabase migrations versioned�never edit existing migration files after they have been applied.
 
-## 🎯 Features Available After Deployment
+With these steps complete, the production site will stay in sync with Netlify, Supabase, and the repository.
 
-### Headless CMS
-- **Admin Dashboard**: Access via Profile → Content Management
-- **Content Types**: Pages, posts, events, celebrations
-- **CRUD Operations**: Create, read, update, delete content
-- **Categories & Tags**: Organize content
-- **Media Management**: Upload and manage files
 
-### Public API
-- All content accessible via React hooks
-- RESTful API endpoints
-- TypeScript support
-- Search and filtering capabilities
 
-## 🔧 Post-Deployment Setup
-
-### 1. **Test CMS Connection**
-1. Visit your deployed site
-2. Go to Profile tab
-3. Click "🧪 Test CMS Connection"
-4. Verify Supabase connection works
-
-### 2. **Create Content**
-1. Click "⚙️ Admin Dashboard"
-2. Create your first content pieces
-3. Test publish/unpublish functionality
-
-### 3. **Verify Features**
-- Test all navigation tabs
-- Verify Google Maps integration
-- Check celebration discovery features
-- Test user authentication flow
-
-## 📝 Notes
-
-- Environment variables are automatically loaded in production
-- The site uses client-side routing with proper redirects
-- Security headers are configured for production
-- Build optimizations are applied automatically
-
-## 🔄 Continuous Deployment
-
-Once connected to GitHub, Netlify will automatically deploy:
-- Every push to `main` branch
-- Pull request previews (optional)
-- Branch deployments (optional)
-
-Your headless CMS is production-ready! 🎉
-
-## 🔧 Troubleshooting
-
-### Build Issues
-- **Environment variables not found**: Ensure all `VITE_*` variables are set in Netlify
-- **TypeScript errors**: Run `npm run build` locally to identify issues
-- **Missing dependencies**: Clear Netlify build cache and redeploy
-
-### Authentication Issues
-- **OAuth redirect fails**:
-  1. Check redirect URLs in Supabase match your Netlify domain exactly
-  2. Ensure `auth/callback` is included in the URL
-  3. Verify environment variables are set correctly
-- **Social login buttons disabled**: Check that OAuth providers are enabled in Supabase
-- **"Not authenticated" errors**: Verify Supabase anon key and URL are correct
-
-### API Integration Issues
-- **Google Maps not loading**: Check `VITE_GOOGLE_MAPS_API_KEY` is valid
-- **Gemini AI not working**: Verify `VITE_GEMINI_API_KEY` has proper quotas
-- **Database connection errors**: Ensure Supabase URL and anon key are correct
-
-### Performance Issues
-- **Large bundle size**: The app uses code splitting, but bundles >500kB are normal for React apps
-- **Slow initial load**: Consider implementing lazy loading for heavy components
-
-## 🚨 Security Checklist
-
-- ✅ OAuth redirect URLs restricted to your domain
-- ✅ CSP headers configured for external resources
-- ✅ Environment variables properly scoped with `VITE_` prefix
-- ✅ Supabase RLS policies enabled for data protection
-- ✅ API keys have minimal required permissions

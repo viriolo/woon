@@ -177,6 +177,21 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                         />
                     </div>
 
+                    <div className="grid grid-cols-3 gap-6 max-w-sm mx-auto mb-8">
+                        <div className="text-center">
+                            <div className="text-heading text-2xl text-ink-900 mb-1">{user.followersCount}</div>
+                            <div className="text-caption text-ink-500">Followers</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-heading text-2xl text-ink-900 mb-1">{user.followingCount}</div>
+                            <div className="text-caption text-ink-500">Following</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-heading text-2xl text-ink-900 mb-1">{savedCelebrations.length}</div>
+                            <div className="text-caption text-ink-500">Saved</div>
+                        </div>
+                    </div>
+
                     {isEditing ? (
                         <div className="space-y-4 max-w-sm mx-auto">
                             <input

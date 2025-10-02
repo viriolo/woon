@@ -122,8 +122,8 @@ const LoggedInView: React.FC<{
 
     const stats = [
         { label: "Celebrations", value: userCelebrations.length },
-        { label: "Connections", value: user.followingUserIds.length },
-        { label: "Saved", value: savedCelebrations.length },
+        { label: "Following", value: user.followingCount },
+        { label: "Followers", value: user.followersCount },
     ];
 
     const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

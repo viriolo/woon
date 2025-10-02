@@ -53,13 +53,15 @@ export const supabaseCommentService = {
       throw new Error('Authentication required to add a comment.');
     }
 
+    const cleanedMentions = (mentions ?? []).map(handle => handle.toLowerCase());
+
     const { data, error } = await supabase
       .from('celebration_comments')
       .insert({
         celebration_id: celebrationId,
         user_id: user.id,
         text,
-        mentions,
+        mentions: cleanedMentions,
       })
       .select(`
         id,

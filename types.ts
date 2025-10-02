@@ -32,6 +32,7 @@ export interface Achievement {
   name: string;
   description: string;
   earnedAt: string;
+  icon?: string;
 }
 
 export interface User {
@@ -40,15 +41,21 @@ export interface User {
   email: string;
   avatarUrl?: string;
   handle?: string;
+  bio?: string;
+  location?: string;
   notificationPreferences: NotificationPreferences;
   likedCelebrationIds: number[];
   savedCelebrationIds: number[];
   rsvpedEventIds: string[];
   followingUserIds: string[];
+  followerUserIds: string[];
+  followingCount: number;
+  followersCount: number;
   streakDays: number;
   experiencePoints: number;
   achievements: Achievement[];
   level: number;
+  subscriptionTier?: string;
 }
 
 export interface EventAttendee {
@@ -84,8 +91,10 @@ export interface Comment {
 export interface FriendConnection {
   id: string;
   name: string;
+  handle?: string;
   avatarUrl: string;
   location: UserLocation;
   celebrationMessage: string;
   isNearby: boolean;
 }
+

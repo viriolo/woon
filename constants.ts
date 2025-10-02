@@ -44,6 +44,7 @@ export const FRIEND_CONNECTIONS: FriendConnection[] = [
     {
         id: "friend_1",
         name: "Ava L.",
+        handle: "aval",
         avatarUrl: "https://i.pravatar.cc/150?img=12",
         location: { lng: -122.4094, lat: 37.7849 },
         celebrationMessage: "Setting up a mural jam in the Mission!",
@@ -52,6 +53,7 @@ export const FRIEND_CONNECTIONS: FriendConnection[] = [
     {
         id: "friend_2",
         name: "Marco P.",
+        handle: "marcop",
         avatarUrl: "https://i.pravatar.cc/150?img=33",
         location: { lng: -122.4294, lat: 37.7649 },
         celebrationMessage: "Hosting a live sketch session downtown.",
@@ -60,9 +62,11 @@ export const FRIEND_CONNECTIONS: FriendConnection[] = [
     {
         id: "friend_3",
         name: "Priya K.",
+        handle: "priyak",
         avatarUrl: "https://i.pravatar.cc/150?img=47",
         location: { lng: -122.3994, lat: 37.7749 },
         celebrationMessage: "Organizing a gratitude wall installation.",
         isNearby: false,
     },
 ];
+

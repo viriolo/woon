@@ -18,12 +18,19 @@ export interface AuthUser {
   savedCelebrationIds: string[]
   rsvpedEventIds: string[]
   followingUserIds: string[]
+  followerUserIds: string[]
+  followingCount: number
+  followersCount: number
+  subscriptionTier?: string
   createdAt: string
   updatedAt: string
 }
 
 // Transform database user to app user format
 const transformDatabaseUser = (dbUser: any): AuthUser => {
+  const followingIds = dbUser.user_follows?.map((follow: any) => follow.followed_id) || [];
+  const followerIds = dbUser.followers?.map((follow: any) => follow.follower_id) || [];
+
   return {
     id: dbUser.id,
     email: dbUser.email,
@@ -45,12 +52,17 @@ const transformDatabaseUser = (dbUser: any): AuthUser => {
       id: ua.achievements.id || ua.achievement_id,
       name: ua.achievements?.name || '',
       description: ua.achievements?.description || '',
-      earnedAt: ua.earned_at
+      earnedAt: ua.earned_at,
+      icon: ua.achievements?.icon || undefined
     })) || [],
     likedCelebrationIds: dbUser.celebration_likes?.map((like: any) => like.celebration_id) || [],
     savedCelebrationIds: dbUser.celebration_saves?.map((save: any) => save.celebration_id) || [],
     rsvpedEventIds: dbUser.event_rsvps?.map((rsvp: any) => rsvp.event_id) || [],
-    followingUserIds: dbUser.user_follows?.map((follow: any) => follow.followed_id) || [],
+    followingUserIds: followingIds,
+    followerUserIds: followerIds,
+    followingCount: followingIds.length,
+    followersCount: followerIds.length,
+    subscriptionTier: dbUser.subscription_tier || 'free',
     createdAt: dbUser.created_at,
     updatedAt: dbUser.updated_at
   }
@@ -121,6 +133,10 @@ export const authService = {
       id: data.user.id,
       email: data.user.email!,
       name,
+      handle: generateHandle(name),
+      avatarUrl: undefined,
+      bio: '',
+      location: '',
       streakDays: 1,
       experiencePoints: 0,
       level: 1,
@@ -135,6 +151,10 @@ export const authService = {
       savedCelebrationIds: [],
       rsvpedEventIds: [],
       followingUserIds: [],
+      followerUserIds: [],
+      followingCount: 0,
+      followersCount: 0,
+      subscriptionTier: 'free',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -224,7 +244,8 @@ export const authService = {
         celebration_likes(celebration_id),
         celebration_saves(celebration_id),
         event_rsvps(event_id),
-        user_follows!follower_id(followed_id)
+        user_follows!follower_id(followed_id),
+        followers:user_follows!user_follows_followed_id_fkey(follower_id)
       `)
       .eq('id', user.id)
       .single()

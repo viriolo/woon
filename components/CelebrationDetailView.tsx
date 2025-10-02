@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import type { Celebration, User, Comment, FriendConnection } from "../types";
 import { commentService } from "../services/commentService";
-import { celebrationService } from "../services/celebrationService";
 import { HeartIcon, ArrowLeftIcon, LoadingSpinner, ShareIcon, BookmarkIcon } from "./icons";
+import { MentionInput } from "./MentionInput";
 
 interface CelebrationDetailViewProps {
     celebration: Celebration;
@@ -60,7 +60,6 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
     mentionSuggestions,
 }) => {
     const [comments, setComments] = useState<Comment[]>([]);
-    const [newComment, setNewComment] = useState("");
     const [isLoadingComments, setIsLoadingComments] = useState(true);
     const [isPostingComment, setIsPostingComment] = useState(false);
     const [shareStatus, setShareStatus] = useState<string | null>(null);
@@ -68,6 +67,24 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
     const isLiked = !!currentUser?.likedCelebrationIds.includes(celebration.id);
     const isSaved = !!currentUser?.savedCelebrationIds.includes(celebration.id);
     const isFollowingAuthor = !!currentUser?.followingUserIds.includes(celebration.authorId);
+    const mentionableUsers = useMemo(() => {
+        return mentionSuggestions.map(friend => {
+            const fallbackHandle = friend.id.slice(0, 8);
+            const baseHandle = friend.handle ?? friend.name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            return {
+                id: friend.id,
+                name: friend.name,
+                handle: baseHandle || fallbackHandle,
+                avatarUrl: friend.avatarUrl,
+            };
+        });
+    }, [mentionSuggestions]);
+
+    const mentionHandleMap = useMemo(
+        () => new Map(mentionableUsers.map(user => [user.id, user.handle])),
+        [mentionableUsers]
+    );
+
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -84,16 +101,16 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
         fetchComments();
     }, [celebration.id]);
 
-    const handlePostComment = async (event: React.FormEvent) => {
-        event.preventDefault();
-        if (!newComment.trim() || !currentUser) return;
+    const handleCommentSubmit = async ({ text, mentionedUserIds }: { text: string; mentionedUserIds: string[] }) => {
+        if (!currentUser) return;
 
         setIsPostingComment(true);
         try {
-            const addedComment = await commentService.addComment(celebration.id, newComment.trim(), currentUser);
-            await celebrationService.incrementCommentCount(celebration.id);
+            const handles = mentionedUserIds
+                .map(id => mentionHandleMap.get(id))
+                .filter((handle): handle is string => Boolean(handle));
+            const addedComment = await commentService.addComment(celebration.id, text, currentUser, handles);
             setComments(prev => [...prev, addedComment]);
-            setNewComment("");
         } catch (error) {
             console.error("Failed to post comment:", error);
         } finally {
@@ -122,12 +139,6 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
             setShareStatus("Unable to share");
             setTimeout(() => setShareStatus(null), 1800);
         }
-    };
-
-    const insertMention = (name: string) => {
-        const trimmed = newComment.trimEnd();
-        const separator = trimmed.length === 0 || trimmed.endsWith("@") ? "" : " ";
-        setNewComment(`${trimmed}${separator}@${name.split(" ")[0]} `);
     };
 
     return (
@@ -188,23 +199,7 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
             <section className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <h3 className="text-heading text-lg">Comments ({comments.length || celebration.commentCount})</h3>
-                    {mentionSuggestions.length > 0 && (
-                        <div className="flex items-center gap-2 text-xs text-ink-500">
-                            <span>Tag friends:</span>
-                            <div className="flex gap-1">
-                                {mentionSuggestions.slice(0, 3).map(friend => (
-                                    <button
-                                        key={friend.id}
-                                        type="button"
-                                        onClick={() => insertMention(friend.name)}
-                                        className="tag-chip bg-white/80"
-                                    >
-                                        @{friend.name.split(" ")[0]}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <span className="text-xs text-ink-400">Use @ to mention a friend</span>
                 </div>
 
                 {isLoadingComments ? (
@@ -225,20 +220,9 @@ export const CelebrationDetailView: React.FC<CelebrationDetailViewProps> = ({
             </section>
 
             {currentUser && (
-                <form onSubmit={handlePostComment} className="flex items-center gap-3">
-                    <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment... use @ to mention"
-                        disabled={isPostingComment}
-                        className="flex-1 rounded-full border border-transparent bg-white/85 px-4 py-3 text-sm text-ink-700 placeholder:text-ink-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
-                    />
-                    <button type="submit" disabled={isPostingComment || !newComment.trim()} className="pill-button pill-accent">
-                        {isPostingComment ? <LoadingSpinner className="h-5 w-5" /> : "Post"}
-                    </button>
-                </form>
+                <MentionInput mentionableUsers={mentionableUsers} isSubmitting={isPostingComment} onSubmit={handleCommentSubmit} />
             )}
         </div>
     );
 };
+
