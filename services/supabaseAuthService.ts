@@ -108,6 +108,13 @@ export const supabaseAuthService = {
   // Auth state listener
   onAuthStateChange: (callback: (user: User | null) => void) => {
     return supabase.auth.onAuthStateChange(async (event, session) => {
+      // Normalize OAuth return URL so the SPA doesn't stay on /auth/callback
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+          typeof window !== 'undefined' &&
+          window.location && window.location.pathname === '/auth/callback') {
+        window.history.replaceState({}, '', '/');
+      }
+
       if (session?.user) {
         const user = await getCurrentUser();
         callback(user);
