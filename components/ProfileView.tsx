@@ -52,16 +52,30 @@ const ToggleRow: React.FC<{ label: string; description: string; enabled: boolean
     </div>
 );
 
+const formatAchievementDate = (iso: string) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 const AchievementsList: React.FC<{ achievements: Achievement[] }> = ({ achievements }) => (
     <div className="grid gap-4 sm:grid-cols-2">
         {achievements.length ? (
             achievements.map(achievement => (
                 <div key={achievement.id} className="flex items-start gap-3 rounded-2xl bg-white/80 px-5 py-4">
-                    <StarIcon className="h-6 w-6 text-primary" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        {achievement.icon ? (
+                            <span className="text-lg">{achievement.icon}</span>
+                        ) : (
+                            <StarIcon className="h-5 w-5 text-primary" />
+                        )}
+                    </div>
                     <div>
                         <p className="text-sm font-semibold text-ink-900">{achievement.name}</p>
                         <p className="text-xs text-ink-500">{achievement.description}</p>
-                        <p className="mt-1 text-xs text-ink-400">Earned {achievement.earnedAt}</p>
+                        <p className="mt-1 text-xs text-ink-400">Earned {formatAchievementDate(achievement.earnedAt)}</p>
                     </div>
                 </div>
             ))

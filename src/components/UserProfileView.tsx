@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react"
+import React, { useRef, useState, useEffect, useMemo } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { celebrationService } from "../../services/celebrationService"
 import type { Celebration } from "../types"
@@ -62,6 +62,29 @@ const ToggleRow: React.FC<{
 )
 
 
+
+
+const formatAchievementDate = (iso: string) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+        return iso;
+    }
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const AchievementBadge: React.FC<{ name: string; description: string; earnedAt: string; icon?: string }> = ({ name, description, earnedAt, icon }) => (
+    <div className="flex items-start gap-3 rounded-2xl bg-white/80 px-5 py-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            {icon ? <span className="text-lg">{icon}</span> : <StarIcon className="h-5 w-5 text-primary" />}
+        </div>
+        <div>
+            <p className="text-sm font-semibold text-ink-900">{name}</p>
+            <p className="text-xs text-ink-500">{description}</p>
+            <p className="mt-1 text-xs text-ink-400">Earned {formatAchievementDate(earnedAt)}</p>
+        </div>
+    </div>
+);
+
 export default function UserProfileView({ onNavigate, onShowMission }: UserProfileViewProps) {
     const { user, logOut, updateAvatar, updateNotificationPreferences, updateProfile } = useAuth()
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -117,6 +140,9 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
             </div>
         )
     }
+    const totalAchievements = user.achievements.length;
+    const topAchievements = useMemo(() => user.achievements.slice(0, 3), [user.achievements]);
+    const remainingAchievements = Math.max(totalAchievements - topAchievements.length, 0);
 
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
@@ -259,6 +285,34 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
                             </button>
                         </>
                     )}
+
+                    {/* Achievements Overview */}
+                    <SectionCard
+                        title="Achievements"
+                        subtitle={totalAchievements ? `You have unlocked ${totalAchievements} badge${totalAchievements === 1 ? '' : 's'}.` : 'Complete missions and celebrations to earn your first badge.'}
+                        action={totalAchievements ? (
+                            <span className="text-xs text-ink-400">Level {user.level} · {user.experiencePoints} XP</span>
+                        ) : null}
+                    >
+                        {topAchievements.length ? (
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                {topAchievements.map(achievement => (
+                                    <AchievementBadge
+                                        key={achievement.id}
+                                        name={achievement.name}
+                                        description={achievement.description}
+                                        earnedAt={achievement.earnedAt}
+                                        icon={achievement.icon}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl bg-white/80 px-5 py-5 text-sm text-ink-500">Share celebrations or join events to unlock achievements.</div>
+                        )}
+                        {remainingAchievements > 0 && (
+                            <p className="mt-3 text-xs text-ink-400">+{remainingAchievements} more badge{remainingAchievements === 1 ? '' : 's'} in your collection.</p>
+                        )}
+                    </SectionCard>
 
                     {/* Celebration Streak Highlight */}
                     <div className="max-w-xs mx-auto mt-8">
@@ -437,3 +491,4 @@ export default function UserProfileView({ onNavigate, onShowMission }: UserProfi
         </div>
     )
 }
+
