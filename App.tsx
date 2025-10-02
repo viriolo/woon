@@ -91,6 +91,29 @@ const AppContent: React.FC = () => {
         };
     }, []);
 
+    useEffect(() => {
+        let subscription: { unsubscribe?: () => Promise<void> | void } | null = null;
+
+        try {
+            subscription = eventService.subscribeToEvents((newEvent) => {
+                setEvents(prev => {
+                    if (prev.some(existing => existing.id === newEvent.id)) {
+                        return prev;
+                    }
+                    return [...prev, newEvent];
+                });
+            });
+        } catch (error) {
+            console.error("Failed to subscribe to event updates", error);
+        }
+
+        return () => {
+            if (subscription && typeof subscription.unsubscribe === 'function') {
+                subscription.unsubscribe();
+            }
+        };
+    }, []);
+
     const requireAuth = useCallback((): boolean => {
         if (!user) {
             setIsAuthViewVisible(true);
@@ -220,7 +243,7 @@ const AppContent: React.FC = () => {
 
         try {
             await toggleRsvpStatus(eventId);
-            await eventService.toggleRsvp(eventId, user!);
+            await eventService.toggleRsvp(eventId);
         } catch (error) {
             console.error("Failed to toggle RSVP", error);
             setEvents(originalEvents);
@@ -373,4 +396,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+
 

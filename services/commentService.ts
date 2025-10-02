@@ -1,8 +1,7 @@
 import type { Comment, User } from "../types";
+import { supabaseCommentService } from "./supabaseCommentService";
 
-const COMMENTS_STORAGE_KEY = "woon_comments";
-
-const initialMockComments: Comment[] = [
+const fallbackComments: Comment[] = [
     { id: "comment-1-1", celebrationId: 1, authorId: "mock-2", authorName: "David L.", text: "Looks so peaceful! I love watercolor.", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), mentions: [] },
     { id: "comment-1-2", celebrationId: 1, authorId: "mock-3", authorName: "Chloe T.", text: "Beautiful setup!", timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(), mentions: [] },
     { id: "comment-2-1", celebrationId: 2, authorId: "mock-1", authorName: "Maria S.", text: "Wow, that must have taken forever!", timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), mentions: [] },
@@ -14,68 +13,45 @@ const extractMentions = (text: string): string[] => {
     return Array.from(new Set(matches.map(match => match.slice(1).toLowerCase())));
 };
 
-const getStoredComments = (): Comment[] => {
-    try {
-        const storedComments = localStorage.getItem(COMMENTS_STORAGE_KEY);
-        if (storedComments) {
-            const parsed: Comment[] = JSON.parse(storedComments);
-            return parsed.map(comment => ({
-                ...comment,
-                mentions: comment.mentions ?? extractMentions(comment.text),
-            }));
-        }
-        localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(initialMockComments));
-        return initialMockComments;
-    } catch (error) {
-        console.error("Failed to parse comments from localStorage", error);
-        return [];
-    }
-};
-
-const saveStoredComments = (comments: Comment[]) => {
-    try {
-        localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
-    } catch (error) {
-        console.error("Failed to save comments to localStorage", error);
-    }
-};
-
 export const commentService = {
-    getCommentsForCelebration: async (celebrationId: number): Promise<Comment[]> => {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const allComments = getStoredComments();
-        return allComments
-            .filter(c => c.celebrationId === celebrationId)
-            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    async getCommentsForCelebration(celebrationId: number): Promise<Comment[]> {
+        try {
+            const comments = await supabaseCommentService.getCommentsForCelebration(celebrationId);
+            if (comments.length === 0) {
+                return fallbackComments.filter(comment => comment.celebrationId === celebrationId);
+            }
+            return comments;
+        } catch (error) {
+            console.error("Failed to fetch comments from Supabase", error);
+            return fallbackComments.filter(comment => comment.celebrationId === celebrationId);
+        }
     },
 
-    addComment: async (
+    async addComment(
         celebrationId: number,
         text: string,
         user: User
-    ): Promise<Comment> => {
+    ): Promise<Comment> {
         if (!user) {
             throw new Error("Authentication required to add a comment.");
         }
 
         const mentions = extractMentions(text);
 
-        const newComment: Comment = {
-            id: new Date().toISOString() + Math.random(),
-            celebrationId,
-            text,
-            authorId: user.id,
-            authorName: user.name,
-            timestamp: new Date().toISOString(),
-            mentions,
-        };
-
-        await new Promise(resolve => setTimeout(resolve, 600));
-
-        const comments = getStoredComments();
-        comments.push(newComment);
-        saveStoredComments(comments);
-
-        return newComment;
+        try {
+            return await supabaseCommentService.addComment(celebrationId, text, mentions, user);
+        } catch (error) {
+            console.error("Supabase comment creation failed", error);
+            // Fall back to an optimistic comment so the UI remains responsive.
+            return {
+                id: `${Date.now()}`,
+                celebrationId,
+                authorId: user.id,
+                authorName: user.name,
+                text,
+                mentions,
+                timestamp: new Date().toISOString(),
+            };
+        }
     },
 };
