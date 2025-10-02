@@ -243,7 +243,7 @@ const AppContent: React.FC = () => {
 
         try {
             await toggleRsvpStatus(eventId);
-            await eventService.toggleRsvp(eventId);
+            await eventService.toggleRsvp(eventId, user!.id);
         } catch (error) {
             console.error("Failed to toggle RSVP", error);
             setEvents(originalEvents);

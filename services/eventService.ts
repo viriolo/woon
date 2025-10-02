@@ -28,7 +28,8 @@ export const eventService = {
         );
     },
 
-    async toggleRsvp(eventId: string): Promise<Event> {
+    async toggleRsvp(eventId: string, userId: string): Promise<Event> {
+        await supabaseEventService.toggleRsvp(eventId, userId);
         const updatedEvent = await supabaseEventService.getEventById(eventId);
         if (!updatedEvent) {
             throw new Error("Event not found.");

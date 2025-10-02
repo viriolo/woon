@@ -168,6 +168,43 @@ export const supabaseEventService = {
     return transformEventRow(data as SupabaseEventRow);
   },
 
+  async toggleRsvp(eventId: string, userId: string): Promise<boolean> {
+    const { data: existing } = await supabase
+      .from('event_rsvps')
+      .select('user_id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('event_rsvps')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error removing RSVP:', error);
+        throw new Error('Failed to remove RSVP');
+      }
+      return false;
+    } else {
+      const { error } = await supabase
+        .from('event_rsvps')
+        .insert({
+          event_id: eventId,
+          user_id: userId,
+          rsvp_status: 'attending',
+        });
+
+      if (error) {
+        console.error('Error adding RSVP:', error);
+        throw new Error('Failed to add RSVP');
+      }
+      return true;
+    }
+  },
+
   subscribeToEvents(callback: (event: Event) => void) {
     return supabase
       .channel('events-stream')
