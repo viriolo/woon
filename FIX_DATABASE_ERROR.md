@@ -31,7 +31,7 @@ You can now test user registration and authentication.
 ### Step 4: Test Authentication
 1. Go back to your app at http://localhost:5173
 2. Try to sign up with a new email address
-3. Or try OAuth login with Google/Facebook
+3. Or try OAuth login with Google
 
 ## 🔍 What This Migration Does
 

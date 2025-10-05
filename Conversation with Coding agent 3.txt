@@ -1,0 +1,135 @@
+Based on my analysis of the codebase, here's a comprehensive technical overview of the Woon project:
+
+Core Components
+
+Application Architecture
+Woon is a React-based social celebration platform built with modern frontend technologies:
+
+•  Framework: React 19.1.1 with TypeScript, using Vite for build tooling
+•  UI Framework: Uses shadcn-ui components with Tailwind CSS for styling
+•  Backend: Supabase for authentication, database, and real-time subscriptions
+•  Maps: Integrated with both Google Maps and Mapbox for location-based features
+
+Major Components & Modules
+
+1. AppShell (src/app/AppShell.tsx) - Main application container
+◦  Role: Central coordinator managing application state, routing, and data flow
+◦  Key Features: Tab navigation, offline support, authentication management, real-time subscriptions
+◦  State Management: Manages celebrations, events, user state, location, and offline queue
+2. Authentication System (src/contexts/AuthContext.tsx + src/services/authService.ts)
+◦  Role: Handles user authentication and authorization flows
+◦  Features: Supabase auth integration, persistent sessions, user profile management
+◦  User Model: Comprehensive user profiles with achievements, streaks, social connections
+3. Feature Modules (Feature-based organization):
+◦  TodayView: Daily special day celebrations and discovery feed
+◦  ShareView: Creating and sharing celebration posts with location
+◦  ConnectView: Community events and social connections
+◦  ProfileView: User profiles and personal celebration history
+4. Services Layer:
+◦  celebrationService: CRUD operations for celebration posts
+◦  eventService: Community event management
+◦  commentService: User interactions and comments
+◦  specialDayService: Daily special day content management
+◦  authService: User authentication and profile management
+5. Real-time Features:
+◦  Supabase Subscriptions: Live updates for new celebrations and events
+◦  Offline Support: Queue-based system for offline actions with sync capability
+
+Design Patterns
+
+•  Context Provider Pattern: AuthContext provides authentication state globally
+•  Service Layer Pattern: Dedicated service classes for data operations
+•  Observer Pattern: Real-time subscriptions for live data updates
+•  Queue Pattern: Offline action queuing with background sync
+•  Component Composition: Feature-based component organization
+
+Component Interactions
+
+Data Flow Architecture
+typescript
+Communication Methods
+
+1. Authentication Flow:
+◦  AuthContext provides user state and auth methods globally
+◦  Components use useAuth() hook to access authentication
+◦  Services receive user context for authorized operations
+2. Data Synchronization:
+◦  Real-time: Supabase subscriptions for live celebration/event updates
+◦  Offline: Local storage caching with background sync queue
+◦  Location: Browser geolocation API with permission management
+3. State Management:
+◦  React state with custom hooks (useUserLocation, useNetworkStatus)
+◦  Local storage for offline persistence and user preferences
+◦  Service layer abstracts database operations
+4. API Integration:
+◦  Supabase: PostgreSQL database with real-time subscriptions
+◦  Google Maps/Mapbox: Location services and map rendering
+◦  Gemini AI: Integrated for content generation (configured via environment)
+
+Deployment Architecture
+
+Build Configuration
+..\..\..\..\OneDrive (1-20)
+Deployment Setup
+
+1. Build Process:
+◦  Command: npm run build (Vite production build)
+◦  Output: Static files to dist/ directory
+◦  Node Version: 20.19.0 (specified in netlify.toml)
+2. Netlify Configuration:
+◦  SPA Routing: Redirects all requests to index.html
+◦  Security Headers: CSP, XSS protection, frame options
+◦  API Domains: Configured for Supabase, Google APIs, and map services
+3. External Dependencies:
+◦  Supabase: Database, authentication, real-time, file storage
+◦  Google Maps: Location services and mapping
+◦  Mapbox: Alternative mapping provider
+◦  Gemini AI: Content generation capabilities
+4. Environment Variables Required:
+bash
+Infrastructure Details
+
+•  Frontend Hosting: Netlify with CDN distribution
+•  Backend: Supabase (managed PostgreSQL + Auth + Storage)
+•  File Storage: Supabase storage buckets for media uploads
+•  Database: PostgreSQL with RLS (Row Level Security)
+
+Runtime Behavior
+
+Application Initialization
+
+1. Bootstrap Process:
+..\..\..\..\OneDrive (7-19)
+2. Service Worker Registration: PWA capabilities for offline support
+3. Authentication Check: Supabase session restoration from local storage
+4. Data Loading: Parallel loading of celebrations, events, and special days
+
+Request/Response Handling
+
+1. Real-time Data:
+◦  Supabase subscriptions establish WebSocket connections
+◦  Live updates push new celebrations and events to clients
+◦  Optimistic UI updates with rollback on failure
+2. Offline Support:
+◦  Actions queued locally when offline detected
+◦  Background sync processes queue when connectivity restored
+◦  Local storage caching for core application data
+3. Location Services:
+◦  Browser geolocation API with permission prompts
+◦  Coordinate-based celebration placement and discovery
+◦  Location-aware event recommendations
+
+Error Handling & Background Tasks
+
+1. Error Boundaries:
+◦  Global error boundary catches React component errors
+◦  Service-level error handling with user-friendly messaging
+◦  Network error detection with offline mode fallback
+2. Background Processing:
+◦  Offline queue processing on connectivity restoration
+◦  Real-time subscription management with automatic reconnection
+◦  Periodic data synchronization and cache updates
+3. Performance Optimizations:
+◦  Component lazy loading for feature views
+◦  Local storage caching reduces API calls
+◦  Optimistic UI updates improve perceived performance

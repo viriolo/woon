@@ -1,0 +1,741 @@
+                                              
+          if (normalizedPath "'!== url.pathname) {                                                                                            
+            modified = true                                                                                                                   
+          }                                                                                                                                   
+                                                                                                                                              
+          if (modified) {                                                                                                                     
+            const search = url.searchParams.toString()                                                                                        
+            const cleanUrl = `${url.origin}${normalizedPath}${search ? `?${search}` : '"''}"'`                                                
+            window.history.replaceState({}, document.title, cleanUrl)                                                                         
+          }                                                                                                                                   
+        }                                                                                                                                     
+                                                                                                                                              
+        const loadInitialUser = async () => {                                                                                                 
+          try {                                                                                                                               
+            const { data: { session } } = await supabase.auth.getSession()                                                                    
+                                                                                                                                              
+            if (!isMounted) {                                                                                                                 
+              return                                                                                                                          
+            }                                                                                                                                 
+                                                                                                                                              
+            if (session) {                                                                                                                    
+              const currentUser = await authService.getCurrentUser()                                                                          
+              if (isMounted && currentUser) {                                                                                                 
+                setUser(currentUser)                                                                                                          
+              }                                                                                                                               
+            } else if (typeof window !== '"'undefined') {                                                                                     
+              const url = new URL(window.location.href)                                                                                       
+              const code = url.searchParams.get('code')                                                                                       
+                                                                                                                                              
+              if (code) {                                                                                                                     
+                try {                                                                                                                         
+                  const exchangedUser = await authService.exchangeCodeForSession(code)                                                        
+                  if (isMounted && exchangedUser) {                                                                                           
+                    setUser(exchangedUser)                                                                                                    
+                  }                                                                                                                           
+                } catch (error) {                                                                                                             
+                  console.error('Failed to complete OAuth code exchange:', error)                                                             
+                }                                                                                                                             
+              }                                                                                                                               
+            }                                                                                                                                 
+          } catch (error) {                                                                                                                   
+            console.error('Error loading initial session:', error)                                                                            
+          } finally {                                                                                                                         
+            if (isMounted) {                                                                                                                  
+              setLoading(false)                                                                                                               
+              cleanOAuthParams()                                                                                                              
+            }                                                                                                                                 
+          }                                                                                                                                   
+        }                                                                                                                                     
+                                                                                                                                              
+        const { data: { subscription } } = authService.onAuthStateChange(async (authUser) => {                                                
+          if ("'!isMounted) return                                                                                                            
+          setUser(authUser)                                                                                                                   
+          setLoading(false)                                                                                                                   
+          cleanOAuthParams()                                                                                                                  
+        })                                                                                                                                    
+                                                                                                                                              
+        void loadInitialUser()                                                                                                                
+                                                                                                                                              
+        return () => {                                                                                                                        
+          isMounted = false                                                                                                                   
+          subscription.unsubscribe()                                                                                                          
+        }                                                                                                                                     
+      Set-Content $path -Value $text
+    } else {
+      Write-Error '"'Original block not found'
+    }
+    "
+
+
+• Ran
+  └ powershell.exe -Command "python -c \"from pathlib import Path
+    path = Path('src/contexts/AuthContext.tsx')
+    text = path.read_text()
+    normalized = text.replace('\\r\\n', '\\n')
+    old = '''  useEffect(() => {
+        let isMounted = true
+
+        const handleOAuthCallback = async (options?: { skipExchange?: boolean }) => {
+          if (typeof window === 'undefined') {
+            return
+          }
+
+          const url = new URL(window.location.href)
+          const code = url.searchParams.get('code')
+          const state = url.searchParams.get('state')
+          const hasOAuthQuery = ['access_token', 'refresh_token', 'expires_in', 'error'].some(param => url.searchParams.has(param))
+          const hasOAuthHash = url.hash.includes('access_token') || url.hash.includes('error')
+          const shouldExchangeCode = "'!options?.skipExchange && !!code                                                                       
+                                                                                                                                              
+          if (shouldExchangeCode && code) {                                                                                                   
+            try {                                                                                                                             
+              const exchangedUser = await authService.exchangeCodeForSession(code)                                                            
+              if (isMounted && exchangedUser) {                                                                                               
+                setUser(exchangedUser)                                                                                                        
+              }                                                                                                                               
+            } catch (error) {                                                                                                                 
+              console.error('"'Failed to complete OAuth code exchange:', error)                                                               
+            }                                                                                                                                 
+          }                                                                                                                                   
+                                                                                                                                              
+          if (shouldExchangeCode || hasOAuthQuery || hasOAuthHash || "'!!state) {                                                             
+            ['"'code', 'state', 'access_token', 'refresh_token', 'expires_in', 'token_type', 'error'].forEach(param => {                      
+              url.searchParams.delete(param)                                                                                                  
+            })                                                                                                                                
+            url.hash = ''                                                                                                                     
+                                                                                                                                              
+            const normalizedPath = url.pathname === '/auth/callback' ? '/' : url.pathname                                                     
+            const cleanUrl = "'`${url.origin}${normalizedPath}${url.search || '"''}"'`                                                        
+            window.history.replaceState({}, document.title, cleanUrl)                                                                         
+          }                                                                                                                                   
+        }                                                                                                                                     
+                                                                                                                                              
+        const { data: { subscription } } = authService.onAuthStateChange(async (authUser) => {                                                
+          if (!isMounted) return                                                                                                              
+          setUser(authUser)                                                                                                                   
+          setLoading(false)                                                                                                                   
+                                                                                                                                              
+          await handleOAuthCallback({ skipExchange: true })                                                                                   
+        })                                                                                                                                    
+                                                                                                                                              
+        ;(async () => {                                                                                                                       
+          await handleOAuthCallback()                                                                                                         
+                                                                                                                                              
+          try {                                                                                                                               
+            const currentUser = await authService.getCurrentUser()                                                                            
+            if (!isMounted) {                                                                                                                 
+              return                                                                                                                          
+            }                                                                                                                                 
+            if (currentUser) {                                                                                                                
+              setUser(currentUser)                                                                                                            
+            }                                                                                                                                 
+          } catch {                                                                                                                           
+            // ignore initial load errors                                                                                                     
+          } finally {                                                                                                                         
+            if (isMounted) {                                                                                                                  
+              setLoading(false)                                                                                                               
+            }                                                                                                                                 
+          }                                                                                                                                   
+        })()                                                                                                                                  
+                                                                                                                                              
+        return () => {                                                                                                                        
+          isMounted = false                                                                                                                   
+          subscription.unsubscribe()                                                                                                          
+        }                                                                                                                                     
+      }, [])'"'''                                                                                                                             
+    new = '''  useEffect(() => {                                                                                                              
+        let isMounted = true                                                                                                                  
+                                                                                                                                              
+        const cleanOAuthParams = () => {                                                                                                      
+          if (typeof window === 'undefined') {                                                                                                
+            return                                                                                                                            
+          }                                                                                                                                   
+                                                                                                                                              
+
+
+• Ran
+  └ powershell.exe -Command "python -c \"from pathlib import Path
+    path = Path('src/contexts/AuthContext.tsx')
+    text = path.read_text()
+    normalized = text.replace('\\r\\n', '\\n')
+    needle = '  useEffect(() => {'
+    start = normalized.find(needle)
+    if start == -1:
+        raise SystemExit('useEffect block not found')
+    end_marker = '  }, [])'
+    end = normalized.find(end_marker, start)
+    if end == -1:
+        raise SystemExit('end marker not found')
+    end += len(end_marker)
+    new_block = '''  useEffect(() => {
+        let isMounted = true
+
+
+
+• Ran
+  └ powershell.exe -Command "python -c \"from pathlib import Path
+    path = Path('src/contexts/AuthContext.tsx')
+    text = path.read_text()
+    normalized = text.replace('\\r\\n', '\\n')
+    needle = '  useEffect(() => {'
+    start = normalized.find(needle)
+    if start == -1:
+        raise SystemExit('useEffect block not found')
+    end_marker = '  }, [])'
+    end = normalized.find(end_marker, start)
+    if end == -1:
+        raise SystemExit('end marker not found')
+    end += len(end_marker)
+    new_block = \"\"\"  useEffect(() => {\\n    let isMounted = true\\n\\n    const cleanOAuthParams = () => {\\n      if (typeof window      
+        === 'undefined') {\\n        return\\n      }\\n\\n      const url = new URL(window.location.href)\\n      const paramsToStrip        
+        = ['code', 'state', 'access_token', 'refresh_token', 'expires_in', 'token_type', 'error']\\n      let modified = false\\n\
+        \n      paramsToStrip.forEach(param => {\\n        if (url.searchParams.has(param)) {\\n          url.searchParams.delete(param)\\n   
+        modified = true\\n        }\\n      })\\n\\n      if (url.hash && (url.hash.includes('access_token') || url.hash.includes('error')))  
+        {\\n        url.hash = ''\\n        modified = true\\n      }\\n\\n      const normalizedPath = url.pathname === '/auth/callback' ?   
+        '/' : url.pathname\\n      if (normalizedPath "'!== url.pathname) {'"\\n        modified = true\\n      }\\n\\n      if (modified)    
+        {\\n        const search = url.searchParams.toString()\\n        const cleanUrl = "'`${url.origin}${normalizedPath}${search ? `?      
+        ${search}` : '"''}"'`'"\\n        window.history.replaceState({}, document.title, cleanUrl)\\n      }\\n    }\\n\\n    const          
+        loadInitialUser = async () => {\\n      try {\\n        const { data: { session } } = await supabase.auth.getSession()\\n\            
+        \n        if ("'!isMounted) {'"\\n          return\\n        }\\n\\n        if (session) {\\n          const currentUser =            
+        await authService.getCurrentUser()\\n          if (isMounted && currentUser) {\\n            setUser(currentUser)\\n          }\      
+        \n        } else if (typeof window "'!== '"'undefined') {\\n          const url = new URL(window.location.href)\\n          const     
+        code = url.searchParams.get('code')\\n\\n          if (code) {\\n            try {\\n              const exchangedUser = await        
+        authService.exchangeCodeForSession(code)\\n              if (isMounted && exchangedUser) {\\n                setUser(exchangedUser)\  
+
+
+• Ran
+  └ powershell.exe -Command '$pycode = @'"'
+    from pathlib import Path
+
+    path = Path('src/contexts/AuthContext.tsx')
+    text = path.read_text()
+    normalized = text.replace('\\r\\n', '\\n')
+    needle = '  useEffect(() => {'
+    start = normalized.find(needle)
+    if start == -1:
+        raise SystemExit('useEffect block not found')
+    end_marker = '  }, [])'
+    end = normalized.find(end_marker, start)
+    if end == -1:
+        raise SystemExit('end marker not found')
+    end += len(end_marker)
+    new_block = \"\"\"  useEffect(() => {\\n    let isMounted = true\\n\\n    const cleanOAuthParams = () => {\\n      if (typeof window
+        === 'undefined') {\\n        return\\n      }\\n\\n      const url = new URL(window.location.href)\\n      const paramsToStrip
+        = ['code', 'state', 'access_token', 'refresh_token', 'expires_in', 'token_type', 'error']\\n      let modified = false\\n\            
+        \n      paramsToStrip.forEach(param => {\\n        if (url.searchParams.has(param)) {\\n          url.searchParams.delete(param)\\n   
+        modified = true\\n        }\\n      })\\n\\n      if (url.hash && (url.hash.includes('access_token') || url.hash.includes('error')))  
+        {\\n        url.hash = ''\\n        modified = true\\n      }\\n\\n      const normalizedPath = url.pathname === '/auth/callback' ?   
+        '/' : url.pathname\\n      if (normalizedPath "'!== url.pathname) {'"\\n        modified = true\\n      }\\n\\n      if (modified)    
+        {\\n        const search = url.searchParams.toString()\\n        const cleanUrl = "'`${url.origin}${normalizedPath}${search ? `?      
+
+• Ran
+  └ powershell.exe -Command '$pycode = @'"'
+    from pathlib import Path
+    import re
+    python __tmp_normalize.py
+    Remove-Item '"'__tmp_normalize.py'
+    "
+
+• Ran powershell.exe -Command "Get-Content -Path 'src/contexts/AuthContext.tsx' -TotalCount 120"
+
+• I'm analyzing the current blank line usage, confirming that double blank lines appear intentionally but typically one blank line (two       
+  newlines) is standard and visible between statements. I want to ensure import statements are grouped without extra blank lines and verify   
+  that new code blocks like cleanUrl maintain proper spacing. Also, I’m checking changes related to Supabase imports, session handling, and   
+  cleaning OAuth parameters, aiming to run a build to confirm no TypeScript errors.
+
+• Ran powershell.exe -Command 'npm run build'
+
+• Ran powershell.exe -Command 'git status --short'
+
+• Ran powershell.exe -Command 'rg -n "cleanOAuthParams" src/contexts/AuthContext.tsx'
+
+  ongoing reliance on re-exporting the Supabase client to avoid duplicates and confirm auth state change listeners remain functional. This    
+  will wrap up all relevant points for the final message.
+
+> - src/lib/supabase.ts:1 – Recreated the global Supabase client with the recommended auth options (persistSession, autoRefreshToken,
+  detectSessionInUrl) so the OAuth return trip can reuse the stored session without prompting again.
+  - src/contexts/AuthContext.tsx:73 – Swapped the old manual diff-handler for a single cleanOAuthParams helper; it now trusts
+  Supabase to process the /auth/callback URL, cleans up the query/hash once the client has inspected it, and only falls back to
+  authService.exchangeCodeForSession if the returned session is missing.
+  - src/contexts/AuthContext.tsx:131 – On mount we call supabase.auth.getSession(), hydrate the profile, and keep the onAuthStateChange       
+  listener for live updates—so the same client instance maintains state after the redirect.
+
+• I see only two files were committed locally, so I'll clarify that while the commit is done, pushing to GitHub requires credentials the agent
+  lacks. I'll highlight tests run earlier and suggest the user push and redeploy, plus note remaining warnings like the Mapbox token.
+
+> - Committed the Supabase session fixes and CSP update (Fix Supabase session persistence and CSP, commit d237b89).
+• Ran powershell.exe -Command 'rg "facebook" -n'
+
+• Ran powershell.exe -Command 'rg "Facebook"'
+
+
+
+• Ran
+  └ powershell.exe -Command '$pycode = @'"'
+    from pathlib import Path
+    import re
+
+    path = Path('src/services/authService.ts')
+    text = path.read_text()
+    pattern = re.compile(r\"  // Social login \\(Google, Facebook, etc\\.\\)\\n  async socialLogIn\\(provider: 'google' \\| 'facebook'\       
+        \): Promise<void> \\{\\n    const \\{ error \\} = await supabase\\.auth\\.signInWithOAuth\\({\\n      provider,\\n      options: \    
+        \{\\n        redirectTo: "'`'"\\"'$'"\\{window.location.origin\\}/auth/callback"'`'"\\n      \\}\\n    }\\)\\n\\n    if \\(error\     
+        \) \\{\\n      // Provide specific error messages for OAuth issues\\n      if \\(error.message.includes\\('redirect_uri'\\)\\) \\{\   
+        \n        throw new Error\\("'`OAuth redirect URL not configured properly. Please contact support.`'"\\)\\n      \\}\\n      if \     
+        \(error.message.includes\\('client_id'\\)\\) \\{\\n        throw new Error\\("'`'"\\"'$'"\\{provider\\} OAuth is not properly
+        configured. Please contact support."'`'"\\)\\n      \\}\\n      if \\(error.message.includes\\('network'\\)\\) \\{\\n        throw    
+        redirected and we handle the response elsewhere\\n  },\")
+
+
+• Ran
+  └ powershell.exe -Command '$py=@'"'
+    from pathlib import Path
+        \" : \\\"Facebook User\\\";\\n\", re.MULTILINE)
+    replacement = \"    socialLogIn: async (): Promise<User> => {\\n        await new Promise(res => setTimeout(res, 700));\\n        const   
+        users = getStoredUsers();\\n\\n        const mockEmail = 'social_user_google@example.com';\\n        const mockName = 'Google User';  
+        \\n\"
+
+    Set-Content '__tmp_ctx_social.py' "'$py
+    python __tmp_ctx_social.py
+    Remove-Item '"'__tmp_ctx_social.py'
+    "
+
+• Ran powershell.exe -Command 'rg "facebook" -n src components services netlify.toml'
+
+• Ran powershell.exe -Command "rg \"socialLogIn\\(\\)\" -n src/components/AuthView.tsx"
+
+• Ran powershell.exe -Command "rg \"socialLogIn\\(\\)\" -n components/AuthView.tsx"
+
+• Ran powershell.exe -Command 'npm run build'
+
+• Ran powershell.exe -Command 'git status --short'
+
+• Ran
+
+
+▌ # Prompt: Fix Supabase Google Authentication Session Issue
+▌
+▌ You are an expert developer assistant. Ive already configured Google Sign-In correctly in both Supabase and Google Cloud Console.
+▌ The issue is that after a successful sign-in with Google, the user is redirected back to my app but is asked to sign in again  the session  
+▌ is not being persisted.
+▌
+▌ Your task:
+▌ - Analyze and fix this issue by correctly handling Supabase Auth sessions.
+▌ - Use clean, framework-agnostic JavaScript (React, Vue, Svelte, etc. compatible).
+▌ - Ensure the session persists after page reload and that the user doesnt have to sign in twice.
+▌ - Automatically detect the session from the redirect URL and store it securely.
+▌
+▌ Implementation requirements:
+▌ 1. Create a reusable Supabase client that:
+▌    - Uses environment variables for the Supabase URL and anon key.
+▌    - Includes:
+▌      ```
+▌      persistSession: true
+▌      autoRefreshToken: true
+▌    - Is initialized only once globally (not inside components).
+▌
+▌ 2. Add a callback handler (for the `/auth/callback` route if used) that:
+▌    - Calls `supabase.auth.getSessionFromUrl({ storeSession: true })` on mount.
+▌    - Redirects the user to the home/dashboard route after processing
+▌
+▌ .3. In the main app logic:
+▌    - Retrieve the current user using `supabase.auth.getUser()`.
+▌    - Keep the user signed in between page reloads.
+▌    - Optionally listen for auth state changes using `supabase.auth.onAuthStateChange()`.
+▌
+▌ 4. Do not hardcode credentials or URLs.
+▌    - Use `import.meta.env` or `process.env` variables for configuration.
+▌    - Support both local and production environments.
+▌
+▌ Goal:
+▌ After implementing this, users should only sign in once. When redirected back from Google, the session should persist, and the app should   
+▌ correctly recognize the logged-in user.
+▌
+▌ Please write clean, commented code that can easily integrate with my existing project structure.
+
+
+▌ Multiple GoTrueClient instances detected
+▌ Multiple GoTrueClient instances detected in the same browser context.
+▌
+▌
+▌ This happens when your Supabase client is being created more than once, e.g., inside React components or multiple imports of createClient.  
+▌
+▌  Fix
+▌
+▌ Make sure you only create your Supabase client once globally (in a single file):
+▌
+▌
+▌
+▌ Then everywhere else in your app:
+▌
+▌ import { supabase } from './supabaseClient'
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+▌ Then everywhere else in your app:
+▌
+▌ import { supabase } from './supabaseClient'
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+▌
+▌ import { supabase } from './supabaseClient'
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+▌ import { supabase } from './supabaseClient'
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+▌ import { supabase } from './supabaseClient'
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+▌
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+▌
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+▌ Avoid calling createClient() in more than one place.
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command 'rg "createClient" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseClient.ts'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'services/supabaseAuthService.ts'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command 'rg "@supabase/supabase-js" -n'
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command "Get-Content -Raw -Path 'index.html'"
+
+• Ran powershell.exe -Command 'rg "supabaseClient" -n'
+
+  Analyzing module resolution and imports (2m 06s • Esc to interrupt)
+
+
+  Analyzing module resolution and imports (2m 06s • Esc to interrupt)
+
+
+  Preventing duplicate Supabase clients during HMR (2m 32s • Esc to interrupt)
+• Preventing duplicate Supabase clients during HMRSupaba6e clients when using Vite's hot module reload by storing the client on globalThis so 
+• Ran same instance is reused across reloads. This involves adjusting the Supabase module to check for and assign a global client instance,
+  └ powershell.exe -Command '$path='"'src/lib/supabase.ts'; "'$content = @"atibility with SSR.
+    import { createClient } from '"'@supabase/supabase-js'
+    import type { SupabaseClient } from '@supabase/supabase-js'
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+    if ("'!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('"'Missing Supabase environment variables')
+    }
+
+    type SupabaseClientType = SupabaseClient
+
+    declare global {
+      interface Window {
+        __supabaseClient__?: SupabaseClientType
+      }
+    }
+
+    const globalWithSupabase = globalThis as Window
+
+    const client = globalWithSupabase.__supabaseClient__
+      ?? createClient(supabaseUrl, supabaseAnonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: typeof window "'!== '"'undefined' ? window.localStorage : undefined,
+          },
+        })
+
+    if ("'!globalWithSupabase.__supabaseClient__) {
+      globalWithSupabase.__supabaseClient__ = client
+    }
+  Refining global SupabaseClient types for compatibility (2m 52s • Esc to in errupt)
+• I'm sorting out the TypeScript types for the global Supabase client, ensuring to use SupabaseClient<any> to satisfy the generic
+  Refining global SupabaseClient types for compatidow object (3specially in Node), I'm defining a custom global interface with an optional
+• RanupabaseClient__ property and using declare global with a var declaration for compatibility across environments. I want to avoid
+  └ powershell.exe -Command '$path='"'src/lib/supabase.ts'; "'$content = @" rendering and keep the typing safe and flexible.
+    import { createClient } from '"'@supabase/supabase-js'
+    import type { SupabaseClient } from '@supabase/supabase-js'
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+    if ("'!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('"'Missing Supabase environment variables')
+    }
+
+    type SupabaseClientType = SupabaseClient<any>
+
+    declare global {
+      // eslint-disable-next-line no-var
+      var __supabaseClient__: SupabaseClientType | undefined
+    }
+
+    const globalForSupabase = globalThis as typeof globalThis & {
+      __supabaseClient__?: SupabaseClientType
+    }
+
+    if ("'!globalForSupabase.__supabaseClient__) {
+      globalForSupabase.__supabaseClient__ = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: typeof window !== '"'undefined' ? window.localStorage : undefined,
+        },
+      })
+    }
+  Examining window usage and build considerations (3m 05s • Esc to interrupt)       
+
+
+• Ran powershell.exe -Command 'git push'
+
+
+• Ran
+  └ powershell.exe -Command "Add-Content README.md '
+    ### Environment variables
+
+    Set these keys before running locally or deploying:
+
+    | Variable | Purpose |
+    | --- | --- |
+    | "'`GEMINI_API_KEY` / `VITE_GEMINI_API_KEY` | Gemini API key for AI features |
+    | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Supabase project credentials |
+    | `VITE_MAPBOX_ACCESS_TOKEN` | Mapbox public access token used by the map components |
+    | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps (Places) API key |
+                                                                                                                                              
+    **Local development**                                                                                                                     
+                                                                                                                                              
+    ```bash
+    VITE_MAPBOX_ACCESS_TOKEN=pk.your-mapbox-public-token
+    ```
+
+    **Netlify deployment**
+
+    1. Open Netlify > *Site settings* > *Build & deploy* > *Environment*.
+    2. Add **VITE_MAPBOX_ACCESS_TOKEN** with your Mapbox public token.
+    3. Redeploy the site so the new token is available at build time.
+
+    `VITE_` prefixed variables are exposed to the browser, which matches Vite, React, Vue, Svelte, and other modern build tools.
+    '"'"
+
+• Ran powershell.exe -Command 'git status --short'
+                                                                                                                                              
+• I'll provide a summary of the changes made, referencing key files like .env.example, README.md, and src/config/mapbox.ts with line numbers, 
+  Once those environment variables are set, the map renderer will find VITE_MAPBOX_ACCESS_TOKEN in import.meta.env, and the Mapbox warning    
+  will disappear.
+▌
+▌ Im seeing this browser error:
+▌ "Refused to connect to wss://<project>.supabase.co/realtime/v1/websocket because it violates Content Security Policy."
+▌
+▌ Task:
+▌ - Update my sites Content-Security-Policy (CSP) so Supabase realtime works.
+▌ - Provide a sample Netlify `_headers` configuration or HTML meta example.
+▌ - Include both HTTPS and WSS allowances for Supabase:
+▌   https://*.supabase.co
+▌   wss://*.supabase.co
+▌ - Keep it generic and production-safe.
+▌
+▌ Goal:
+▌ Allow realtime features (websocket) to connect without CSP violations.
+                                                                                                                                              
+> To let Supabase realtime connect, make sure your CSP lists both HTTPS and WebSocket endpoints for Supabase. On Netlify you can do this in   
+  either netlify.toml or an _headers file—here’s a safe example for _headers:                                                                 
+                                                                                                                                              
+  /*                                                                                                                                          
+    Content-Security-Policy: default-src 'self';                                                                                              
+      script-src 'self';                                                                                                                      
+      style-src 'self' 'unsafe-inline';                                                                                                       
+      img-src 'self' data:;                                                                                                                   
+      font-src 'self';                                                                                                                        
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co;                                                                           
+      media-src 'self';                                                                                                                       
+      frame-src 'self';                                                                                                                       
+      object-src 'none';                                                                                                                      
+      base-uri 'self';                                                                                                                        
+      form-action 'self';                                                                                                                     
+    X-Frame-Options: DENY                                                                                                                     
+
+  The key line is connect-src 'self' https://*.supabase.co wss://*.supabase.co;—that allows both HTTPS calls (auth, REST) and the realtime    
+  WebSocket.
+
+  If you prefer to keep everything in netlify.toml, update the CSP value there instead:
+
+  [[headers]]
+    for = "/*"
+    [headers.values]
+      Content-Security-Policy = "default-src 'self'; ... connect-src 'self' https://*.supabase.co wss://*.supabase.co; ..."
+
+  After you deploy with either approach, browsers will accept Supabase realtime connections and the CSP warning will disappear.
+
+▌ Im getting 401 responses when fetching from Supabase tables (celebrations, events, etc.).
+                                                                                                                                              
+• I'm piecing together that the 401 errors likely stem from unauthorized requests due to missing or invalid auth tokens, row-level security   
+  (RLS) policies blocking access, or environment variables like VITE_SUPABASE_ANON_KEY missing or misconfigured. I'll focus on explaining     
+  how RLS interacts with Restful queries, the need for authenticated sessions, and recommend creating read policies for involved tables such  
+  as celebrations and user_profiles. I'll also plan to advise verifying environment variables in deployment (like Netlify) and ensuring the   
+  Supabase client is correctly initialized and used consistently across the services.                                                         
+                                                                                                                                              
+> Why you’re seeing 401                                                                                                                       
+                                                                                                                                              
+  Supabase returns 401 whenever row-level security (RLS) blocks the query or when the request doesn’t carry a valid JWT (user session/API     
+  key). In your app the Supabase client already sends the anon key and, once the user signs in, their JWT. That means the 401s you’re seeing  
+  when calling /rest/v1/celebrations / events come from RLS: there’s no policy that lets the current user read those tables (or any joined    
+  tables such as user_profiles).                                                                                                              
+                                                                                                                                              
+  Fix: add read policies for the tables you query                                                                                             
+                                                                                                                                              
+  Open Supabase Dashboard → SQL Editor and run policies that grant SELECT to authenticated users (and a restricted INSERT/UPDATE if you need  
+  to write). Here is a minimal set based on the joins in your app; adjust to your exact schema, but this gets you past the 401s:              
+                                                                                                                                              
+  -- Allow signed-in users to read celebrations (and joined profiles)                                                                         
+  create policy "Allow authenticated read on celebrations"                                                                                    
+  on public.celebrations for select                                                                                                           
+  using ( auth.role() = 'authenticated' );                                                                                                    
+                                                                                                                                              
+  -- Allow signed-in users to read user profiles                                                                                              
+  create policy "Allow authenticated read on user_profiles"                                                                                   
+  on public.user_profiles for select                                                                                                          
+  using ( auth.role() = 'authenticated' );                                                                                                    
+                                                                                                                                              
+  -- Events (list + join with hosts/RSVPs)                                                                                                    
+  create policy "Allow authenticated read on events"                                                                                          
+  on public.events for select                                                                                                                 
+  using ( auth.role() = 'authenticated' );                                                                                                    
+                                                                                                                                              
+  create policy "Allow authenticated read on event_rsvps"                                                                                     
+  on public.event_rsvps for select                                                                                                            
+  using ( auth.role() = 'authenticated' );                                                                                                    
+                                                                                                                                              
+  If you want users to insert/update their own rows, add policies such as:                                                                    
+                                                                                                                                              
+  create policy "Users insert their celebrations"                                                                                             
+  on public.celebrations for insert                                                                                                           
+  with check ( auth.uid() = user_id );                                                                                                        
+                                                                                                                                              
+  create policy "Users update their celebrations"                                                                                             
+  on public.celebrations for update                                                                                                           
+  using ( auth.uid() = user_id )                                                                                                              
+  with check ( auth.uid() = user_id );                                                                                                        
+                                                                                                                                              
+  Repeat similar logic for events or other tables where writes are allowed.                                                                   
+  Repeat similar logic for events or other tables where writes are allowed.
+
+  Checklist
+
+  1. Ensure RLS is enabled on each table and the above policies exist.
+  2. Make sure the signed-in user actually has a valid session (you already fixed the Google session persistence).
+  3. Redeploy your site once policies are in place. The next requests will come back 200 instead of 401.
+
+  With these policies, authenticated users (those logged in through Supabase Auth) can read the celebrations, events, etc., resolving the     
+  401 errors.

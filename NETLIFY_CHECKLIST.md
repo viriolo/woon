@@ -12,10 +12,6 @@
   - [ ] Enable Google provider in Supabase Dashboard
   - [ ] Add redirect URL: `https://YOUR-NETLIFY-URL.netlify.app/auth/callback`
   - [ ] Keep localhost URL: `http://localhost:5173/auth/callback`
-- [ ] **Facebook OAuth**:
-  - [ ] Enable Facebook provider in Supabase Dashboard
-  - [ ] Add redirect URL: `https://YOUR-NETLIFY-URL.netlify.app/auth/callback`
-  - [ ] Keep localhost URL: `http://localhost:5173/auth/callback`
 - [ ] Update **Site URL** to your Netlify domain: `https://YOUR-NETLIFY-URL.netlify.app`
 
 ### 3. **Netlify Environment Variables**
@@ -47,14 +43,13 @@ Set these in Netlify Dashboard → Site Settings → Environment Variables:
 1. **Get Your Netlify URL**: Note your app's URL (e.g., `https://wonderful-app-123.netlify.app`)
 2. **Update Supabase OAuth URLs**:
    - Replace `YOUR-NETLIFY-URL` with your actual domain
-   - Add to both Google and Facebook provider settings
+   - Add to Google provider settings
 3. **Update Site URL** in Supabase Authentication settings
 
 ### 3. **Test All Authentication Flows**
 - [ ] **Email/Password Sign Up**: Create new account
 - [ ] **Email/Password Sign In**: Log in with existing account
 - [ ] **Google OAuth**: Test social login
-- [ ] **Facebook OAuth**: Test social login
 - [ ] **Sign Out**: Verify logout works
 - [ ] **Profile Management**: Test profile updates
 
@@ -83,7 +78,6 @@ Set these in Netlify Dashboard → Site Settings → Environment Variables:
 - [ ] Users can sign up with email/password
 - [ ] Users can log in with email/password
 - [ ] Google OAuth works (redirects properly)
-- [ ] Facebook OAuth works (redirects properly)
 - [ ] User profiles are created automatically
 - [ ] All app features work (maps, celebrations, events)
 - [ ] No console errors in browser
