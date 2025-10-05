@@ -4,6 +4,7 @@ import { XCircleIcon, LoadingSpinner, GoogleIcon, FacebookIcon } from "../../com
 
 interface AuthViewProps {
     onClose: () => void
+    prompt?: string
 }
 
 const SocialButton: React.FC<{
@@ -29,7 +30,7 @@ const SocialButton: React.FC<{
     )
 }
 
-export default function AuthView({ onClose }: AuthViewProps) {
+export default function AuthView({ onClose, prompt }: AuthViewProps) {
     const { signUp, logIn, socialLogIn } = useAuth()
     const [mode, setMode] = useState<"login" | "signup">("login")
     const [name, setName] = useState("")
@@ -115,6 +116,9 @@ export default function AuthView({ onClose }: AuthViewProps) {
                 </button>
                 <div className="space-y-6">
                     <div className="space-y-2 text-center">
+                        {prompt && (
+                            <p className="text-sm font-medium text-primary">{prompt}</p>
+                        )}
                         <span className="section-heading text-ink-400">
                             {mode === "login" ? "Welcome back" : "Join Woon"}
                         </span>

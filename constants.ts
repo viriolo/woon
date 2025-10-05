@@ -2,15 +2,11 @@ import type { SpecialDay, Celebration, UserLocation, FriendConnection } from "./
 
 const env = import.meta.env;
 
-export const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY ?? "";
-export const GOOGLE_MAPS_API_KEY = env.VITE_GOOGLE_MAPS_API_KEY ?? "";
+export const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN ?? "";
+export const MAPBOX_STYLE_URL = env.VITE_MAPBOX_STYLE_URL ?? "mapbox://styles/mapbox/light-v11";
 
-if (!GEMINI_API_KEY) {
-    console.warn("Gemini API key is not configured. Set VITE_GEMINI_API_KEY in your environment.");
-}
-
-if (!GOOGLE_MAPS_API_KEY) {
-    console.warn("Google Maps API key is not configured. Set VITE_GOOGLE_MAPS_API_KEY in your environment.");
+if (!MAPBOX_ACCESS_TOKEN) {
+    console.warn("Mapbox access token is not configured. Set VITE_MAPBOX_ACCESS_TOKEN in your environment.");
 }
 
 export const TODAY_SPECIAL_DAY: SpecialDay = {
@@ -69,4 +65,3 @@ export const FRIEND_CONNECTIONS: FriendConnection[] = [
         isNearby: false,
     },
 ];
-

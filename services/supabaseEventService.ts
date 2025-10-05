@@ -137,9 +137,10 @@ export const supabaseEventService = {
       location: string;
     },
     userId: string,
-    authorName: string
+    authorName: string,
+    coords?: { lng: number; lat: number }
   ): Promise<Event> {
-    const locationCoords = randomizeFallbackCoords();
+    const locationCoords = coords ?? randomizeFallbackCoords();
 
     const { data, error } = await supabase
       .from('events')
@@ -167,7 +168,6 @@ export const supabaseEventService = {
 
     return transformEventRow(data as SupabaseEventRow);
   },
-
   async toggleRsvp(eventId: string, userId: string): Promise<boolean> {
     const { data: existing } = await supabase
       .from('event_rsvps')

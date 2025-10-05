@@ -1,6 +1,8 @@
-import type { Celebration, User } from '../types';
+import type { Celebration } from '../types';
 import { USER_LOCATION } from '../constants';
 import { supabaseCelebrationService } from './supabaseCelebrationService';
+
+type MinimalUser = { id: string };
 
 const randomizePositionNearUser = () => {
   const variance = 0.08;
@@ -25,16 +27,19 @@ export const celebrationService = {
 
   async createCelebration(
     celebrationData: Pick<Celebration, 'title' | 'description' | 'imageUrl'>,
-    user: User
+    user: MinimalUser,
+    position?: { lng: number; lat: number }
   ): Promise<Celebration> {
-    if (!user) {
+    if (!user?.id) {
       throw new Error('Authentication required to create a celebration.');
     }
+
+    const submissionPosition = position ?? randomizePositionNearUser();
 
     return supabaseCelebrationService.createCelebration(
       celebrationData,
       user,
-      randomizePositionNearUser()
+      submissionPosition
     );
   },
 

@@ -11,6 +11,7 @@ interface SupabaseCommentRow {
   user_profiles?: {
     name: string | null;
     handle: string | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -22,6 +23,7 @@ const transformComment = (row: SupabaseCommentRow): Comment => ({
   text: row.text,
   mentions: row.mentions ?? [],
   timestamp: row.created_at,
+  authorAvatarUrl: row.user_profiles?.avatar_url ?? undefined,
 });
 
 export const supabaseCommentService = {
@@ -35,7 +37,7 @@ export const supabaseCommentService = {
         text,
         mentions,
         created_at,
-        user_profiles(name, handle)
+        user_profiles(name, handle, avatar_url)
       `)
       .eq('celebration_id', celebrationId)
       .order('created_at', { ascending: true });
@@ -70,7 +72,7 @@ export const supabaseCommentService = {
         text,
         mentions,
         created_at,
-        user_profiles(name, handle)
+        user_profiles(name, handle, avatar_url)
       `)
       .single();
 

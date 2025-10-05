@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import type { Celebration, User } from '../types';
+import type { Celebration } from '../types';
 
 export interface SupabaseCelebration {
   id: number;
@@ -92,7 +92,7 @@ export const supabaseCelebrationService = {
 
   createCelebration: async (
     celebrationData: Pick<Celebration, 'title' | 'description' | 'imageUrl'>,
-    user: User,
+    user: { id: string },
     position?: { lng: number; lat: number }
   ): Promise<Celebration> => {
     const { data, error } = await supabase
