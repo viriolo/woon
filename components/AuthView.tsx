@@ -34,7 +34,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onClose, onLoginSuccess, onS
         setIsLoading(true);
         onSetAuthLoading(true);
         try {
-            const user = await authService.socialLogIn("google");
+            const user = await authService.socialLogIn();
             onLoginSuccess(user);
         } catch (err: any) {
             setError(err.message || "An error occurred during social login.");

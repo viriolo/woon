@@ -35,7 +35,7 @@ export default function AuthView({ onClose, prompt }: AuthViewProps) {
         setError("")
         setIsLoading(true)
         try {
-            await socialLogIn("google")
+            await socialLogIn()
             // For OAuth, user will be redirected - the auth listener will close the modal
         } catch (err: any) {
             setError(err.message || "An error occurred during social login.")

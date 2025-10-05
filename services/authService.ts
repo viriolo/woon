@@ -166,12 +166,12 @@ export const authService = {
         return userToReturn;
     },
 
-    socialLogIn: async (provider: "google" | "facebook"): Promise<User> => {
+    socialLogIn: async (): Promise<User> => {
         await new Promise(res => setTimeout(res, 700));
         const users = getStoredUsers();
 
-        const mockEmail = `social_user_${provider}@example.com`;
-        const mockName = provider === "google" ? "Google User" : "Facebook User";
+        const mockEmail = 'social_user_google@example.com';
+        const mockName = 'Google User';
 
         let storedUser = users.find(u => u.email === mockEmail);
 

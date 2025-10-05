@@ -228,10 +228,10 @@ export const authService = {
     return user
   },
 
-  // Social login (Google, Facebook, etc.)
-  async socialLogIn(provider: 'google' | 'facebook'): Promise<void> {
+  // Social login (Google)
+  async socialLogIn(): Promise<void> {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`
       }
@@ -240,15 +240,15 @@ export const authService = {
     if (error) {
       // Provide specific error messages for OAuth issues
       if (error.message.includes('redirect_uri')) {
-        throw new Error(`OAuth redirect URL not configured properly. Please contact support.`)
+        throw new Error('OAuth redirect URL not configured properly. Please contact support.')
       }
       if (error.message.includes('client_id')) {
-        throw new Error(`${provider} OAuth is not properly configured. Please contact support.`)
+        throw new Error('Google OAuth is not properly configured. Please contact support.')
       }
       if (error.message.includes('network')) {
         throw new Error('Network error. Please check your connection and try again.')
       }
-      throw new Error(error.message || `Failed to authenticate with ${provider}. Please try again.`)
+      throw new Error(error.message || 'Failed to authenticate with Google. Please try again.')
     }
     // For OAuth, the user will be redirected and we handle the response elsewhere
   },

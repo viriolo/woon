@@ -16,7 +16,7 @@ interface AuthContextType {
 
   logOut: () => Promise<void>
 
-  socialLogIn: (provider: 'google' | 'facebook') => Promise<void>
+  socialLogIn: () => Promise<void>
 
   updateProfile: (updates: any) => Promise<AuthUser>
 
@@ -244,12 +244,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   }
 
-  const socialLogIn = async (provider: 'google' | 'facebook'): Promise<void> => {
-
-    await authService.socialLogIn(provider)
-
+  const socialLogIn = async (): Promise<void> => {
+    await authService.socialLogIn()
     // User will be updated via onAuthStateChange
-
   }
 
   const updateProfile = async (updates: any): Promise<AuthUser> => {
