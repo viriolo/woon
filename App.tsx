@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Header } from "./components/Header";
 import { BottomNavBar } from "./components/BottomNavBar";
 import { DiscoveryView } from "./components/DiscoveryView";
@@ -38,10 +38,26 @@ const AppContent: React.FC = () => {
     const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
     const [isMissionViewVisible, setIsMissionViewVisible] = useState(false);
 
+    const lastKnownUserIdRef = useRef<string | null>(null);
+
     const updateActiveTab = useCallback((tab: string) => {
         setActiveTab(tab);
         localStorage.setItem(ACTIVE_TAB_KEY, tab);
     }, [setActiveTab]);
+
+    useEffect(() => {
+        if (loading) {
+            return;
+        }
+
+        const currentUserId = user?.id ?? null;
+
+        if (currentUserId && lastKnownUserIdRef.current !== currentUserId) {
+            updateActiveTab("profile");
+        }
+
+        lastKnownUserIdRef.current = currentUserId;
+    }, [user, loading, updateActiveTab]);
 
     const todaySpecialDay = useMemo(() => {
         const today = new Date();
